@@ -1,0 +1,64 @@
+- class_name: 友情链接
+  class_desc: 那些人，那些事
+  link_list:
+    - name: 代晓康个人网站
+      link: https://www.daixk.com
+      avatar: https://cdn.daixk.com/web/touxiang.jpg
+      descr: 代晓康个人网站
+    - name: 唐志远の博客
+      link: https://fe32.top/
+      avatar: https://cdn.skypro.cartafi.cn/2023/04/20/6440a3b60a970.webp
+      descr: 古今之成大事者，不惟有超世之才，亦必有坚忍不拔之志。
+- class_name: 技术代码
+  class_desc: 优秀的框架、代码网站
+  link_list:
+    - name: go-zero
+      link: https://go-zero.dev/
+      avatar: https://go-zero.dev/logos/logo.svg
+      descr: go-zero官网
+    - name: GOFRAME
+      link: https://goframe.org/
+      avatar: https://goframe.org/download/attachments/1114117/gf?version=4&modificationDate=1684159712369&api=v2
+      descr: goframe官网
+    - name: Hutool
+      link: https://www.hutool.cn/
+      avatar: https://plus.hutool.cn/images/hutool.svg
+      descr: 小而全的java工具类
+    - name: MyBatis-Plus
+      link: https://baomidou.com/
+      avatar: https://baomidou.com/img/logo.svg
+      descr:  🚀为简化开发而生
+    - name: 稀土掘金
+      link: https://juejin.cn/
+      avatar: https://lf3-cdn-tos.bytescm.com/obj/static/xitu_juejin_web/6c61ae65d1c41ae8221a670fa32d05aa.svg
+      descr:  掘金是面向全球中文开发者的技术内容分享与交流平台。
+- class_name: 电影电视
+  class_desc: 影视网站
+  link_list:
+    - name: 555电影
+      link: https://www.stuo-express.com/
+      avatar: https://shp.qpic.cn/wanjiashequ_pic/0/0f3c7d3af3efda8ef4d1f1c1f26f5081/0
+      descr: 555电影
+    - name: 南瓜电影
+      link: https://v.vcinema.cn/
+      avatar: https://s.image.vcinema.com.cn/doras_web/imgs/logo.png?x-oss-process=image/resize,p_100
+      descr: 南瓜电影
+- class_name: 实用工具
+  class_desc: 实用工具网站
+  link_list:
+    - name: TinyPng
+      link: https://tinypng.com/cn/
+      avatar: https://tinypng.com/images/panda-happy.png
+      descr: 图片压缩工具
+    - name: 码工具
+      link: https://www.matools.com/
+      avatar: https://tpc.googlesyndication.com/simgad/3367794557162511334/14763004658117789537?w=100&h=100
+      descr: 超使用的编码工具网站
+    - name: BEJSON
+      link: https://www.bejson.com/
+      avatar: https://www.bejson.com/static/bejson/img/qq/bejson-q.png
+      descr: 在线,JSON,JSON 校验,格式化,xml转json 工具
+    - name: 奇Q工具cron表达式
+      link: https://cron.qqe2.com/
+      avatar: https://cron.qqe2.com/res/logo.png
+      descr: 在线生成cron

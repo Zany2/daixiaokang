@@ -1,0 +1,29 @@
+- var homeStats = []
+- homeStats.push({ label: 'Posts', value: site.posts.length, href: url_for('/archives/'), icon: 'fas fa-feather-pointed' })
+- homeStats.push({ label: 'Categories', value: site.categories.length, href: url_for('/categories/'), icon: 'fas fa-folder-tree' })
+- homeStats.push({ label: 'Tags', value: site.tags.length, href: url_for('/tags/'), icon: 'fas fa-hashtag' })
+- homeStats.push({ label: 'Pages', value: site.pages.length, href: url_for('/personal/about/'), icon: 'fas fa-compass' })
+
+.zany-home
+  .zany-home-panel.zany-home-hero(data-reveal)
+    .zany-home-copy
+      span.zany-home-kicker ZANY BLOG
+      h2.zany-home-title= config.title
+      p.zany-home-desc= config.description || 'Record ideas, life, and ongoing work.'
+      p#zany-greeting.zany-home-greeting Stay curious and keep building.
+      .zany-home-actions
+        a.zany-home-btn.primary(href=url_for('/archives/')) Explore Posts
+        a.zany-home-btn(href=url_for('/personal/about/')) About
+        a.zany-home-btn(href=url_for('/site/time/')) Timeline
+    .zany-home-visual
+      .zany-home-glow
+      .zany-home-note
+        span.zany-home-note-label Site Mood
+        strong Zany style, fully customized.
+        p#zany-time-tip The page is ready. Take your time.
+  .zany-home-grid
+    each item in homeStats
+      a.zany-home-card(href=item.href data-reveal)
+        i(class=item.icon)
+        strong= item.value
+        span= item.label
