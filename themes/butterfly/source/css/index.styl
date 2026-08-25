@@ -12,15 +12,8 @@ if hexo-config('css_prefix')
 @import '_mode/*'
 @import '_custom/custom.css'
 
-// search
-if hexo-config('algolia_search.enable')
-  @import '_search/index'
-  @import '_search/algolia'
-
-if hexo-config('local_search') && hexo-config('local_search.enable')
-  @import '_search/index'
-  @import '_search/local-search'
-
-// 灯笼
 if hexo-config('lantern') && hexo-config('lantern.enable')
   @import '_custom/lantern.css'
+
+// search
+@import '_search/index'
