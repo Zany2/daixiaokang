@@ -109,17 +109,18 @@ mathjax:
 # --------------------------------------
 
 # Favicon（網站圖標）
-favicon: /favicon.ico
+favicon:
+
 # Avatar (頭像)
 avatar:
-  img: /assets/avatar.webp
+  img: https://cdn.daixk.com/web/touxiang.jpg
   effect: true
 
 # Disable all banner image
 disable_top_img: false
 
 # The banner image of home page
-index_img: '/assets/head.jpg'
+index_img: 'https://cdn.daixk.com/web/beijing.png'
 
 # If the banner of page not setting, it will show the top_img
 default_top_img:
@@ -155,9 +156,8 @@ cover:
   position: both
   # When cover is not set, the default cover is displayed (當沒有設置cover時，默認的封面顯示)
   default_cover:
-    - /assets/head.jpg
-    - /assets/r1.jpg
-    - /assets/r2.jpg
+    - https://cdn.daixk.com/web/beijing.png
+    - https://cdn.daixk.com/web/beijing.png
     # ...
 
 # A simple 404 page
@@ -225,10 +225,10 @@ reward:
   enable: true
   coinAudio: https://npm.elemecdn.com/akilar-candyassets@1.0.36/audio/aowu.m4a
   QR_code:
-    - img: /assets/WX.png
+    - img: https://cdn.daixk.com/web_shoukuan/weixinshoukuanma.png
       link:
       text: 微信
-    - img: /assets/QRCode.jpg
+    - img: https://cdn.daixk.com/web_shoukuan/zhifubaoshoukuanma.png
       link:
       text: 支付宝
 
@@ -680,7 +680,9 @@ subtitle:
 # preloader: false
 preloader:
   enable: true # true|false
-  source: 1 # 1: Butterfly full-page loader, other values: Pace loader
+  load_color: # '#37474f'
+  load_style: heo # default|gear|ironheart|scarecrow|triangles|wizard|image|spincat|heo(新增)
+  load_image: # url
 
 # aside (側邊欄)
 # --------------------------------------
@@ -701,11 +703,12 @@ aside:
     button:
       enable: true
       icon: # fab fa-github
-      text: 了解我
-      link: /personal/about/
+      text: 🤖前往小窝
+      link: https://www.daixk.com
   card_announcement:
     enable: true
-    content: <center><b>欢迎来到 Zany 的小站</b><br><a href="/archives/" class="anno_content"><font color="#5ea6e5">文章归档</font></a>&nbsp;|&nbsp;<a href="/categories/" class="anno_content"><font color="#5ea6e5">分类索引</font></a><br><a href="/personal/about/" class="anno_content"><font color="#5ea6e5">关于我</font></a>&nbsp;|&nbsp;<a href="/site/time/" class="anno_content"><font color="#5ea6e5">建站记录</font></a></center>
+    # content: <center><b>--- 主域名 ---<br><a href="https://www.daixk.com" title="此线路部署于Vercel" class="anno_content"><font color="#5ea6e5">daixk.com</font></a>&nbsp;|&nbsp;<a href="https://www.daixk.com" title="此线路部署于Vercel" class="anno_content"><font color="#5ea6e5">daixk.com</font></a><br>--- 备用域名 ---<br><a href="https://www.daixk.com" title="此线路部署于Netlify" class="anno_content"><font color="#5ea6e5">daixk.com</font></a><br><a href="https://www.daixk.com" title="此线路部署于Cloudflare" class="anno_content"><font color="#5ea6e5">daixk.com</font></a><br>--- 网站安卓APP ---<br>🍧<a href="https://lskypro.acozycotage.net/Fomalhaut/Fomalhaut.apk" title="点这里可以下载网站的安卓APP" class="anno_content"><font color="#5ea6e5">点此下载</font></a>🍧</b></center>
+    content: <center><b>--- 主域名 ---<br><a href="https://www.daixk.com" title="此线路部署于Vercel" class="anno_content"><font color="#5ea6e5">daixk.com</font></a>&nbsp;|&nbsp;<a href="https://www.daixk.com" title="此线路部署于Vercel" class="anno_content"><font color="#5ea6e5">daixk.com</font></a><br>--- 备用域名 ---<br><a href="https://www.daixk.com" title="此线路部署于Netlify" class="anno_content"><font color="#5ea6e5">daixk.com</font></a><br><a href="https://www.daixk.com" title="此线路部署于Cloudflare" class="anno_content"><font color="#5ea6e5">daixk.com</font></a></b></center>
   card_recent_post:
     enable: false
     limit: 3 # if set 0 will show all
@@ -887,10 +890,10 @@ pwa:
   enable: false
   manifest: /manifest.json
   theme_color: var(--theme-color)
-  apple_touch_icon: /favicon.ico
-  favicon_32_32: /favicon.ico
-  favicon_16_16: /favicon.ico
-  mask_icon: /favicon.ico
+  apple_touch_icon: /assets/gulp/siteicon/128.png
+  favicon_32_32: /assets/gulp/siteicon/32.png
+  favicon_16_16: /assets/gulp/siteicon/16.png
+  mask_icon: /assets/gulp/siteicon/128.png
 
 # Open graph meta tags
 # https://developers.facebook.com/docs/sharing/webmasters/
@@ -905,7 +908,7 @@ css_prefix: true
 inject:
   head:
     # - <link rel="stylesheet" href="/css/custom.css" media="defer" onload="this.media='all'"> # 常规css
-    - <link rel="stylesheet" href="/vendor/element-ui/index.css"> # Element UI local
+    - <link rel="stylesheet" href="https://cdn1.tianli0.top/npm/element-ui@2.15.6/packages/theme-chalk/lib/index.css"> # 引入组件库(f12)
     # 综合美化模块样式引入
     - <style id="themeColor"></style> # 主题色
     - <style id="rightSide"></style> # 侧边栏
@@ -915,16 +918,16 @@ inject:
     - <span id="fps"></span> # 帧率检测
     - <style id="defineBg"></style> # 自定义背景选项
     - <style id="menu_shadow"></style> # 菜单发光样式
-    - <script src="/vendor/echarts/echarts.min.js"></script>
+    - <script src="https://npm.elemecdn.com/echarts@4.9.0/dist/echarts.min.js"></script>
 
   bottom:
-    - <script src="/vendor/jquery/jquery.min.js"></script> # jQuery local
-    - <script async src="/vendor/vue/vue.min.js"></script> # Vue local
-    - <script async src="/vendor/element-ui/index.js"></script> # ElementUI local
+    - <script src="https://cdn.staticfile.org/jquery/3.6.3/jquery.min.js"></script> # jQuery
+    - <script async src="https://cdn1.tianli0.top/npm/vue@2.6.14/dist/vue.min.js"></script> # VUE
+    - <script async src="https://cdn1.tianli0.top/npm/element-ui@2.15.6/lib/index.js"></script> # ElementUI
     - <script async src="https://cdn.bootcdn.net/ajax/libs/clipboard.js/2.0.11/clipboard.min.js"></script> # 分享按钮依赖
-    - <script defer type="text/javascript" src="/vendor/sweetalert2/sweetalert2.all.js"></script> # SweetAlert2 local
-    - <script async src="/vendor/pace/pace.min.js"></script> # Pace local
-    - <script defer src="/vendor/winbox/winbox.bundle.min.js"></script> # Winbox local
+    - <script defer type="text/javascript" src="https://cdn1.tianli0.top/npm/sweetalert2@8.19.0/dist/sweetalert2.all.js"></script> # 节日弹窗依赖
+    - <script async src="//npm.elemecdn.com/pace-js@1.2.4/pace.min.js"></script> # 顶部进度条js
+    - <script defer src="https://cdn1.tianli0.top/gh/nextapps-de/winbox/dist/winbox.bundle.min.js"></script> # winbox
     - <script async src="//at.alicdn.com/t/c/font_3586335_hsivh70x0fm.js"></script> # js图标引入1
     - <script async src="//at.alicdn.com/t/c/font_3636804_gr02jmjr3y9.js"></script> # js图标引入2
     - <script async src="//at.alicdn.com/t/c/font_3612150_kfv55xn3u2g.js"></script> # js图标引入3
@@ -932,7 +935,6 @@ inject:
     - <canvas id="universe"></canvas> # 星空画布
     - <canvas id="snow"></canvas> # 雪花画布
     - <script defer src="/js/fomal.js"></script> # 主模块js
-    - <script defer data-pjax src="/js/zany-enhance.js"></script> # local interaction enhancer
     # - <script async src="https://npm.elemecdn.com/tzy-blog/lib/js/other/sakura.js"></script>
     - <script defer data-pjax src="/js/txmap.js"></script> # 腾讯位置API
 
@@ -1163,9 +1165,9 @@ categoryBar:
   row: 1 #显示行数，默认两行，超过行数切换为滚动显示
   message:
     - descr: 
-      cover: /assets/head.jpg
+      cover: https://cdn.daixk.com/web/beijing.png
     - descr: 
-      cover: /assets/r2.jpg
+      cover: https://cdn.daixk.com/web/beijing.png
     # - descr: 长篇小说连载
     #   cover: https://assets.akilar.top/image/cover3.webp
     # - descr: 个人日记

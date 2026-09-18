@@ -1,4 +1,4 @@
-.container
+#article-container
   .btn-center
     margin: 0 0 20px
     text-align: center
@@ -7,19 +7,19 @@
     display: inline-block
     margin: 0 4px 6px
     padding: 0 15px
-    background-color: var(--btn-beautify-color, var(--btn-default-color))
-    color: var(--btn-color, $btn-color)
-    vertical-align: top
+    background-color: var(--btn-beautify-color, $btn-default-color)
+    color: $btn-color
     line-height: 2
-    addBorderRadius()
-    @extend .btn-effects
 
     for $type in $color-types
       &.{$type}
-        --btn-beautify-color: unquote('var(--tags-' + $type + '-color)')
+        --btn-beautify-color: lookup('$tagsP-' + $type + '-color')
 
     &:hover
       background-color: var(--btn-hover-color)
+
+    i + span
+      margin-left: 6px
 
     &:not(.block) + .btn-beautify:not(.block)
       margin: 0 4px 20px
@@ -38,26 +38,18 @@
 
     &.larger
       padding: 6px 15px
-      @extend .btn-effects-large
+
+    &:hover
+      text-decoration: none
 
     &.outline
       border: 1px solid transparent
-      border-color: var(--btn-beautify-color, var(--btn-default-color))
+      border-color: var(--btn-beautify-color, $btn-default-color)
       background-color: transparent
-      color: var(--btn-beautify-color, var(--btn-default-color))
-
-      i,
-      span
-        transition: color .3s cubic-bezier(.4, 0, .2, 1)
-
-      &::before
-        background: linear-gradient(90deg, transparent, rgba(0, 0, 0, .1), transparent)
+      color: var(--btn-beautify-color, $btn-default-color)
 
       &:hover
-        border-color: var(--btn-beautify-color, var(--btn-default-color))
-        background-color: var(--btn-beautify-color, var(--btn-default-color))
-        color: var(--btn-color) !important
+        background-color: var(--btn-beautify-color, $btn-default-color)
 
-        i,
-        span
-          color: var(--btn-color)
+      &:hover
+        color: white !important

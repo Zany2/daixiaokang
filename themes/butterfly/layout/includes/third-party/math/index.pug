@@ -1,14 +1,18 @@
-case theme.math.use
-  when 'mathjax'
-    if (theme.math.per_page && (['post','page'].includes(globalPageType))) || page.mathjax
+if theme.mathjax && theme.mathjax.enable
+  if theme.mathjax.per_page
+    if is_post() || is_page()
+      include ./mathjax.pug
+  else
+    if page.mathjax
       include ./mathjax.pug
 
-  when 'katex'
-    if (theme.math.per_page && (['post','page'].includes(globalPageType))) || page.katex
+if theme.katex && theme.katex.enable
+  if theme.katex.per_page
+    if is_post() || is_page()
+      include ./katex.pug
+  else
+    if page.katex
       include ./katex.pug
 
 if theme.mermaid.enable
   include ./mermaid.pug
-
-if theme.chartjs.enable
-  include ./chartjs.pug

@@ -1199,16 +1199,16 @@ button#go-up:hover #percent {
 
 /* 个人信息卡片背景图 */
 [data-theme="light"] #aside-content > .card-widget.card-info {
-  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(214, 240, 247, 0.72)), url(/assets/r1.jpg);
+  background-image: url(https://tuchuang.voooe.cn/images/2023/02/28/springBg.png);
   background-repeat: no-repeat;
   background-attachment: inherit;
-  background-size: cover;
+  background-size: 100%;
 }
 [data-theme="dark"] #aside-content > .card-widget.card-info {
-  background-image: linear-gradient(135deg, rgba(20, 24, 34, 0.78), rgba(20, 45, 63, 0.65)), url(/assets/r2.jpg);
+  background-image: url(https://tuchuang.voooe.cn/images/2023/02/28/aurora.webp);
   background-repeat: no-repeat;
   background-attachment: inherit;
-  background-size: cover;
+  background-size: 100%;
 }
 /* 头像呼吸灯 */
 [data-theme="light"] .avatar-img {
@@ -1271,7 +1271,7 @@ input#pic-link {
 
 /* heo 加载动画头像 */
 .loading-img {
-  background: url(/assets/avatar.webp)
+  background: url(https://tuchuang.voooe.cn/images/2023/01/02/avatar.webp)
     no-repeat center center;
   background-size: cover;
 }
@@ -3011,265 +3011,4 @@ hr:before {
 .github-badge img:hover {
   scale: 1.05;
   transition: all 0.3s ease-in-out;
-}
-
-/* Zany home enhancement */
-.zany-home {
-  margin-bottom: 2rem;
-}
-
-.zany-home-panel,
-.zany-home-card,
-#recent-posts .recent-post-item,
-#aside-content .card-widget {
-  position: relative;
-  overflow: hidden;
-}
-
-.zany-home-panel::before,
-.zany-home-card::before,
-#recent-posts .recent-post-item::before,
-#aside-content .card-widget::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(120deg, rgba(255, 255, 255, 0.18), transparent 45%, rgba(94, 166, 229, 0.1));
-  opacity: 0;
-  transition: opacity 0.35s ease;
-  pointer-events: none;
-}
-
-.zany-home-panel:hover::before,
-.zany-home-card:hover::before,
-#recent-posts .recent-post-item:hover::before,
-#aside-content .card-widget:hover::before {
-  opacity: 1;
-}
-
-.zany-home-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
-  gap: 1.25rem;
-  padding: 1.4rem;
-  border-radius: 24px;
-  background:
-    radial-gradient(circle at top left, rgba(94, 166, 229, 0.28), transparent 38%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(237, 246, 252, 0.78)),
-    url(/assets/head.jpg) center/cover no-repeat;
-  border: 1px solid rgba(94, 166, 229, 0.16);
-  box-shadow: 0 18px 45px rgba(70, 115, 148, 0.14);
-}
-
-[data-theme="dark"] .zany-home-hero {
-  background:
-    radial-gradient(circle at top left, rgba(94, 166, 229, 0.22), transparent 35%),
-    linear-gradient(135deg, rgba(19, 25, 35, 0.92), rgba(27, 40, 58, 0.82)),
-    url(/assets/r2.jpg) center/cover no-repeat;
-  border-color: rgba(94, 166, 229, 0.12);
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
-}
-
-.zany-home-kicker {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.35rem 0.8rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.6);
-  color: var(--theme-color);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-}
-
-[data-theme="dark"] .zany-home-kicker {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.zany-home-title {
-  margin: 0.9rem 0 0.75rem;
-  font-size: clamp(2rem, 4vw, 2.9rem);
-  line-height: 1.05;
-}
-
-.zany-home-desc,
-.zany-home-greeting {
-  max-width: 56ch;
-  color: var(--font-color);
-  opacity: 0.9;
-}
-
-.zany-home-greeting {
-  margin-top: 0.7rem;
-  font-weight: 600;
-}
-
-.zany-home-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem;
-  margin-top: 1.15rem;
-}
-
-.zany-home-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 116px;
-  padding: 0.72rem 1rem;
-  border: 1px solid rgba(94, 166, 229, 0.18);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.52);
-  color: var(--font-color);
-  font-weight: 700;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
-}
-
-.zany-home-btn.primary {
-  background: linear-gradient(120deg, var(--theme-color), #7bc3ec);
-  color: #fff;
-}
-
-.zany-home-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(66, 90, 239, 0.14);
-}
-
-.zany-home-visual {
-  position: relative;
-  min-height: 220px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
-  padding: 1.1rem;
-  border-radius: 20px;
-  background:
-    linear-gradient(180deg, rgba(10, 18, 32, 0.1), rgba(10, 18, 32, 0.55)),
-    url(/assets/r2.jpg) center/cover no-repeat;
-}
-
-.zany-home-glow {
-  position: absolute;
-  inset: 14% auto auto 8%;
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.8), rgba(123, 195, 236, 0.08) 65%, transparent 70%);
-  filter: blur(2px);
-}
-
-.zany-home-note {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  padding: 1rem;
-  border-radius: 18px;
-  backdrop-filter: blur(10px);
-  background: rgba(15, 22, 36, 0.46);
-  color: #fff;
-}
-
-.zany-home-note-label {
-  display: inline-block;
-  margin-bottom: 0.45rem;
-  font-size: 0.76rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  opacity: 0.72;
-}
-
-.zany-home-note p {
-  margin: 0.35rem 0 0;
-  opacity: 0.78;
-}
-
-.zany-home-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.9rem;
-  margin-top: 1rem;
-}
-
-.zany-home-card {
-  display: grid;
-  gap: 0.45rem;
-  padding: 1.15rem 1rem;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(240, 248, 252, 0.76));
-  border: 1px solid rgba(94, 166, 229, 0.12);
-  color: var(--font-color);
-  box-shadow: 0 10px 26px rgba(70, 115, 148, 0.08);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-[data-theme="dark"] .zany-home-card {
-  background: linear-gradient(135deg, rgba(18, 24, 34, 0.92), rgba(24, 35, 49, 0.82));
-  border-color: rgba(94, 166, 229, 0.08);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22);
-}
-
-.zany-home-card i {
-  color: var(--theme-color);
-  font-size: 1.15rem;
-}
-
-.zany-home-card strong {
-  font-size: 1.45rem;
-  line-height: 1;
-}
-
-.zany-home-card span {
-  opacity: 0.72;
-  font-size: 0.95rem;
-}
-
-.zany-home-card:hover,
-#recent-posts .recent-post-item:hover,
-#aside-content .card-widget:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 18px 34px rgba(66, 90, 239, 0.12);
-}
-
-#recent-posts .recent-post-item,
-#aside-content .card-widget {
-  transition: transform 0.28s ease, box-shadow 0.28s ease;
-}
-
-[data-reveal] {
-  opacity: 0;
-  transform: translateY(22px);
-  transition: opacity 0.55s ease var(--reveal-delay, 0ms), transform 0.55s ease var(--reveal-delay, 0ms);
-}
-
-[data-reveal].is-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-@media screen and (max-width: 900px) {
-  .zany-home-hero {
-    grid-template-columns: 1fr;
-  }
-
-  .zany-home-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media screen and (max-width: 600px) {
-  .zany-home-hero {
-    padding: 1rem;
-    border-radius: 20px;
-  }
-
-  .zany-home-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .zany-home-actions {
-    gap: 0.65rem;
-  }
-
-  .zany-home-btn {
-    width: 100%;
-  }
 }

@@ -18,8 +18,7 @@ abbrlink:
 
 # URL
 ## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
-url: http://localhost:4000
-root: /
+url: https://Zany2.github.io
 permalink: posts/:abbrlink.html
 permalink_defaults:
 pretty_urls:
@@ -35,8 +34,7 @@ category_dir: categories
 code_dir: downloads/code
 i18n_dir: :lang
 # 指定不渲染某些页面
-skip_render:
-  - vendor/**/*
+skip_render: 
 
 # Writing
 new_post_name: :year-:month-:day-:title.md # File name of new posts

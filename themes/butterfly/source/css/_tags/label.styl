@@ -1,11 +1,11 @@
 .hl-label
   padding: 2px 4px
-  color: var(--btn-color, $btn-color)
-  addBorderRadius(3)
+  border-radius: 3px
+  color: $btn-color
 
   &.default
-    background-color: var(--btn-default-color)
+    background-color: $btn-default-color
 
   for $type in $color-types
     &.{$type}
-      background-color: unquote('var(--tags-' + $type + '-color)')
+      background-color: lookup('$tagsP-' + $type + '-color')

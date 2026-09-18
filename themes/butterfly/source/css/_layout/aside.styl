@@ -8,14 +8,19 @@
       padding-right: 15px
 
   +maxWidth900()
-    margin-top: 20px
     width: 100%
+
+  > .card-widget:first-child
+    margin-top: 0
+
+    +maxWidth900()
+      margin-top: 20px
 
   .card-widget
     @extend .cardHover
     position: relative
     overflow: hidden
-    margin-bottom: 20px
+    margin-top: 20px
     padding: 20px 24px
 
     if hexo-config('aside.mobile') == false
@@ -23,19 +28,16 @@
         &:not(#card-toc)
           display: none
 
-    // &:last-child
-    //   margin-bottom: 0
-
   .card-info
     .author-info
-      &-name
+      &__name
         font-weight: 500
         font-size: 1.57em
 
-      &-description
+      &__description
         margin-top: -.42em
 
-    .site-data
+    .card-info-data
       margin: 14px 0 4px
 
     .card-info-social-icons
@@ -50,7 +52,7 @@
         transition: all .3s
 
         &:hover
-          transform: rotate(360deg)
+          transform: rotate(540deg)
 
     #card-info-btn
       display: block
@@ -59,8 +61,6 @@
       color: var(--btn-color)
       text-align: center
       line-height: 2.4
-      addBorderRadius(7)
-      @extend .btn-effects
 
       &:hover
         background-color: var(--btn-hover-color)
@@ -86,7 +86,6 @@
     a
       display: inline-block
       padding: 0 4px
-      line-height: 1.8
 
       &:hover
         color: $text-hover !important
@@ -113,11 +112,10 @@
 
       .thumbnail
         overflow: hidden
-        width: w = 4em
+        width: w = 4.2em
         height: w
-        addBorderRadius()
 
-        :first-child
+        & > img
           @extend .imgHover
 
       .content
@@ -132,14 +130,14 @@
         & > time,
         & > .name
           display: block
-          color: var(--card-meta)
-          font-size: .85em
+          color: $theme-meta-color
+          font-size: 85%
 
         & > .title,
         & > .comment
           @extend .limit-more-line
           color: var(--font-color)
-          // font-size: 95%
+          font-size: 95%
           line-height: 1.5
           -webkit-line-clamp: 2
 
@@ -160,16 +158,13 @@
     a
       display: flex
       flex-direction: row
-      margin: 2px 0
-      padding: 2px 8px
+      padding: 3px 10px
       color: var(--font-color)
-      transition: all .3s
-      addBorderRadius()
+      transition: all .4s
 
       &:hover
-        padding: 2px 12px
+        padding: 3px 17px
         background-color: var(--text-bg-hover)
-        color: var(--white)
 
       span
         @extend .limit-one-line
@@ -181,23 +176,9 @@
     .card-category-list
       &.child
         padding: 0 0 0 16px
-        overflow: hidden
-        max-height: 0
-        opacity: 0
-        visibility: hidden
-        transition: max-height .3s ease, opacity .3s ease
 
       > .parent
         > a
-          &.expand
-            i
-              transform: rotate(-90deg)
-
-            & + .child
-              max-height: 1000px
-              opacity: 1
-              visibility: visible
-
           .card-category-list
             &-name
               width: 70% !important
@@ -206,18 +187,19 @@
               width: calc(100% - 70% - 20px)
               text-align: right
 
-          i
-            float: right
-            margin-right: -.5em
-            padding: .5em
-            transition: transform .3s
-            transform: rotate(0)
+        i
+          float: right
+          margin-right: -.5em
+          padding: .5em
+          transition: transform .3s
+          transform: rotate(0)
+
+          &.expand
+            transform: rotate(-90deg)
 
         if hexo-config('aside.card_categories.expand') == false
           > .child
-            max-height: 0
-            opacity: 0
-            visibility: hidden
+            display: none
 
   .card-webinfo
     .webinfo
@@ -238,18 +220,15 @@
 
     +maxWidth900()
       position: fixed
-      right: 55px
+      right: -100%
       bottom: 30px
       z-index: 100
       max-width: $toc-mobile-maxWidth
       max-height: calc(100% - 60px)
       width: $toc-mobile-width
-      transition: none
-      transform: scale(0)
+      opacity: 0
+      transition: initial
       transform-origin: right bottom
-
-      &.open
-        transform: scale(1)
 
     .toc-percentage
       float: right
@@ -263,7 +242,6 @@
       overflow-y: overlay
       margin: 0 -24px
       max-height: calc(100vh - 120px)
-      width: calc(100% + 48px)
 
       +maxWidth900()
         max-height: calc(100vh - 140px)
@@ -302,10 +280,9 @@
       .toc-link
         display: block
         margin: 4px 0
-        padding: 1px 8px
+        padding: 1px 6px
         color: var(--toc-link-color)
         transition: all .2s ease-in-out
-        addBorderRadius()
 
         &:hover
           color: $theme-color
@@ -314,8 +291,8 @@
           background: $theme-toc-color
           color: $toc-active-color
 
-  .sticky_layout:only-child
-    > :first-child
+  :only-child
+    > .card-widget
       margin-top: 0
 
   .card-more-btn
@@ -340,7 +317,7 @@
   img
     width: 100%
     height: 100%
-    transition: filter 375ms ease-in .2s, transform .3s
+    transition: filter 1000ms cubic-bezier(0.38, 0.21, 0.94, 0.1) 0.2s, transform 1.0s;
     object-fit: cover
 
     &:hover
@@ -364,12 +341,11 @@
     .headline
       @extend .limit-one-line
       color: var(--font-color)
-      font-size: .95em
 
     .length-num
-      margin-top: -.45em
+      margin-top: -.32em
       color: var(--text-highlight-color)
-      font-size: 1.2em
+      font-size: 1.4em
 
 @keyframes more-btn-move
   0%,
@@ -413,9 +389,9 @@
     .card-recent-post
       order: hexo-config('aside.card_recent_post.sort_order')
 
-  if hexo-config('aside.card_newest_comments.sort_order')
+  if hexo-config('newest_comments.sort_order')
     #card-newest-comments
-      order: hexo-config('aside.card_newest_comments.sort_order')
+      order: hexo-config('newest_comments.sort_order')
 
   if hexo-config('aside.card_categories.sort_order')
     .card-categories

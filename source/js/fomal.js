@@ -54,7 +54,7 @@ function tonav() {
     position = scroll;
   });
   //修复没有弄右键菜单的童鞋无法回顶部的问题
-  document.getElementById("page-name").innerText = document.title.split(" | ")[0];
+  document.getElementById("page-name").innerText = document.title.split(" | Fomalhaut🥝")[0];
 }
 
 function scrollToTop() {
@@ -69,23 +69,18 @@ function scrollToTop() {
 
 /* 欢迎信息 start */
 //get请求
-const TX_MAP_KEY = '';
-let ipLoacation = null;
-
-if (TX_MAP_KEY) {
-  $.ajax({
-    type: 'get',
-    url: 'https://apis.map.qq.com/ws/location/v1/ip',
-    data: {
-      key: TX_MAP_KEY,
-      output: 'jsonp',
-    },
-    dataType: 'jsonp',
-    success: function (res) {
-      ipLoacation = res;
-    }
-  })
-}
+$.ajax({
+  type: 'get',
+  url: 'https://apis.map.qq.com/ws/location/v1/ip',
+  data: {
+    key: '',  // 这里要写你的KEY!!!
+    output: 'jsonp',
+  },
+  dataType: 'jsonp',
+  success: function (res) {
+    ipLoacation = res;
+  }
+})
 function getDistance(e1, n1, e2, n2) {
   const R = 6371
   const { sin, cos, asin, PI, hypot } = Math
@@ -103,13 +98,6 @@ function getDistance(e1, n1, e2, n2) {
 }
 
 function showWelcome() {
-  if (!document.getElementById("welcome-info")) return;
-
-  if (!ipLoacation || !ipLoacation.result || !ipLoacation.result.location) {
-    document.getElementById("welcome-info").innerHTML =
-      "<b><center>🎉 欢迎信息 🎉</center>&emsp;&emsp;欢迎来到 Zany 的小站，愿你今天也有一点新的收获。</b>";
-    return;
-  }
 
   let dist = getDistance(113.34499552, 23.15537143, ipLoacation.result.location.lng, ipLoacation.result.location.lat); //这里换成自己的经纬度
   let pos = ipLoacation.result.ad_info.nation;
@@ -1131,7 +1119,7 @@ function createtime1() {
   var dnum = Math.floor(days);
 
   var ascll = [
-    `欢迎来到Zany🥝の小家!`,
+    `欢迎来到Fomalhaut🥝の小家!`,
     `Future is now 🍭🍭🍭`,
     `
         
@@ -1145,7 +1133,7 @@ function createtime1() {
     "小站已经苟活",
     dnum,
     "天啦!",
-    "©2022 By Zany",
+    "©2022 By Fomalhaut",
   ];
 
   setTimeout(
@@ -1184,7 +1172,7 @@ function createtime2() {
   setTimeout(
     console.warn.bind(
       console,
-      "%c ⚡ Powered by Zany🥝 %c 你正在访问Zany🥝の小家",
+      "%c ⚡ Powered by Fomalhaut🥝 %c 你正在访问Fomalhaut🥝の小家",
       "color:white; background-color:#f0ad4e",
       ""
     )
@@ -1294,8 +1282,8 @@ function share_() {
   try {
     // 截取标题
     var title = document.title;
-    var subTitle = title.endsWith("| Zany🥝") ? title.substring(0, title.length - 14) : title;
-    navigator.clipboard.writeText('Zany🥝的站内分享\n标题：' + subTitle + '\n链接：' + url + '\n欢迎来访！🍭🍭🍭');
+    var subTitle = title.endsWith("| Fomalhaut🥝") ? title.substring(0, title.length - 14) : title;
+    navigator.clipboard.writeText('Fomalhaut🥝的站内分享\n标题：' + subTitle + '\n链接：' + url + '\n欢迎来访！🍭🍭🍭');
     new Vue({
       data: function () {
         this.$notify({
@@ -2816,8 +2804,8 @@ function createtime() {
   let currentTimeHtml = "";
   (currentTimeHtml =
     hnum < 18 && hnum >= 9
-      ? `<br> <div style="font-size:13px;font-weight:bold">本站居然运行了 ${dnum} 天 ${hnum} 小时 ${mnum} 分 ${snum} 秒 <i id="heartbeat" class='fas fa-heartbeat'></i> <br> 旅行者 1 号当前距离地球 ${dis} 千米，约为 ${unit} 个天文单位 🚀</div>`
-      : `<br> <div style="font-size:13px;font-weight:bold">本站居然运行了 ${dnum} 天 ${hnum} 小时 ${mnum} 分 ${snum} 秒 <i id="heartbeat" class='fas fa-heartbeat'></i> <br> 旅行者 1 号当前距离地球 ${dis} 千米，约为 ${unit} 个天文单位 🚀</div>`),
+      ? `<img class='boardsign' src='https://sourcebucket.s3.bitiful.net/badge/F小屋-科研摸鱼中.svg' title='什么时候能够实现财富自由呀~'><br> <div style="font-size:13px;font-weight:bold">本站居然运行了 ${dnum} 天 ${hnum} 小时 ${mnum} 分 ${snum} 秒 <i id="heartbeat" class='fas fa-heartbeat'></i> <br> 旅行者 1 号当前距离地球 ${dis} 千米，约为 ${unit} 个天文单位 🚀</div>`
+      : `<img class='boardsign' src='https://sourcebucket.s3.bitiful.net/badge/F小屋-下班休息啦.svg' title='下班了就该开开心心地玩耍~'><br> <div style="font-size:13px;font-weight:bold">本站居然运行了 ${dnum} 天 ${hnum} 小时 ${mnum} 分 ${snum} 秒 <i id="heartbeat" class='fas fa-heartbeat'></i> <br> 旅行者 1 号当前距离地球 ${dis} 千米，约为 ${unit} 个天文单位 🚀</div>`),
       // ? `<img class='boardsign' title='什么时候能够实现财富自由呀~'><br> <div style="font-size:13px;font-weight:bold">本站居然运行了 ${dnum} 天 ${hnum} 小时 ${mnum} 分 ${snum} 秒 <i id="heartbeat" class='fas fa-heartbeat'></i> <br> 旅行者 1 号当前距离地球 ${dis} 千米，约为 ${unit} 个天文单位 🚀</div>`
       // : `<img class='boardsign' title='下班了就该开开心心地玩耍~'><br> <div style="font-size:13px;font-weight:bold">本站居然运行了 ${dnum} 天 ${hnum} 小时 ${mnum} 分 ${snum} 秒 <i id="heartbeat" class='fas fa-heartbeat'></i> <br> 旅行者 1 号当前距离地球 ${dis} 千米，约为 ${unit} 个天文单位 🚀</div>`),
     document.getElementById("workboard") &&
@@ -3188,10 +3176,10 @@ if (localStorage.getItem("blogbg") != undefined) {
   setBg(localStorage.getItem("blogbg"));
 } else {
   document.getElementById("defineBg").innerText = `:root{
-    --default-bg: url(/assets/head.jpg);
-    --darkmode-bg:url(/assets/r2.jpg);
-    --mobileday-bg: url(/assets/r1.jpg);
-    --mobilenight-bg: url(/assets/r2.jpg);
+    --default-bg: url(https://cdn.daixk.com/web/beijing.png);
+    --darkmode-bg:url(https://cdn.daixk.com/web/beijing.png);
+    --mobileday-bg: url(https://cdn.daixk.com/web/beijing.png);
+    --mobilenight-bg: url(https://cdn.daixk.com/web/beijing.png);
   }`;
 }
 // 切换背景主函数
@@ -3420,7 +3408,7 @@ function createWinbox() {
 <h3>1. 二次元</h3>
 {% folding cyan, 查看二次元背景 %}
 <div class="bgbox">
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(/assets/head.jpg)" class="imgbox" onclick="changeBg('url(/assets/head.jpg)')"></a>
+<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://lskypro.acozycotage.net/Fomalhaut/img/home_bg.webp)" class="imgbox" onclick="changeBg('url(https://lskypro.acozycotage.net/Fomalhaut/img/home_bg.webp)')"></a>
 
 </div>
 {% endfolding %}
@@ -3430,7 +3418,7 @@ function createWinbox() {
 
 {% folding cyan, 查看风景背景 %}
 <div class="bgbox">
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(/assets/r1.jpg)" class="imgbox" onclick="changeBg('url(/assets/r1.jpg)')"></a>
+<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://lskypro.acozycotage.net/Fomalhaut/img/fj1.webp)" class="imgbox" onclick="changeBg('url(https://lskypro.acozycotage.net/Fomalhaut/img/fj1.webp)')"></a>
 
 
 </div>
@@ -3440,7 +3428,7 @@ function createWinbox() {
 
 {% folding cyan, 查看萌宠背景 %}
 <div class="bgbox">
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(/assets/avatar.webp)" class="imgbox" onclick="changeBg('url(/assets/avatar.webp)')"></a>
+<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://lskypro.acozycotage.net/Fomalhaut/img/mc1.webp)" class="imgbox" onclick="changeBg('url(https://lskypro.acozycotage.net/Fomalhaut/img/mc1.webp)')"></a>
 
 </div>
 {% endfolding %}
@@ -3479,7 +3467,7 @@ function createWinbox() {
 <h3>6. 适配手机</h3>
 {% folding cyan, 查看适配手机的背景 %}
 <div class="bgbox">
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(/assets/r2.jpg)" class="pimgbox" onclick="changeBg('url(/assets/r2.jpg)')"></a>
+<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://lskypro.acozycotage.net/Fomalhaut/img/mb4.webp)" class="pimgbox" onclick="changeBg('url(https://lskypro.acozycotage.net/Fomalhaut/img/mb4.webp)')"></a>
 
 </div>
 {% endfolding %}
@@ -3503,7 +3491,7 @@ function createWinbox() {
 <h3>8. 自定义背景</h3>
 {% folding cyan, 设置自定义背景 %}
 <p><center>
-<input type="text" id="pic-link" size="70%" maxlength="1000" placeholder="请输入有效的图片链接，如 https://example.com/your-bg.webp">
+<input type="text" id="pic-link" size="70%" maxlength="1000" placeholder="请输入有效的图片链接，如 https://source.fomal.cc/img/home_bg.webp">
 </center></p>
 <p><center>
 <button type="button" onclick="getPicture()" style="background:var(--theme-color);width:35%;padding: 5px 0px 7px 0px;border-radius:30px;color:white;line-height:2;">🌈切换背景🌈</button>

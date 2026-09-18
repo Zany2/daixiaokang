@@ -1,19 +1,17 @@
 /**
- * inlineImg
- * @param {Array} args - Image name and height
- * @param {string} args[0] - Image name
- * @param {number} args[1] - Image height
- * @returns {string} - Image tag
+ * inlineImg 圖片
+ * {% inlineImg src height %}
  */
 
 'use strict'
 
 const urlFor = require('hexo-util').url_for.bind(hexo)
 
-const inlineImg = ([img, height = '']) => {
-  const heightStyle = height ? `style="height:${height}"` : ''
-  const src = urlFor(img)
-  return `<img class="inline-img" src="${src}" ${heightStyle} />`
+function inlineImg (args) {
+  const img = args[0]
+  const height = args[1] ? `style="height:${args[1]}"` : ''
+
+  return `<img class="inline-img" src="${urlFor(img)}" ${height}/>`
 }
 
 hexo.extend.tag.register('inlineImg', inlineImg, { ends: false })
