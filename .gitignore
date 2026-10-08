@@ -7,8 +7,20 @@ public/
 .deploy*/
 .deploy_git*/
 .idea
-themes/fomalhaut/.git
+frontend/themes/fomalhaut/.git
 .ai-chat-key
+
+# Python / FastAPI backend
+backend/logs/
+.venv/
+__pycache__/
+*.py[cod]
+.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # ===== 2026-10-04 追加：本地调试残留与备份，不进仓库 =====
 # DSH 调试会话产生的临时文件、日志、浏览器 profile

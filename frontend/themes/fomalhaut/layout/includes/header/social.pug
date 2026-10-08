@@ -1,0 +1,34 @@
+//- each url, icon in theme.social
+//-   a.social-icon(href=url_for(trim(url.split('||')[0])) target="_blank" 
+//-   title=url.split('||')[1] === undefined ? '' : trim(url.split('||')[1]))
+//-     i(class=icon)
+
+each value, title in theme.social
+  - var socialTitle = title === undefined ? '' : trim(title)
+  - var isWechat = socialTitle === '微信'
+  - var socialUrl = trim(value.split('||')[0])
+  a.social-icon.faa-parent.animated-hover(
+    class=isWechat ? 'social-wechat' : undefined
+    href=isWechat ? '#wechat-qr' : url_for(socialUrl)
+    target=isWechat ? undefined : '_blank'
+    rel=isWechat ? undefined : 'noopener noreferrer'
+    title=isWechat ? undefined : socialTitle
+    aria-label=isWechat ? '查看微信二维码' : socialTitle
+    aria-haspopup=isWechat && socialUrl ? 'dialog' : undefined
+    data-wechat-src=isWechat && socialUrl ? url_for(socialUrl) : undefined
+  )
+    if value.split('||')[1]
+      - var icon_value = trim(value.split('||')[1])
+      - var anima_value = value.split('||')[2] ? trim(value.split('||')[2]) : 'faa-tada'
+      if icon_value.substring(0,2)=="fa"      
+        i.fa-fw(class=icon_value + ' ' + anima_value)
+      else if icon_value.substring(0,4)=="icon"          
+        svg.social_icon(aria-hidden="true" class=anima_value style="width:1.15em;height:1.15em;vertical-align:-0.15em;fill:currentColor;overflow:hidden;")
+          use(xlink:href=`#`+ icon_value)
+    if isWechat
+      span.wechat-qr-preview
+        if socialUrl
+          img(src=url_for(socialUrl) alt='微信好友二维码' loading='lazy' decoding='async')
+          span.wechat-qr-caption 微信扫码添加好友
+        else
+          span.wechat-qr-caption 微信二维码暂未提供
