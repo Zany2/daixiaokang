@@ -1,7 +1,6 @@
 ---
-title: tags
-date: 2022-05-29 21:42:56
-type: "tags"
-orderby: random
-order: 1
+title: 文章统计
+date: 2022-08-09 21:18:31
+type: "echarts"
+comments: false
 ---
