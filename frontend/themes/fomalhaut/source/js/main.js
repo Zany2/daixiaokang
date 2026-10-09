@@ -278,13 +278,14 @@ document.addEventListener('DOMContentLoaded', function () {
       return result
     }
 
-    let initTop = 0
+    let initTop = window.scrollY || document.documentElement.scrollTop
     let isChatShow = true
     const $header = document.getElementById('page-header')
     const $navBar = document.getElementById('nav')
     const isChatBtnHide = typeof chatBtnHide === 'function'
     const isChatBtnShow = typeof chatBtnShow === 'function'
     let navReturnTimer = null
+    let scrollFrame = null
 
     const cancelNavReturn = () => {
       clearTimeout(navReturnTimer)
@@ -321,13 +322,21 @@ document.addEventListener('DOMContentLoaded', function () {
       navReturnTimer = setTimeout(finishNavReturn, 500)
     }
 
-    // Keep the throttle state across scroll events for this page.
-    window.scrollCollect = btf.throttle(function (e) {
+    // 导航按帧更新：200ms 节流会让旧的顶部导航在切换定位前多显示一帧。
+    const updateScrollState = (initial = false) => {
       const currentTop = window.scrollY || document.documentElement.scrollTop
-      const isDown = scrollDirection(currentTop)
+      // 忽略很小的方向抖动，避免标题和菜单在滚动停止时来回切换。
+      const crossedNavBoundary = (currentTop > 56) !== (initTop > 56)
+      if (!initial && currentTop !== 0 && !crossedNavBoundary && Math.abs(currentTop - initTop) < 4) return
+      const isDown = initial || scrollDirection(currentTop)
+      if (typeof setNavTitleVisible === 'function') {
+        setNavTitleVisible(currentTop > 56 && isDown)
+      }
       if (currentTop > 56) {
+        const firstFixed = !$header.classList.contains('nav-fixed')
         cancelNavReturn()
         $header.classList.remove('nav-top-returning')
+        if (firstFixed) $header.classList.add('nav-preparing')
         if (isDown) {
           if ($header.classList.contains('nav-visible')) $header.classList.remove('nav-visible')
           if (isChatBtnShow && isChatShow === true) {
@@ -342,6 +351,12 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         }
         $header.classList.add('nav-fixed')
+        if (firstFixed) {
+          // 先提交「固定且隐藏」的起点，再只用 CSS transition 滑入。
+          // 仅首次切换定位时同步布局，普通滚动不强制重算布局。
+          $navBar.getBoundingClientRect()
+          $header.classList.remove('nav-preparing')
+        }
         if (window.getComputedStyle($rightside).getPropertyValue('opacity') === '0') {
           $rightside.style.cssText = 'opacity: 0.8; transform: translateX(-58px)'
         }
@@ -357,15 +372,24 @@ document.addEventListener('DOMContentLoaded', function () {
       if (document.body.scrollHeight <= innerHeight) {
         $rightside.style.cssText = 'opacity: 0.8; transform: translateX(-58px)'
       }
-    }, 200)
-
-    const cancelScroll = window.scrollCollect.cancel
-    window.scrollCollect.cancel = () => {
-      cancelScroll()
-      cancelNavReturn()
-      $header.classList.remove('nav-top-returning')
     }
-    window.addEventListener('scroll', scrollCollect)
+
+    window.scrollCollect = () => {
+      if (scrollFrame !== null) return
+      scrollFrame = requestAnimationFrame(() => {
+        scrollFrame = null
+        updateScrollState()
+      })
+    }
+    window.scrollCollect.cancel = () => {
+      cancelAnimationFrame(scrollFrame)
+      scrollFrame = null
+      cancelNavReturn()
+      $header.classList.remove('nav-top-returning', 'nav-preparing')
+    }
+    window.addEventListener('scroll', window.scrollCollect, { passive: true })
+    // 刷新/PJAX 恢复滚动位置时也确定初始导航状态，不等待用户再次滚动。
+    updateScrollState(true)
   }
 
   /**

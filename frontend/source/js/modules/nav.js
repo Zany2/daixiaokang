@@ -1,5 +1,5 @@
 /* ============================================================================
- * modules/nav.js —— 导航栏 / 首屏欢迎语 / 随便逛逛 / 分享按钮
+ * modules/nav.js —— 导航栏 / 首屏欢迎语 / 分享按钮
  * ----------------------------------------------------------------------------
  * 本文件由 source/js/fomal.js 拆出（2026-10-03 屎山重构）。
  * 【重要】这里故意不套 IIFE：主题 pug 模板里有大量内联 onclick="xxx()"，
@@ -8,7 +8,6 @@
  * 包含的模块（括号内为拆分前在 fomal.js 里的行号）：
  *   · 导航栏显示标题（37-66）—— 滚动到正文后，顶栏中间淡入文章标题（原来只有站点名）
  *   · 欢迎信息（70-165）—— 首屏打字机欢迎语，按当前时间/节日换不同问候语；window.onload 触发
- *   · 随便逛逛（504-525）—— 右下角"随便逛逛"按钮，随机跳一篇文章
  *   · 分享按钮（1237-1267）—— 文章页分享：复制链接 / 调起系统分享面板
  * ----------------------------------------------------------------------------
  * 和「顶栏 + 首屏 + 分享」有关的交互都在这。
@@ -20,47 +19,43 @@
  *     81  getDistance(e1, n1, e2, n2)
  *     98  showWelcomeLoading()
  *    107  showWelcome()
- *    168  randomPost()
  *    191  share_()
  *    215  share()
  * ========================================================================== */
 
 /* ------------------------------ 导航栏显示标题 ------------------------------ */
-/* 原 fomal.js 37-66 行，原样搬运，未改逻辑 */
+/* 标题切换与主题 main.js 共用滚动状态，CSS 负责位移和透明度动画。 */
 /* 导航栏显示标题 start */
 
 document.addEventListener('pjax:complete', tonav);
 document.addEventListener('DOMContentLoaded', tonav);
 //响应pjax
 function tonav() {
-  // Replace only this module's listener; keep other scroll handlers intact.
-  var $window = $(window);
-  $window.off('scroll.fomalNavTitle');
-  var nameContainer = document.getElementById("name-container");
-  var menusItems = document.getElementsByClassName("menus_items")[1];
-  var pageName = document.getElementById("page-name");
-  if (!nameContainer || !menusItems || !pageName) return;
-
-  nameContainer.setAttribute("style", "display:none");
-  var position = $window.scrollTop();
-  $window.on('scroll.fomalNavTitle', function () {
-    var scroll = $window.scrollTop();
-    if (scroll > position) {
-      nameContainer.setAttribute("style", "");
-      menusItems.setAttribute("style", "display:none!important");
-    } else {
-      menusItems.setAttribute("style", "");
-      nameContainer.setAttribute("style", "display:none");
-    }
-    position = scroll;
-  });
+  // 兼容 PJAX 复用页面：移除旧版监听，不影响其他滚动模块。
+  $(window).off('scroll.fomalNavTitle');
+  var pageName = document.querySelector("#nav #page-name");
+  if (!pageName) return;
+  setNavTitleVisible((window.scrollY || document.documentElement.scrollTop) > 56);
   //修复没有弄右键菜单的童鞋无法回顶部的问题
   pageName.innerText = document.title.split(" | Demo")[0];
 }
 
+function setNavTitleVisible(visible) {
+  var nav = document.getElementById("nav");
+  if (!nav) return;
+  var nameContainer = nav.querySelector("#name-container");
+  var menusItems = nav.querySelector("#menus > .menus_items");
+  if (!nameContainer || !menusItems) return;
+  nav.classList.toggle("nav-title-visible", visible);
+  // 保留元素参与动画，但不可见内容不能接收点击或键盘聚焦。
+  nameContainer.inert = !visible;
+  menusItems.inert = visible;
+  nameContainer.setAttribute("aria-hidden", String(!visible));
+  menusItems.setAttribute("aria-hidden", String(visible));
+}
+
 function scrollToTop() {
-  document.getElementsByClassName("menus_items")[1].setAttribute("style", "");
-  document.getElementById("name-container").setAttribute("style", "display:none");
+  setNavTitleVisible(false);
   btf.scrollToDest(0, 500);
 }
 
@@ -168,31 +163,6 @@ setTimeout(function () {
 }, 10000);
 
 /* 欢迎信息 end */
-
-/* ------------------------------ 随便逛逛 ------------------------------ */
-/* 原 fomal.js 504-525 行，原样搬运，未改逻辑 */
-/* 随便逛逛 start */
-// 随便逛逛
-// sitemap 里的 <loc> 是绝对地址（域名由 _config.yml 的 url 决定），
-// 直接跳转会导致本地预览 / 镜像域名下跳到生产站，所以统一转成同源相对路径。
-function randomPost() {
-  fetch('/baidusitemap.xml').then(res => res.text()).then(str => (new window.DOMParser()).parseFromString(str, "text/xml")).then(data => {
-    const ls = [...data.querySelectorAll('url loc')].map(el => {
-      try {
-        const u = new URL(el.textContent.trim(), location.origin);
-        return u.pathname + u.search + u.hash;
-      } catch (e) { return null }
-    }).filter(Boolean);
-    if (!ls.length) return;
-    // 发现有时会和当前页面重复，加一个判断
-    let url = ls[Math.floor(Math.random() * ls.length)];
-    for (let i = 0; i < 20 && url === decodeURI(location.pathname); i++) {
-      url = ls[Math.floor(Math.random() * ls.length)];
-    }
-    location.href = url;
-  })
-}
-/* 随便逛逛 end */
 
 /* ------------------------------ 分享按钮 ------------------------------ */
 /* 原 fomal.js 1237-1267 行，原样搬运，未改逻辑 */

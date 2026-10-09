@@ -17,7 +17,7 @@ hexo.extend.helper.register('tag_ranking_bar', function (options) {
         tag: tagArr.slice(0, topNum)
     }
     return `
-    <script type="text/javascript" id="${id}">
+    <script type="text/javascript" id="${id}-script">
     var themeMode = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
     var tagsChart = echarts.init(document.getElementById("${id}"),themeMode);
 
@@ -97,15 +97,13 @@ hexo.extend.helper.register('tag_ranking_bar', function (options) {
             },
             markLine: {
                 itemStyle: { color: '#425aef' },
+                label: { position: 'insideEndTop', distance: 8, formatter: '平均 {c}' },
                 data: [{ type: 'average', name: '平均值' }]
             }
         }
     };
     // 使用刚指定的配置项和数据显示图表。
     tagsChart.setOption(tagsOption);
-    window.addEventListener("resize", () => {
-        tagsChart.resize();
-    });
     </script>`
 })
 
@@ -121,7 +119,7 @@ hexo.extend.helper.register('categories_pic', function (options) {
         categoryArr.push({ name: category.name, value: category.length })
     })
     return `
-    <script type="text/javascript" id="${id}">
+    <script type="text/javascript" id="${id}-script">
     var themeMode = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
     var categoriesChart = echarts.init(document.getElementById("${id}"),themeMode);
     // 指定图表的配置项和数据
@@ -158,9 +156,6 @@ hexo.extend.helper.register('categories_pic', function (options) {
         };
     // 使用刚指定的配置项和数据显示图表。
     categoriesChart.setOption(categoriesOption);
-    window.addEventListener("resize", () => {
-        categoriesChart.resize();
-    });
     </script>`
 })
 
@@ -170,16 +165,13 @@ hexo.extend.helper.register('posts_echarts', function (options) {
     // 【2026-10-01 新增】titlePosition: 'outside' 时不在图表内部画标题
     const showTitle = options.titlePosition !== 'outside'
     var moment = require('moment');
-    const startDate = moment().subtract(1, 'years').startOf('month')
-    const endDate = moment().endOf('month')
+    // 含当前月的最近 12 个月；按月份递增，不对 Moment 对象做 += 运算。
+    const endDate = moment().startOf('month')
+    const startDate = endDate.clone().subtract(11, 'months')
 
     const monthMap = new Map()
-    const dayTime = 3600 * 24 * 1000
-    for (let time = startDate; time <= endDate; time += dayTime) {
-        const month = moment(time).format('YYYY-MM')
-        if (!monthMap.has(month)) {
-            monthMap.set(month, 0)
-        }
+    for (const time = startDate.clone(); time.valueOf() <= endDate.valueOf(); time.add(1, 'month')) {
+        monthMap.set(time.format('YYYY-MM'), 0)
     }
     hexo.locals.get('posts').forEach(function (post) {
         const month = post.date.format('YYYY-MM')
@@ -187,12 +179,13 @@ hexo.extend.helper.register('posts_echarts', function (options) {
             monthMap.set(month, monthMap.get(month) + 1)
         }
     })
-    let postsArr = [...monthMap.entries()]
+    const postsArr = [...monthMap.entries()]
     return `
-  <script type="text/javascript" id="${id}">
+  <script type="text/javascript" id="${id}-script">
     var themeMode = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
     var postsChart = echarts.init(document.getElementById("${id}"),themeMode);
-    let postsOption = {
+    // PJAX 会重复执行内联脚本，var 允许重入，避免全局 let 重复声明。
+    var postsOption = {
         color: ['#425aef'],
         title:{
           show: ${showTitle},
@@ -210,10 +203,13 @@ hexo.extend.helper.register('posts_echarts', function (options) {
          },
         xAxis: {
           type: 'category',
-          boundaryGap: false
+          boundaryGap: false,
+          data: ${JSON.stringify(postsArr.map(item => item[0]))}
         },
         yAxis: {
           name:'${seriesName}',
+          type: 'value',
+          minInterval: 1,
           axisLine: {
             show: true
           }
@@ -223,7 +219,9 @@ hexo.extend.helper.register('posts_echarts', function (options) {
             name:'${seriesName}',
             type: 'line',
             smooth:true,
-            symbol: 'none',
+            symbol: 'circle',
+            symbolSize: 6,
+            showSymbol: false,
             lineStyle: {
               color: '#425aef',
               width: 1
@@ -237,13 +235,10 @@ hexo.extend.helper.register('posts_echarts', function (options) {
                       color: '#FFFFFF'
                   }])
             },
-            data: ${JSON.stringify(postsArr)}
+            data: ${JSON.stringify(postsArr.map(item => item[1]))}
           }
         ]
       };
     postsChart.setOption(postsOption);
-    window.addEventListener("resize", () => { 
-        postsChart.resize();
-      });
     </script>`
 })

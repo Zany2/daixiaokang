@@ -206,24 +206,30 @@
 
   // 主题内联脚本里的全局 var：拿到实例才 setOption
   function statsChart(name) {
-    var el = window[name]
-    return (el && typeof el.setOption === 'function' && !el.isDisposed || el && typeof el.setOption === 'function') ? el : null
+    var chart = window[name]
+    if (!chart || typeof chart.setOption !== 'function') return null
+    if (typeof chart.isDisposed === 'function' && chart.isDisposed()) return null
+    var el = typeof chart.getDom === 'function' ? chart.getDom() : null
+    return el && el.isConnected && el === document.getElementById(el.id) ? chart : null
   }
 
-  // pjax 重新进入本页时，主题内联脚本里的 \`let postsOption\` 会与上一次执行撞名，
-  // 整个 script 被 SyntaxError 中止（"Identifier 'postsOption' has already been declared"）→
-  // 文章发布统计图容器成了空壳。这里用旧实例的 option 把图表重建出来，
-  // 配色随后由 restyleCharts() 接管；首屏（没有旧实例）交给主题脚本自己跑。
+  // 模板使用可重入的 var；这里只在内联初始化未完成时恢复图表。
+  // 优先识别当前 DOM 上的实例，不能把上一页已移除的画布当成当前图表。
   function statsReviveCharts() {
     if (typeof echarts === 'undefined') return
     var pairs = [['posts-echart', 'postsChart'], ['tag-echarts', 'tagsChart'], ['categories-echarts', 'categoriesChart']]
     var dark = document.documentElement.getAttribute('data-theme') === 'dark'
     for (var i = 0; i < pairs.length; i++) {
       var el = document.getElementById(pairs[i][0])
-      // 同名的 <script id="xxx"> 也在文档里，getElementById 取到的是靠前的 div，这里再排除一次
-      if (!el || el.tagName === 'SCRIPT' || el.querySelector('canvas')) continue
+      if (!el || el.tagName === 'SCRIPT') continue
+      var current = echarts.getInstanceByDom(el)
+      if (current) {
+        window[pairs[i][1]] = current
+        continue
+      }
       var old = window[pairs[i][1]]
       if (!old || typeof old.getOption !== 'function') continue
+      if (typeof old.isDisposed === 'function' && old.isDisposed()) continue
       var opt = null
       try { opt = old.getOption() } catch (err) { opt = null }
       if (!opt) continue
@@ -231,6 +237,7 @@
         var inst = echarts.init(el, dark ? 'dark' : 'light')
         inst.setOption(opt, true)
         window[pairs[i][1]] = inst
+        if (old !== inst && typeof old.dispose === 'function') old.dispose()
       } catch (err) { }
     }
   }
@@ -280,7 +287,7 @@
       tags.setOption({
         backgroundColor: 'transparent',
         tooltip: statsTooltip({}),
-        grid: { left: 6, right: 22, top: 34, bottom: 4, containLabel: true },
+        grid: { left: 6, right: 24, top: 50, bottom: 4, containLabel: true },
         xAxis: {
           axisLine: { lineStyle: { color: line } },
           axisTick: { show: false },
@@ -312,7 +319,17 @@
           markLine: {
             symbol: 'none',
             lineStyle: { color: statsSoft(0.55), width: 1, type: 'dashed' },
-            label: { color: muted, fontSize: 11, formatter: '平均 {c}' },
+            // 放在平均线右端内侧，避免默认外侧标注越过画布边界。
+            label: {
+              position: 'insideEndTop',
+              distance: 8,
+              color: muted,
+              fontSize: 11,
+              formatter: '平均 {c}',
+              backgroundColor: statsCardBg(),
+              padding: [3, 6],
+              borderRadius: 4
+            },
             data: [{
               type: 'average',
               name: '平均值',
@@ -391,11 +408,25 @@
     statsReviveCharts()
     decorateHeadings()
     restyleCharts()
+    ;['postsChart', 'tagsChart', 'categoriesChart'].forEach(function (name) {
+      var chart = statsChart(name)
+      if (chart) chart.resize()
+    })
   }
 
   function schedule(delay) {
     window.setTimeout(run, delay || 0)
   }
+
+  // 一处监听负责当前页面的图表，避免 PJAX 每次进入又累加三个 resize 回调。
+  var resizeFrame = null
+  window.addEventListener('resize', function () {
+    if (!statsPageReady() || resizeFrame !== null) return
+    resizeFrame = window.requestAnimationFrame(function () {
+      resizeFrame = null
+      run()
+    })
+  })
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () { schedule(30) })

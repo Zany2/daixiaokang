@@ -1,0 +1,66 @@
+//- 标签 / 分类目录由 Hexo 数据直出，不加载图表库，不改变详情页与归档。
+mixin taxonomyBrowser(kind)
+  -
+    var isTags = kind === 'tags'
+    var source = isTags ? site.tags : site.categories
+    var terms = source.toArray().filter(function (term) { return term.length > 0 })
+    terms.sort(function (a, b) {
+      return b.length - a.length || String(a.name).localeCompare(String(b.name), 'zh-CN')
+    })
+    var icon = isTags ? 'icon-sekuaibiaoqian' : 'icon-fenlei'
+    var title = isTags ? '按标签发现文章' : '按分类浏览文章'
+    var description = isTags ? '从一个关键词出发，找到你感兴趣的内容。' : '把不同主题的内容放在一起，慢慢翻阅。'
+    var categoryMap = new Map(site.categories.toArray().map(function (term) { return [String(term._id), term] }))
+    var lineage = function (term) {
+      var names = [], parent = term.parent, visited = new Set()
+      while (parent && !visited.has(String(parent))) {
+        visited.add(String(parent))
+        var ancestor = categoryMap.get(String(parent))
+        if (!ancestor) break
+        names.unshift(ancestor.name)
+        parent = ancestor.parent
+      }
+      return names.join(' / ')
+    }
+  section.taxonomy-browser(data-kind=kind aria-label=title)
+    header.taxonomy-header
+      .taxonomy-heading
+        span.taxonomy-icon(aria-hidden='true')
+          svg
+            use(xlink:href='#' + icon)
+        div
+          h2= title
+          p= description
+      .taxonomy-summary
+        span #{terms.length} 个#{isTags ? '标签' : '分类'}
+        a(href=url_for('/archives/')) 查看全部 #{site.posts.length} 篇文章 →
+    if terms.length === 0
+      p.taxonomy-empty= isTags ? '还没有标签，给文章添加 tags 后就会显示在这里。' : '还没有分类，给文章添加 categories 后就会显示在这里。'
+    else if isTags
+      nav(aria-label='标签列表')
+        ul.taxonomy-tags
+          each term in terms
+            li
+              a.taxonomy-tag(href=url_for(term.path) aria-label=term.name + '，' + term.length + ' 篇文章')
+                span.taxonomy-hash(aria-hidden='true') #
+                span.taxonomy-term= term.name
+                span.taxonomy-count= term.length
+    else
+      .taxonomy-categories
+        each term in terms
+          - var parents = lineage(term)
+          - var recent = term.posts.sort('date', -1).limit(2).toArray()
+          section.taxonomy-category
+            if parents
+              p.taxonomy-lineage= parents
+            a.taxonomy-category-heading(href=url_for(term.path))
+              span.taxonomy-icon(aria-hidden='true')
+                svg
+                  use(xlink:href='#icon-fenlei')
+              h3= term.name
+              span.taxonomy-count #{term.length} 篇
+            ul.taxonomy-recent
+              each post in recent
+                li
+                  a(href=url_for(post.path) title=post.title)= post.title || _p('no_title')
+            a.taxonomy-browse(href=url_for(term.path)) 浏览此分类 →

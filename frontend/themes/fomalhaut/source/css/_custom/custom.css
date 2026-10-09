@@ -44,7 +44,6 @@
  *   2781  版权、二级菜单圆角、搜索框、公告栏、关于页、欢迎信息、霓虹灯
  *   2892  自定义页脚 #ft（站点统计 / 友链 / 格言 / 广告位占位）
  *   3055  手机侧栏、代码行号、右侧栏宽度、齿轮箭头圆角、作者状态
- *   3174  页脚波浪动画 .main-hero-waves-area
  *   3253  图片圆角与边框、twikoo 聚焦、友链描述、目录、diff
  *   3348  夜间友链字色、信息卡彩带、霓虹灯发光字 keyframes、按钮、分割线、必应壁纸、转圈颜色
  *   3640  侧栏显隐 / 侧栏位置（CSS 变量驱动，配合美化面板）
@@ -75,7 +74,6 @@
  *   3019  max-width: 768px              页脚 #ft 分栏 / 广告位
  *   3033  max-width: 576px              页脚 t-top 顶部条
  *   3066  min-width: 900px              #aside-content 侧栏宽度（宽屏）
- *   3242  max-width: 768px              （裸语法）页脚波浪 .waves-svg
  *   3654  min-width: 1069px             .recent-post-item 卡片宽度
  *   3748  prefers-reduced-motion: reduce（裸语法）关闭置顶角标流光动画
  *   4020  max-width: 768px              美化面板：开关行 / 滤镜参数 / 主题色圈 / 字体按钮（手机端重排）
@@ -95,7 +93,6 @@
  *   2595  -webkit-keyframes iconAnimate   页脚心跳 #heartbeat
  *   2616  iconAnimate                     同上（无前缀版）
  *   3089  ddd                             首页卡片右下角箭头 .recent-post-arrow
- *   3233  move-forever                    页脚波浪 .parallax > use
  *   3382  light_15px                      霓虹灯发光字（15px 档）——注意：全项目已找不到 animation 引用它的地方，目前是「备着」状态
  *   3415  light_10px                      霓虹灯发光字（10px 档），同上
  *   3448  light_5px                       霓虹灯发光字（5px 档），同上
@@ -163,7 +160,9 @@
   --color-darkblue: rgb(97, 100, 159);
   --color-heoblue: rgb(66, 90, 239);
   --btn-bg: var(--theme-color) !important;
-  --scrollbar-color: #7fded9 !important;
+  /* 滚动条跟随美化设置的主题色，切换时由 CSS 变量即时更新。 */
+  --scrollbar-color: var(--theme-color) !important;
+  --scrollbar-track-color: color-mix(in srgb, var(--scrollbar-color) 20%, transparent);
   --border-style: 1px solid rgba(169, 169, 169, 0.7);
   /* 代码框行数背景色 */
   --hlnumber-bg: #282c34;
@@ -192,7 +191,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background-color: rgba(127, 222, 217, 0.2);
+  background-color: var(--scrollbar-track-color, transparent);
   border-radius: 2em;
 }
 
@@ -218,7 +217,7 @@
   right: 2px;
   width: 8px;
   border-radius: 2em;
-  background-color: rgba(127, 222, 217, 0.2);
+  background-color: var(--scrollbar-track-color, transparent);
   pointer-events: none;
   z-index: 9999;
   opacity: 0;
@@ -373,7 +372,7 @@ center#name-container {
   position: absolute !important;
   width: fit-content !important;
   left: 50% !important;
-  transform: translateX(-50%) !important;
+  transform: translate(-50%, var(--nav-title-offset, -12px)) !important;
 }
 @media screen and (max-width: 768px) {
   center#name-container {
@@ -393,7 +392,41 @@ center#name-container {
   position: absolute !important;
   width: max-content !important;
   left: 50% !important;
-  transform: translateX(-50%) !important;
+  transform: translate(-50%, var(--nav-menu-offset, 0px)) !important;
+}
+/* 菜单与标题始终留在布局中，隐藏时向上淡出，显示时从上方淡入。 */
+#nav #name-container,
+#nav #menus > .menus_items {
+  transition:
+    transform .35s cubic-bezier(.4, 0, .2, 1),
+    opacity .3s ease-in-out,
+    visibility 0s .35s;
+}
+#nav #name-container {
+  --nav-title-offset: -12px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+#nav #menus > .menus_items {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+#nav.nav-title-visible #name-container {
+  --nav-title-offset: 0px;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+#nav.nav-title-visible #menus > .menus_items {
+  --nav-menu-offset: -12px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition-delay: 0s, 0s, .35s;
 }
 #nav .menus_items .menus_item {
   /* 一级菜单左右各留 6px，相邻菜单间距统一为 12px。 */
@@ -1798,7 +1831,18 @@ input#contrast:hover {
   visibility: visible;
   pointer-events: auto;
   transition-delay: 0s !important;
-  animation: nav-slide-enter .45s cubic-bezier(.4, 0, .2, 1);
+  animation: none;
+}
+
+/* 切换 absolute → fixed 时先提交隐藏起点，防止旧导航闪现后再重播入场。 */
+#page-header.nav-fixed.nav-preparing > #nav,
+#page-header.nav-fixed.nav-preparing > #nav:is(.nav_fixed, .nav_visible) {
+  transform: translate3d(0, -100%, 0);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: none !important;
+  animation: none;
 }
 
 /* 回到顶部时先在固定位置向上收起，再切换到顶部导航向下展开。 */
@@ -1828,7 +1872,7 @@ input#contrast:hover {
   }
 }
 
-/* 第一次进入固定状态时也从上方滑入，而非直接跳到视口顶部。 */
+/* 回到顶部后从上方重新展开；固定导航的入场只使用 transition。 */
 @keyframes nav-slide-enter {
   from {
     transform: translate3d(0, -100%, 0);
@@ -1840,7 +1884,9 @@ input#contrast:hover {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  #nav {
+  #nav,
+  #nav #name-container,
+  #nav #menus > .menus_items {
     transition: none !important;
   }
   #page-header.nav-fixed > #nav.nav_fixed,
@@ -1892,7 +1938,7 @@ input#contrast:hover {
    整块标题左偏 0.5×宽度×0.03 ≈ 6.3px（悬停时才看得见，所以一直没发现）。
    写成 translateX(-50%) scale(1.03) 时 translate 在最后一步，位移不再被放大，居中才是准的。 */
 center#name-container:hover {
-  transform: translateX(-50%) scale(1.03) !important;
+  transform: translate(-50%, var(--nav-title-offset, -12px)) scale(1.03) !important;
 }
 #page-name {
   position: relative;
@@ -3237,85 +3283,6 @@ i.fas.fa-cog.right_side {
 .card-widget .card-info-avatar {
   display: inline-block;
   position: relative;
-}
-
-/* 波浪css */
-.main-hero-waves-area {
-  width: 100%;
-  position: absolute;
-  left: 0;
-  bottom: -11px;
-  z-index: 5;
-}
-.waves-area .waves-svg {
-  width: 100%;
-  height: 5rem;
-}
-/* Animation */
-
-.parallax > use {
-  animation: move-forever 25s cubic-bezier(0.55, 0.5, 0.45, 0.5) infinite;
-}
-.parallax > use:nth-child(1) {
-  animation-delay: -2s;
-  animation-duration: 7s;
-  fill: #f7f9febd;
-}
-.parallax > use:nth-child(2) {
-  animation-delay: -3s;
-  animation-duration: 10s;
-  fill: #f7f9fe82;
-}
-.parallax > use:nth-child(3) {
-  animation-delay: -4s;
-  animation-duration: 13s;
-  fill: #f7f9fe36;
-}
-.parallax > use:nth-child(4) {
-  animation-delay: -5s;
-  animation-duration: 20s;
-  fill: #f7f9fe;
-}
-/* 黑色模式背景 */
-[data-theme="dark"] .parallax > use:nth-child(1) {
-  animation-delay: -2s;
-  animation-duration: 7s;
-  fill: #18171dc8;
-}
-[data-theme="dark"] .parallax > use:nth-child(2) {
-  animation-delay: -3s;
-  animation-duration: 10s;
-  fill: #18171d80;
-}
-[data-theme="dark"] .parallax > use:nth-child(3) {
-  animation-delay: -4s;
-  animation-duration: 13s;
-  fill: #18171d3e;
-}
-[data-theme="dark"] .parallax > use:nth-child(4) {
-  animation-delay: -5s;
-  animation-duration: 20s;
-  fill: #18171d;
-}
-
-@keyframes move-forever {
-  0% {
-    transform: translate3d(-90px, 0, 0);
-  }
-  100% {
-    transform: translate3d(85px, 0, 0);
-  }
-}
-/*Shrinking for mobile*/
-@media (max-width: 768px) {
-  .waves-area .waves-svg {
-    height: 40px;
-    min-height: 40px;
-  }
-}
-/* 波浪黑夜模式隐藏 */
-[data-theme="dark"] .main-hero-waves-area {
-  display: none;
 }
 
 /* 图片圆角和边框 */

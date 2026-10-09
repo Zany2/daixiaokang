@@ -7,20 +7,18 @@ menu:
   文章 || icon--article || faa-tada || hide:
     归档: /archives/ || icon-guidang1 || faa-tada
     # 当前 /tags/ 与 /categories/ 用于综合统计，独立列表新增地址以保留原有功能。
-    标签: /article/tags/ || fa-solid fa-tags || faa-tada
-    分类: /article/categories/ || fa-solid fa-folder-open || faa-tada
+    标签: /article/tags/ || icon-sekuaibiaoqian || faa-tada
+    分类: /article/categories/ || icon-fenlei || faa-tada
     文章统计: /tags/ || icon-shujutongji1 || faa-tada
-    随便逛逛: javascript:randomPost(); || icon-zuji1 || faa-tada
-  休闲 || fa-solid fa-mug-hot || faa-tada || hide:
-    八音盒: /life/music/ || icon-yinle || faa-tada
-    影院: /life/movies/ || fa-solid fa-film || faa-tada
-    游戏: /life/games/ || fa-solid fa-gamepad || faa-tada
-  八宝箱 || icon-xiangzi || faa-tada || hide:
-    八音盒: /life/music/ || icon-yinle || faa-tada
+  休闲 || icon-pinweishenghuo || faa-tada || hide:
+    # 影院入口暂时隐藏，保留 /life/movies/ 页面，取消注释即可恢复。
+    # 影院: /life/movies/ || icon-dianying1 || faa-tada
+    游戏: /life/games/ || icon-youxishoubing || faa-tada
+  百宝箱 || icon-xiangzi || faa-tada || hide:
     画廊: /box/gallery/ || icon-tubiaozhizuomoban || faa-tada
+    视频: /box/animation/ || icon-nvwumao || faa-tada
     天文馆: /box/astronomy/ || icon-wangyuanjing || faa-tada
     网址导航: /box/nav/ || icon-zhifengche || faa-tada
-    视频: /box/animation/ || fa-solid fa-video || faa-tada
   社交 || icon-shejiaoxinxi || faa-tada || hide:
     朋友圈: /social/fcircle/ || icon-pengyouquan || faa-tada
     留言板: /comments/ || icon-liuyan || faa-tada
@@ -30,9 +28,9 @@ menu:
     文章统计: /site/echarts/ || icon-shujutongji1 || faa-tada
     旧时光: /site/time/ || icon-xianxingshalou || faa-tada
     关于: /personal/about/ || icon-paperplane || faa-tada
-  个人 || fa-solid fa-user || faa-tada || hide:
-    唠叨: /personal/bb/ || fa-solid fa-comment-dots || faa-tada
-    恋爱小屋: /personal/love/ || fa-solid fa-heart || faa-tada
+  个人 || icon-maoliang || faa-tada || hide:
+    唠叨: /personal/bb/ || icon-qunliaotian || faa-tada
+    恋爱小屋: /personal/love/ || icon-love-sign || faa-tada
     关于我: /personal/about/ || icon-paperplane || faa-tada
 
 # Code Blocks (代碼相關)
@@ -60,8 +58,8 @@ social:
   # 格式： 名称: 链接 || 图标类名 || 动画类名
   Github: https://github.com/Zany2 || icon-github || faa-tada
   B站: https://space.bilibili.com/130922081 || icon-bilibili || faa-tada
-  # 微信第一段填写二维码图片地址：/assets/wechat-qr.webp 或 https://...；暂未提供时留空。
-  微信: ' || fab fa-weixin || faa-tada'
+  # 微信：本地二维码地址 || Iconfont 绿色微信图标 || 悬浮动画；悬浮预览，点击放大。
+  微信: /assets/wechat-qr.png || icon-weixin || faa-tada
   # RSS: /atom.xml || icon-RSS || faa-tada
 
   # 用 iconfont 图标的写法：
@@ -1208,6 +1206,7 @@ inject:
     # 文章统计页（网站 › 文章统计，/tags/）专用样式。选择器都带 #page:has(#posts-echart) 守卫，
     # 所以全站注入也只在该页生效；:has() 不支持时整块失效，页面退回主题原样。
     - <link rel="stylesheet" href="/css/stats.css?v=20261005">
+    - <link rel="stylesheet" href="/css/article-taxonomy.css?v=20261009"> # 标签入口与分类卡片，跟随主题色和明暗模式
     # Twikoo 评论美化（站点独立样式，不改主题源码）：表单/列表/交互统一到主题色与卡片语言。
     # 源文件 source/css/twikoo.css；只写 Twikoo 2.x 的 .tk-* 类名，配色派生自 --theme-color。
     # 回滚：删掉这一行即可（备份 bak/announcement-20261004-twikoo-ui/before/_config.fomalhaut.yml）。
@@ -1322,16 +1321,15 @@ inject:
     - <script defer src="/js/modules/shell.js?v=20261005-animation1"></script> # 快捷键拦截/夜间动画/恶搞标题/搜索框修复/手机滚动条
     - <script defer src="/js/modules/effects.js?v=20261004q"></script> # 雪花/星空/表情放大
     - <script defer src="/js/modules/reading.js?v=20261005-animation1"></script> # 阅读进度条/FPS
-    - <script defer src="/js/modules/nav.js?v=20261005-scroll1"></script> # 导航栏标题/首屏欢迎语/随便逛逛/分享
-    - <script defer src="/js/modules/cursor.js?v=20261005-hover1"></script> # 小猫咪/右键菜单/听话鼠标
+    - <script defer src="/js/modules/nav.js?v=20261009-articles1"></script> # 导航栏标题/首屏欢迎语/分享
+    - <script defer src="/js/modules/cursor.js?v=20261009-navmotion1"></script> # 小猫咪/右键菜单/听话鼠标
     - <script defer src="/js/modules/footer-time.js"></script> # 页脚计时器
     - <script defer src="/js/modules/settings.js?v=20261008-live2d3"></script> # 美化模块（含 Live2D 角色局部切换）
-    - <script defer src="/js/fomal.js"></script> # 站点主引导：模块地图 + 控制台策略 + 全局入口清单
+    - <script defer src="/js/fomal.js?v=20261009-articles1"></script> # 站点主引导：模块地图 + 控制台策略 + 全局入口清单
     - <script defer src="/js/wechat-qr.js?v=20261008-hover1"></script> # 微信二维码悬浮预览，点击同页弹层展示
     - <script defer src="/js/festival.js"></script> # 节日提醒卡片（左上角通知）
     - <script defer src="/js/author-status.js"></script> # 侧栏头像状态胶囊：按时间/节假日自动切换（放假/上班/下班/睡觉）
-    - <script defer src="/js/stats.js?v=20261005"></script> # 文章统计页（/tags/）：emoji 标题拆成分节头 + 三张 echarts 跟随主题色/明暗模式
-    - <script defer src="/js/footer-music.js?v=20261005"></script> # 页脚「猜你想看」右下空位补一条「听点音乐」→ /life/music/（八音盒）
+    - <script defer src="/js/stats.js?v=20261009-statlabels1"></script> # 文章统计页（/tags/）：分节标题、图表恢复与主题色适配
     - <script defer src="/js/pjax-guard.js?v=20261005"></script> # 修 pjax 选择器不匹配：/tags/ 图表容器 id 导致换页退回整页刷新 + 加载遮罩一直转圈
     - <script defer src="/js/inject/search-lazy.js?v=20261004"></script> # Algolia 搜索按需加载：空闲预取 + 点开才执行（省 88KB 压缩流量 / 277KB 解析，见 source/js/inject/search-lazy.js）
     - <script src="/js/inject/scroll-gap-fix.js"></script> # 锚点跳转补偿：常驻顶栏留 70px
@@ -1366,7 +1364,7 @@ CDN:
 
   option:
     # main_css:
-    main: /js/main.js?v=20261008-navreturn1
+    main: /js/main.js?v=20261009-navmotion2
     utils: /js/utils.js?v=20261005-scroll1
     # translate: https://cdn.tianli0.top/npm/js-heo@1.0.6/translate/tw_cn.js
     # local_search:

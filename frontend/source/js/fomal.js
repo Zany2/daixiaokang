@@ -13,7 +13,7 @@
  *   /js/modules/shell.js        快捷键拦截 / 夜间模式动画 / 恶搞标题 / 搜索框修复 / 手机滚动条
  *   /js/modules/effects.js      雪花 / 星空 / 表情放大
  *   /js/modules/reading.js      阅读进度条 / FPS 计数
- *   /js/modules/nav.js          导航栏标题 / 首屏欢迎语 / 随便逛逛 / 分享按钮
+ *   /js/modules/nav.js          导航栏标题 / 首屏欢迎语 / 分享按钮
  *   /js/modules/cursor.js       小猫咪 / 右键菜单 / 听话鼠标
  *   /js/modules/footer-time.js  页脚计时器（依赖上面两个 data/ 文件）
  *   /js/modules/settings.js     美化模块：右下角齿轮设置面板（最大的一块，约 1200 行）
@@ -27,11 +27,10 @@
  *       —— themes/fomalhaut/layout/includes/rightside.pug
  *     scrollToTop / switchNightMode / toggleWinbox
  *       —— themes/fomalhaut/layout/includes/header/nav.pug
- *     randomPost / switchNightMode / toggleWinbox
+ *     switchNightMode / toggleWinbox
  *       —— themes/fomalhaut/layout/includes/rightmenu.pug
  *     share        —— themes/fomalhaut/layout/includes/third-party/share/share-js.pug
  *     setColor     —— source/js/census.js 会调它
- *     randomPost   —— _config.fomalhaut.yml 里以字符串形式引用
  *   注意：btf.scrollToDest(...) 是主题自带 main.js 上的方法，不是本项目的全局函数。
  *
  * 【改这里之前】
@@ -69,14 +68,14 @@ window.__fomal = {
   debug: FOMAL_DEBUG,
   // 主题 pug 内联 onclick / 其它脚本 / 配置文件会直接调用的全局入口
   entries: ["changeMouseMode", "share", "switchNightMode", "toggleRightside", "toggleWinbox",
-    "scrollToTop", "randomPost", "setColor"],
+    "scrollToTop", "setColor"],
   // 拆分后各模块应该提供的代表性全局名，用来粗查"某个文件是不是没加载"
   modules: {
     "console-art.js": ["createtime2"],
     "shell.js": ["debounce"],
     "effects.js": ["owoBig"],
     "reading.js": ["startFps"],
-    "nav.js": ["showWelcome", "randomPost", "share"],
+    "nav.js": ["showWelcome", "share"],
     "cursor.js": ["popupMenu", "CURSOR"],
     "footer-time.js": ["createtime"],
     "settings.js": ["createWinbox", "winboxNeedSize"],
