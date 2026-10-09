@@ -1,7 +1,13 @@
 extends includes/layout.pug
 
 block content
-  #page
+  -
+    var generatedPageTypes = ['tags', 'categories', 'link', 'echarts', 'redirect']
+    var hasGeneratedContent = generatedPageTypes.indexOf(page.type) !== -1
+    var hasBodyContent = String(page.content || '').replace(/<!--[\s\S]*?-->/g, '').trim().length > 0
+    var hasComments = page.comments !== false && theme.comments && theme.comments.use
+    var isEmptyPage = !hasGeneratedContent && !hasBodyContent && !hasComments
+  #page(class=isEmptyPage ? 'page-empty' : undefined)
     if top_img === false
       h1.page-title= page.title
 

@@ -511,6 +511,13 @@ div#archive {
   background: var(--trans-dark);
 }
 
+/* 空白占位页只去掉卡片外观；保留边框宽度、内边距和布局高度。 */
+#content-inner > #page.page-empty {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
 /* 白天模式：移除头图灰色遮罩，保留页脚遮罩 */
 [data-theme="light"] #page-header:before {
   background-color: transparent !important;
@@ -1797,7 +1804,7 @@ input#contrast:hover {
 
 /* heo 加载动画头像 */
 .loading-img {
-  background: url(/assets/avatar.webp)
+  background: url(/assets/avatar.png)
     no-repeat center center;
   background-size: cover;
 }

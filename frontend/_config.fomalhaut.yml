@@ -11,8 +11,8 @@ menu:
     分类: /article/categories/ || icon-fenlei || faa-tada
     文章统计: /tags/ || icon-shujutongji1 || faa-tada
   休闲 || icon-pinweishenghuo || faa-tada || hide:
-    # 影院入口暂时隐藏，保留 /life/movies/ 页面，取消注释即可恢复。
-    # 影院: /life/movies/ || icon-dianying1 || faa-tada
+    八音盒: /life/music/ || icon-yinle || faa-tada
+    影院: /life/movies/ || icon-dianying1 || faa-tada
     游戏: /life/games/ || icon-youxishoubing || faa-tada
   百宝箱 || icon-xiangzi || faa-tada || hide:
     画廊: /box/gallery/ || icon-tubiaozhizuomoban || faa-tada
@@ -27,7 +27,6 @@ menu:
     网站统计: /site/census/ || icon--tongjibiao || faa-tada
     文章统计: /site/echarts/ || icon-shujutongji1 || faa-tada
     旧时光: /site/time/ || icon-xianxingshalou || faa-tada
-    关于: /personal/about/ || icon-paperplane || faa-tada
   个人 || icon-maoliang || faa-tada || hide:
     唠叨: /personal/bb/ || icon-qunliaotian || faa-tada
     恋爱小屋: /personal/love/ || icon-love-sign || faa-tada
@@ -119,7 +118,7 @@ favicon:
 
 # Avatar (頭像)
 avatar:
-  img: /assets/avatar.webp
+  img: /assets/avatar.png
   effect: false
 
 # Disable all banner image
