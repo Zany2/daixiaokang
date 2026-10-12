@@ -16,7 +16,7 @@
  *
  * 引入
  *   _config.fomalhaut.yml → inject.head：
- *     <link rel="stylesheet" href="/css/mobile-drawer.css?v=20261007">
+ *     <link rel="stylesheet" href="/css/mobile-drawer.css?v=20261012-zany1">
  *   放在 /css/site-inject.css 之后 → 层叠顺序在主题 /css/index.css 与各站点样式之后，同权重必胜。
  *
  * 配色
@@ -114,11 +114,11 @@
 /* ---------------------------------------------------------------- 顶部字标 */
 /* 主题没有「站点名」这个节点，用伪元素补一行 masthead；★ 改站名记得改这里 */
 #sidebar #sidebar-menus::before {
-  content: "Demo";
+  content: "Zany";
   display: block;
   padding: 20px 24px 0;
   text-align: center;
-  text-transform: uppercase;
+  text-transform: none;
   font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.2em;

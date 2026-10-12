@@ -21,24 +21,15 @@
 var now = new Date();
 function createtime() {
   // 当前时间
-  now.setTime(now.getTime() + 1000);
+  now.setTime(Date.now());
   // 旅行者1号距离：JPL Horizons 数据离线拟合模型（见文件中的 vgDist 模型块）
   var vgd = vgDist(Date.now());          // 几何距离（千米）
   var dis = vgFmt(vgd);                  // 千分位格式
   var unit = (vgd / vgAU).toFixed(6);    // 天文单位（1 AU = 149597870.7 km）
   var lt = vgLight(vgd);                 // 信号单程光行时
-  // 网站诞生时间
-  var grt = new Date("08/09/2022 00:00:00");
-  // 年按“满周年”算：2022-08-09 → 2026-08-09 记 4 年，周年之后再数剩余的天/时/分/秒
-  var years = now.getFullYear() - grt.getFullYear(),
-    anniv = new Date(grt.getTime());
-  anniv.setFullYear(grt.getFullYear() + years);
-  if (anniv.getTime() > now.getTime()) {
-    years--;
-    anniv.setFullYear(grt.getFullYear() + years);
-  }
-  var ynum = years,
-    rest = now.getTime() - anniv.getTime(); // 满周年之后经过的毫秒数
+  // 建站时间固定为北京时间 2026-10-08 零点，展示累计天数。
+  var grt = new Date("2026-10-08T00:00:00+08:00");
+  var rest = Math.max(0, now.getTime() - grt.getTime());
   var dnum = Math.floor(rest / 86400000),
     hnum = Math.floor(rest / 3600000) % 24;
   1 == String(hnum).length && (hnum = "0" + hnum);
@@ -52,7 +43,7 @@ function createtime() {
     : `<img class='boardsign' src='/assets/badge/Fomalhaut-work.svg' title='上班偷偷摸鱼，别被发现~'>`;
   let currentTimeHtml =
     boardBadge +
-    `<br> <div style="font-size:13px;font-weight:bold">本站居然运行了 ${ynum} 年 ${dnum} 天 ${hnum} 小时 ${mnum} 分 ${snum} 秒 <i id="heartbeat" class='fas fa-heartbeat'></i> <br> 旅行者 1 号当前距离地球 ${dis} 千米，约为 ${unit} 个天文单位（信号单程需 ${lt}）🚀</div>`;
+    `<br> <div style="font-size:13px;font-weight:bold">本站运行了 ${dnum} 天 ${hnum} 小时 ${mnum} 分 ${snum} 秒 <i id="heartbeat" class='fas fa-heartbeat'></i> <br> 旅行者 1 号当前距离地球 ${dis} 千米，约为 ${unit} 个天文单位（信号单程需 ${lt}）🚀</div>`;
   document.getElementById("workboard") &&
     (document.getElementById("workboard").innerHTML = currentTimeHtml);
 }

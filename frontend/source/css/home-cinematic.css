@@ -1,0 +1,220 @@
+/* 首页视频结束后保留全站静态背景，站内换页与滚动都不附加模糊。 */
+/* 已显示的末帧不跟随 PJAX 替换，避免 PC / 移动端恢复各自的旧壁纸。 */
+#site-cinematic-background {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
+  filter: none !important;
+  transform: none;
+  animation: none;
+}
+
+#site-cinematic-background::before {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: linear-gradient(180deg, rgba(8, 17, 24, 0.12), rgba(8, 17, 24, 0.3));
+}
+
+[data-theme='dark'] #site-cinematic-background::before {
+  background: linear-gradient(180deg, rgba(5, 12, 18, 0.25), rgba(5, 12, 18, 0.5));
+}
+
+/* 同一静态背景显示期间，不再让页面背景和移动端媒体规则切回旧图片。 */
+html.cinematic-site-background #web_bg {
+  display: none;
+}
+
+#body-wrap.home-cinematic {
+  isolation: isolate;
+}
+
+.home-cinematic #home-background {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  display: none;
+  overflow: hidden;
+  background: #102027;
+  pointer-events: none;
+}
+
+/* 开场用纯色遮住旧壁纸；脚本失效时恢复原站点背景，不加载别组图片兜底。 */
+.home-intro-pending .home-cinematic #home-background:not([hidden]),
+.home-cinematic #home-background[data-media-group]:not([hidden]) {
+  display: block;
+}
+
+.home-cinematic #home-background[hidden],
+.home-cinematic .home-background-video[hidden],
+#home-intro-sound[hidden],
+#home-intro-replay[hidden],
+#home-intro-skip[hidden] {
+  display: none;
+}
+
+.home-cinematic .home-background-media {
+  position: absolute;
+  inset: 0;
+  filter: none !important;
+  transform: none;
+}
+
+.home-cinematic .home-background-still,
+.home-cinematic .home-background-still img,
+.home-cinematic .home-background-video {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--home-media-position, center);
+}
+
+.home-cinematic .home-background-still img,
+.home-cinematic .home-background-video {
+  filter: none !important;
+}
+
+.home-intro-pending .home-cinematic .home-background-still,
+.home-cinematic:is([data-home-intro='loading'], [data-home-intro='playing'], [data-home-intro='settling']) .home-background-still {
+  visibility: hidden;
+}
+
+.home-cinematic .home-background-video {
+  opacity: 0;
+  transition: opacity 0.65s ease;
+}
+
+.home-cinematic .home-background-video.is-frame-ready {
+  opacity: 1;
+  transition: none;
+}
+
+.home-cinematic .home-background-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(8, 17, 24, 0.12), rgba(8, 17, 24, 0.3));
+  opacity: 1;
+  transition: opacity 1.2s ease;
+}
+
+[data-theme='dark'] .home-cinematic .home-background-shade {
+  background: linear-gradient(180deg, rgba(5, 12, 18, 0.25), rgba(5, 12, 18, 0.5));
+}
+
+.home-cinematic > #page-header {
+  background: transparent !important;
+  animation: none;
+}
+
+.home-cinematic > #page-header::before {
+  background: transparent;
+}
+
+/* 首页滚动导航沿用渐变风格，覆盖旧主题夜间模式的 95% 纯黑背景。 */
+.home-cinematic > #page-header.nav-fixed > #nav {
+  background: linear-gradient(60deg, #ffd7e4 0, #c8f1ff 93%) !important;
+}
+
+[data-theme='dark'] .home-cinematic > #page-header.nav-fixed > #nav {
+  background: linear-gradient(60deg, rgba(30, 40, 52, 0.9), rgba(26, 58, 64, 0.9)) !important;
+}
+
+.home-cinematic #site-info,
+.home-cinematic #scroll-down,
+.home-cinematic > #content-inner,
+.home-cinematic > #footer {
+  transition: opacity 0.9s ease;
+}
+
+/* 中间的标题、副标题在所有播放模式下都隐藏，结束或跳过后才恢复。 */
+.home-intro-pending .home-cinematic #site-info,
+.home-cinematic:is([data-home-intro='loading'], [data-home-intro='playing']) #site-info {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* 首次开场隐藏正文；主动重播仍保留正文，方便继续阅读。 */
+.home-intro-pending .home-cinematic:not(.home-replaying) #scroll-down,
+.home-intro-pending .home-cinematic:not(.home-replaying) > #content-inner,
+.home-intro-pending .home-cinematic:not(.home-replaying) > #footer,
+.home-cinematic:not(.home-replaying):is([data-home-intro='loading'], [data-home-intro='playing']) #scroll-down,
+.home-cinematic:not(.home-replaying):is([data-home-intro='loading'], [data-home-intro='playing']) > #content-inner,
+.home-cinematic:not(.home-replaying):is([data-home-intro='loading'], [data-home-intro='playing']) > #footer {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.home-intro-pending .home-cinematic .home-background-shade,
+.home-cinematic:is([data-home-intro='loading'], [data-home-intro='playing']) .home-background-shade {
+  opacity: 0;
+}
+
+/* 主动重播只更新背景，保留遮罩和正文，不打断当前阅读位置。 */
+.home-cinematic.home-replaying .home-background-shade {
+  opacity: 1;
+}
+
+/* 视频按钮挂入现有工具栏，尺寸、间距和配色由同一套工具栏样式控制。 */
+/* 只要有可用的视频按钮就保留外层，普通工具组仍遵从原来的隐藏设置。 */
+#rightside:has(.home-intro-control:not([hidden])) {
+  display: block;
+}
+
+#rightside > #rightside-config-hide,
+#rightside > #rightside-config-show {
+  display: var(--rightside-display, block);
+}
+
+#rightside-home-controls:empty {
+  display: none;
+}
+
+#rightside .home-intro-control {
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#rightside .home-intro-control:focus-visible {
+  outline: 2px solid var(--btn-color);
+  outline-offset: 2px;
+}
+
+@media screen and (max-width: 900px) {
+  .home-cinematic #home-background {
+    /* 横屏时也尽量保留竖版画作的脸部，视频与末帧始终使用同一裁切。 */
+    --home-media-position: center 35%;
+  }
+
+  .home-cinematic > #page-header.full_page {
+    height: 100vh;
+    height: 100svh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-cinematic .home-background-media,
+  .home-cinematic .home-background-video,
+  .home-cinematic .home-background-shade,
+  .home-cinematic #site-info,
+  .home-cinematic #scroll-down,
+  .home-cinematic > #content-inner,
+  .home-cinematic > #footer {
+    transition: none;
+  }
+}
+
+/* 用户主动更换背景时立即显示所选图片；重播时恢复视频末帧。 */
+html.custom-site-background #web_bg { display: block !important; }
+html.custom-site-background #site-cinematic-background,
+html.custom-site-background .home-cinematic #home-background { display: none !important; }

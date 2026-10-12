@@ -23,7 +23,10 @@
   var SAME = ";--darkmode-bg:";
   // 1) 自定义壁纸
   var bg = def(ls("blogbg"), "default").replace(/^\s+|\s+$/g, "");
+  if (window.SiteMedia) bg = window.SiteMedia.resolve(bg);
+  if (window.SiteMedia && bg !== 'default') bg = window.SiteMedia.withFallback(bg);
   if (bg !== "default" && /^(#|url\(|linear-gradient|radial-gradient|https?:)/.test(bg)) {
+    d.classList.add("custom-site-background");
     tag("defineBg", ":root{--default-bg:" + bg + SAME + bg + ";--mobileday-bg:" + bg + ";--mobilenight-bg:" + bg + ";}");
   }
   // 2) 卡片透明度

@@ -1,3 +1,11 @@
+mixin footerBadgeParts(badge)
+  span.footer-badge-label
+    if badge.icon
+      svg.footer-badge-icon(aria-hidden='true')
+        use(xlink:href='#' + badge.icon)
+    span= badge.label
+  span.footer-badge-value= badge.value
+
 #footer-wrap
   #ft
     .ft-item-1
@@ -31,50 +39,19 @@
               a(href='/site/census/') 网站统计
     .ft-item-2
       p.ft-t 推荐友链⌛
-      //- 硬编码的展示位；换成你自己的朋友即可（头像建议 100x100 以内的小图）
+      //- 推荐友链只保留 Fomalhaut。
       .ft-img-group
         .img-group-item
-          a(href='https://example.com/' title='本站')
-            img(src=url_for(theme.avatar.img) alt='')
-        .img-group-item
-          a(href='https://hexo.io/zh-cn/' title='Hexo')
-            img(src='https://picsum.photos/id/1036/100/100' alt='')
-        .img-group-item
-          a(href='https://butterfly.js.org/' title='Butterfly')
-            img(src='https://picsum.photos/id/1039/100/100' alt='')
-        .img-group-item
-          a(href='https://example.org/' title='示例站点 A')
-            img(src='https://picsum.photos/id/1018/100/100' alt='')
-        .img-group-item
-          a(href='javascript:void(0)' title='广告位招租')
-            img(src='https://picsum.photos/id/1044/100/100' alt='')
-        .img-group-item
-          a(href='javascript:void(0)' title='广告位招租')
-            img(src='https://picsum.photos/id/1015/100/100' alt='')
-        .img-group-item
-          a(href='javascript:void(0)' title='广告位招租')
-            img(src='https://picsum.photos/id/1016/100/100' alt='')
-        .img-group-item
-          a(href='javascript:void(0)' title='广告位招租')
-            img(src='https://picsum.photos/id/1018/100/100' alt='')
+          a(href='https://www.fomal.cc/' title='Fomalhaut🥝' target='_blank' rel='noopener noreferrer')
+            img(src='https://sourcebucket.s3.bitiful.net/img/avatar.webp' alt='Fomalhaut 头像' onerror=`this.onerror=null;this.src='${url_for(theme.error_img.flink)}'`)
 
   if theme.footer.owner.enable
     - var now = new Date()
     - var nowYear = now.getFullYear()
-    //- if theme.footer.owner.since && theme.footer.owner.since != nowYear
-    //-   .copyright!= `&copy;${theme.footer.owner.since} - ${nowYear} By ${config.author}`
-    //- else
-    //-   .copyright!= `&copy;${nowYear} By ${config.author}`
-    //- 新加的
-    if theme.footer.owner.since && theme.footer.owner.since != nowYear
-      .copyright
-        span!= `<b>&copy;${theme.footer.owner.since}-${nowYear}</b>`
-        span!= `<b>&nbsp;&nbsp;By ${config.author}</b>`
-    else
-       .copyright
-         span!= `<b>&copy;${nowYear}</b>`
-         span!= `<b>&nbsp;&nbsp;By ${config.author}</b>`
-    //- 到这里
+    - var sinceYear = theme.footer.owner.since || nowYear
+    .copyright
+      span!= `<b>&copy;${sinceYear}-${nowYear}</b>`
+      span!= `<b>&nbsp;&nbsp;By ${config.author}</b>`
   if theme.footer.copyright
     .framework-info
       span= _p('footer.framework') + ' '
@@ -85,27 +62,14 @@
   if theme.footer.custom_text
     .footer_custom_text!=`${theme.footer.custom_text}`
   #workboard
-  p#ghbdages
-    a.github-badge(target='_blank' href="https://hexo.io/" style='margin-inline:5px' title="博客框架为Hexo_v6.3.0")
-      img(src="https://img.shields.io/badge/Frame-Hexo-blue.svg" alt='')
-
-    a.github-badge(target='_blank' href="https://github.com/yourname/hexo-theme-fomalhaut" style='margin-inline:5px' title="主题Fomalhaut v1.0.2(基于Butterfly v4.3.1)")
-      img(src="/assets/badge/Theme-Fomalhaut-6513df.svg" alt='')
-
-    a.github-badge(target='_blank' href="https://vercel.com/" style='margin-inline:5px' title="本站采用多线部署，主线路托管于Vercel")
-      img(src="https://img.shields.io/badge/Hosted-Vercel-brightgreen.svg" alt='')
-
-    a.github-badge(target='_blank' href="https://user.51.la/" style='margin-inline:5px' title="本站数据分析得益于51la技术支持")
-      img(src="https://img.shields.io/badge/Analytics-51la-3db1eb.svg" alt='')
-
-
-
-    a.github-badge(target='_blank' href="https://npmmirror.com/" style='margin-inline:5px' title="本站使用npmmirror为部分静态资源加速")
-      //- 源站上这枚已去掉 shields.io 模板自带的 1px 深色阴影文字（浅底深字会显重影），别换回 -fff2cc 那版
-      img(src="/assets/badge/CDN-npmmirror.svg" alt='')
-
-    a.github-badge(target='_blank' href="https://github.com/" style='margin-inline:5px' title="本网站源码由Github提供存储仓库")
-      img(src="https://img.shields.io/badge/Source-GitHub-d021d6.svg" alt='')
-
-    //- a.github-badge(target='_blank' href="http://creativecommons.org/licenses/by-nc-sa/4.0/" style='margin-inline:5px' title="本站采用知识共享署名-非商业性使用-相同方式共享4.0国际许可协议进行许可")
-    //-   img(src="https://picsum.photos/id/1039/1200/675" alt='')
+  if theme.footer.badges && theme.footer.badges.enable
+    .footer-badges(role='group' aria-label='站点信息')
+      each badge in theme.footer.badges.items || []
+        if badge && badge.label && badge.value
+          - var badgeColor = '--footer-badge-color:' + (badge.color || '#64748b')
+          if badge.link
+            a.footer-badge(href=badge.link target='_blank' rel='noopener noreferrer' style=badgeColor aria-label=badge.label + '：' + badge.value)
+              +footerBadgeParts(badge)
+          else
+            span.footer-badge.is-pending(style=badgeColor title='信息待补充，暂不可跳转')
+              +footerBadgeParts(badge)

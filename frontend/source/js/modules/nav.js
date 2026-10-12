@@ -29,6 +29,18 @@
 
 document.addEventListener('pjax:complete', tonav);
 document.addEventListener('DOMContentLoaded', tonav);
+
+function getCurrentSiteName() {
+  var siteName = document.getElementById("site-name");
+  return siteName && siteName.textContent.trim() || "Zany";
+}
+
+function getCurrentPageTitle() {
+  var title = document.title;
+  var suffix = " | " + getCurrentSiteName();
+  return title.endsWith(suffix) ? title.slice(0, -suffix.length) : title;
+}
+
 //响应pjax
 function tonav() {
   // 兼容 PJAX 复用页面：移除旧版监听，不影响其他滚动模块。
@@ -37,7 +49,7 @@ function tonav() {
   if (!pageName) return;
   setNavTitleVisible((window.scrollY || document.documentElement.scrollTop) > 56);
   //修复没有弄右键菜单的童鞋无法回顶部的问题
-  pageName.innerText = document.title.split(" | Demo")[0];
+  pageName.innerText = getCurrentPageTitle();
 }
 
 function setNavTitleVisible(visible) {
@@ -171,10 +183,8 @@ setTimeout(function () {
 function share_() {
   let url = window.location.origin + window.location.pathname
   try {
-    // 截取标题
-    var title = document.title;
-    var subTitle = title.endsWith("| Demo") ? title.substring(0, title.length - 7) : title;
-    navigator.clipboard.writeText('Demo的站内分享\n标题：' + subTitle + '\n链接：' + url + '\n欢迎来访！🍭🍭🍭');
+    var subTitle = getCurrentPageTitle();
+    navigator.clipboard.writeText(getCurrentSiteName() + '的站内分享\n标题：' + subTitle + '\n链接：' + url + '\n欢迎来访！🍭🍭🍭');
     fomalNotify({
           title: "成功复制分享信息🎉",
           message: "您现在可以通过粘贴直接跟小伙伴分享了！",

@@ -1,6 +1,6 @@
 {
-  "name": "Demo",
-  "short_name": "Demo",
+  "name": "Zany",
+  "short_name": "Zany",
   "theme_color": "var(--theme-color)",
   "background_color": "var(--theme-color)",
   "display": "standalone",

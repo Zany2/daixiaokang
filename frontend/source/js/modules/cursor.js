@@ -157,7 +157,7 @@ if (document.body.clientWidth > 992) {
     $.fn.nekoScroll = function (option) {
       var setting = $.extend({ top: '0', scroWidth: '6px', z_index: 9999, zoom: 0.9,
         borderRadius: '5px', right: '55.6px',
-        nekoImg: 'https://bu.dusays.com/2022/07/20/62d812db74be9.png' }, option);
+        nekoImg: window.SiteMedia ? window.SiteMedia.config.cat : '/assets/decorations/cat.svg' }, option);
       if (!this.length) return this;
       var cat = nekoElement();
       if (!cat) {

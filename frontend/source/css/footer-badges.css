@@ -1,0 +1,48 @@
+/* 页脚站点信息：双段式徽章，本地 CSS 绘制，不依赖在线徽章图片。 */
+#footer-wrap .footer-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 12px;
+  margin-top: 22px;
+}
+
+#footer-wrap .footer-badge {
+  display: inline-flex;
+  align-items: stretch;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 4px;
+  color: #fff;
+  font-family: var(--global-font), sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 26px;
+  text-decoration: none;
+  text-shadow: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, .18);
+}
+
+#footer-wrap .footer-badge-label,
+#footer-wrap .footer-badge-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+
+#footer-wrap .footer-badge-label { background: #505050; }
+#footer-wrap .footer-badge-value { background: var(--footer-badge-color, #64748b); }
+#footer-wrap .footer-badge-icon { flex: none; width: 16px; height: 16px; fill: currentColor; }
+#footer-wrap .footer-badge.is-pending { cursor: default; }
+#footer-wrap a.footer-badge:hover { color: #fff; filter: brightness(1.1); }
+#footer-wrap a.footer-badge:focus-visible { outline: 2px solid var(--theme-color, #39c5bb); outline-offset: 4px; }
+
+@media (max-width: 768px) {
+  #footer-wrap .footer-badges { gap: 8px; margin-top: 18px; }
+  #footer-wrap .footer-badge { font-size: 12px; line-height: 24px; }
+  #footer-wrap .footer-badge-label,
+  #footer-wrap .footer-badge-value { padding: 0 6px; }
+}

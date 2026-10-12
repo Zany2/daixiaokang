@@ -20,14 +20,14 @@ if theme.aside.card_friend_link.enable
               each item in i.link_list
                 if !(item.offline)
                   a.card-friend-item.online-friend-link(href=url_for(item.link)  title=item.name target="_blank")
-                    img.no-lightbox.card-friend-avatar(src=url_for(item.avatar) onerror=`this.onerror=null;this.src='` + url_for(theme.error_img.flink) + `'` alt=item.name )
+                    img.no-lightbox.card-friend-avatar(src=site_media_url(item.avatar || theme.error_img.flink) onerror=`this.onerror=null;this.src='` + url_for(theme.error_img.flink) + `'` alt=item.name )
                     .card-friend-details
                       .card-friend-name= item.name
                       .card-friend-descr(title=item.descr)= item.descr
               each item in i.link_list
                 if item.offline
                   a.card-friend-item.offline-friend-link(href=url_for(item.link)  title=item.name target="_blank")
-                    img.no-lightbox.card-friend-avatar(src=url_for(item.avatar) onerror=`this.onerror=null;this.src='` + url_for(theme.error_img.flink) + `'` alt=item.name )
+                    img.no-lightbox.card-friend-avatar(src=site_media_url(item.avatar || theme.error_img.flink) onerror=`this.onerror=null;this.src='` + url_for(theme.error_img.flink) + `'` alt=item.name )
                     .card-friend-details
                       .card-friend-name= item.name
                       .card-friend-descr(title=item.descr)= item.descr

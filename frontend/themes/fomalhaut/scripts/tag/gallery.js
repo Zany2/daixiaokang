@@ -16,7 +16,7 @@ function galleryGroup (args) {
   const name = args[0]
   const desrc = args[1]
   const url = urlFor(args[2])
-  const img = urlFor(args[3])
+  const img = urlFor(args[3] || hexo.theme.config.error_img.post_page)
 
   return `
   <figure class="gallery-group">

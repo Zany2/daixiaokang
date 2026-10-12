@@ -1,8 +1,12 @@
 - var htmlClassHideAside = theme.aside.enable && theme.aside.hide ? 'hide-aside' : ''
 - page.aside = is_archive() ? theme.aside.display.archive: is_category() ? theme.aside.display.category : is_tag() ? theme.aside.display.tag : page.aside
 - var hideAside = !theme.aside.enable || page.aside === false ? 'hide-aside' : ''
+- var homeCinematic = theme.home_cinematic || {}
+- var homeMediaPools = homeCinematic.enable ? home_cinematic_media() : {desktop: [], mobile: []}
+- var useHomeCinematic = is_home() && homeCinematic.enable && (homeMediaPools.desktop.length || homeMediaPools.mobile.length)
 //- - var pageType = is_post() ? 'post' : 'page'
 - var pageType = is_home() ? 'page home' : is_post() ? 'post' : 'page'
+- if (useHomeCinematic) pageType += ' home-cinematic'
 
 doctype html
 html(lang=config.language data-theme=theme.display_mode class=htmlClassHideAside)
@@ -86,6 +90,8 @@ html(lang=config.language data-theme=theme.display_mode class=htmlClassHideAside
 
     if page.type !== '404'
       #body-wrap(class=pageType)
+        if useHomeCinematic
+          include ./home-background.pug
         include ./header/index.pug
 
         main#content-inner.layout(class=hideAside)

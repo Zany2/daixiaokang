@@ -1,0 +1,9 @@
+- var siteMedia = site_media_config()
+- var siteMediaJson = JSON.stringify(siteMedia).replace(/</g, '\\u003c')
+script.
+  window.__SITE_MEDIA__ = !{siteMediaJson};
+script(src=url_for('/js/site-media.js?v=20261012-local4'))
+style.
+  [data-theme="light"] #aside-content > .card-widget.card-info { --author-card-cover: url("#{site_media_cover('author-light')}"), url("#{siteMedia.fallback}"); }
+  [data-theme="dark"] #aside-content > .card-widget.card-info { --author-card-cover: url("#{site_media_cover('author-dark')}"), url("#{siteMedia.fallback}"); }
+  .loading-img { background-image: url("#{site_media_url(theme.avatar.img || '/assets/avatar.png')}"), url("#{siteMedia.avatar}"); }

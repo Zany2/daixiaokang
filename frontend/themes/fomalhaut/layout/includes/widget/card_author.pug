@@ -3,10 +3,10 @@ if theme.aside.card_author.enable
     .author_top.is-center
       div.card-info-avatar
         .avatar-img
-          img(src=url_for(theme.avatar.img) onerror=`this.onerror=null;this.src='` + url_for(theme.error_img.flink) + `'` alt="avatar")
+          img(src=site_media_url(theme.avatar.img || theme.error_img.flink) onerror=`this.onerror=null;this.src='` + url_for(theme.error_img.flink) + `'` alt="avatar")
         div.author-status-box
           div.author-status
-            g-emoji.g-emoji(alias="focus_arrow" fallback-src="https://cdnjson.com/images/2023/03/30/Focus.jpg") 🎯
+            span.g-emoji 🎯
             span 专注学习中
       b
         .author-info__name= config.author

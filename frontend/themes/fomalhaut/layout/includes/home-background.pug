@@ -1,0 +1,8 @@
+//- 背景位于 #body-wrap 内，跟随 PJAX 一起替换，不增加 PJAX 选择器。
+#home-background(aria-hidden='true')
+  .home-background-media
+    picture.home-background-still
+      //- 只放透明占位图，实际 src 由脚本按本次随机组设置，不提前下载默认图片。
+      img(data-home-still='true' src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' alt='' decoding='async' loading='eager')
+    video.home-background-video(playsinline webkit-playsinline preload='none' disablepictureinpicture disableremoteplayback tabindex='-1')
+  .home-background-shade

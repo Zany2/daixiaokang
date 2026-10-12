@@ -87,6 +87,7 @@ var live2DLoadToken = 0;
 var live2DFrameToken = 0;
 var live2DBridgeBound = false;
 var live2DPendingLabel = "";
+var live2DPageLeaving = false;
 var LIVE2D_MODELS = [
   { key: "koharu", label: "Koharu（本地）", local: true },
   { key: "chitose", label: "Chitose", pkg: "live2d-widget-model-chitose@1.0.5", path: "assets/chitose.model.json" },
@@ -134,7 +135,8 @@ function live2DConfig(modelUrl) {
       hOffset: 0,
       vOffset: 0
     },
-    mobile: { show: true, scale: 0.5 },
+    // 移动端由父页面统一缩放 iframe，让画布与模型一起靠近屏幕边缘。
+    mobile: { show: true, scale: 1 },
     react: { opacity: 1 }
   };
 }
@@ -161,25 +163,48 @@ function markLive2DModelButton() {
 function positionLive2DFrame(frame) {
   if (!frame) return;
   var position = localStorage.getItem("live2dPosition") === "right" ? "right" : "left";
-  frame.style.left = position === "left" ? "0" : "auto";
-  frame.style.right = position === "right" ? "0" : "auto";
+  frame.setAttribute("data-live2d-position", position);
+}
+
+function setLive2DFrameReady(frame, ready) {
+  if (!frame) return;
+  frame.setAttribute("data-live2d-ready", ready ? "1" : "0");
+  frame.style.opacity = ready ? "1" : "0";
+  // 加载时保持画布可绘制，只隐藏画面；清除旧文档退出时留下的裁切。
+  frame.style.clipPath = "none";
+}
+
+function hideLive2DOnPageLeave() {
+  live2DPageLeaving = true;
+  live2DLoadToken++;
+  live2DFrameToken++;
+  var frame = document.getElementById("live2d-frame");
+  if (!frame) return;
+  setLive2DFrameReady(frame, false);
+  // 刷新退出时直接停止展示旧 iframe，避免子文档卸载后露出白色空文档。
+  frame.style.visibility = "hidden";
+  frame.style.display = "none";
 }
 
 function forwardLive2DPointer(event, mappedType) {
   var frame = document.getElementById("live2d-frame");
-  if (!frame || frame.style.display === "none" || !frame.contentWindow) return;
+  if (!frame || frame.style.display === "none" || frame.getAttribute("data-live2d-ready") !== "1" || !frame.contentWindow) return;
   var point = event;
   if (event.touches || event.changedTouches) {
     point = event.touches && event.touches[0] || event.changedTouches && event.changedTouches[0];
     if (!point) return;
   }
   var rect = frame.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  // CSS 缩放后，把页面坐标换算回 iframe 内部坐标，保持注视与触摸反馈准确。
+  var scaleX = frame.clientWidth / rect.width;
+  var scaleY = frame.clientHeight / rect.height;
   try {
     var forwarded = new frame.contentWindow.MouseEvent(mappedType || event.type, {
       bubbles: true,
       cancelable: true,
-      clientX: point.clientX - rect.left,
-      clientY: point.clientY - rect.top,
+      clientX: (point.clientX - rect.left) * scaleX,
+      clientY: (point.clientY - rect.top) * scaleY,
       button: typeof event.button === "number" ? event.button : 0,
       buttons: typeof event.buttons === "number" ? event.buttons : 0
     });
@@ -194,7 +219,7 @@ function forwardLive2DPointer(event, mappedType) {
 }
 
 function fallbackLive2DToLocal(label) {
-  if (localStorage.getItem("live2dEnabled") !== "1") return;
+  if (live2DPageLeaving || localStorage.getItem("live2dEnabled") !== "1") return;
   live2DPendingLabel = "";
   localStorage.setItem("live2dModel", LIVE2D_DEFAULT_MODEL);
   markLive2DModelButton();
@@ -203,16 +228,27 @@ function fallbackLive2DToLocal(label) {
 }
 
 function handleLive2DFrameMessage(event) {
+  if (live2DPageLeaving) return;
   var frame = document.getElementById("live2d-frame");
   if (!frame || event.source !== frame.contentWindow || !event.data || event.data.channel !== "fomalhaut-live2d") return;
   if (event.data.token !== live2DFrameToken) return;
-  if (event.data.type === "error" && event.data.remote) {
-    fallbackLive2DToLocal(live2DPendingLabel);
+  if (localStorage.getItem("live2dEnabled") !== "1") return;
+  if (event.data.type === "error") {
+    setLive2DFrameReady(frame, false);
+    if (event.data.remote) {
+      fallbackLive2DToLocal(live2DPendingLabel);
+    } else {
+      live2DPendingLabel = "";
+      notifyLive2DSettings("本地角色加载失败，已暂时隐藏看板娘，请稍后重新开启", "warning");
+    }
     return;
   }
-  if (event.data.type === "ready" && live2DPendingLabel) {
-    notifyLive2DSettings("已切换为 " + live2DPendingLabel);
-    live2DPendingLabel = "";
+  if (event.data.type === "ready") {
+    setLive2DFrameReady(frame, true);
+    if (live2DPendingLabel) {
+      notifyLive2DSettings("已切换为 " + live2DPendingLabel);
+      live2DPendingLabel = "";
+    }
   }
 }
 
@@ -227,31 +263,152 @@ function bindLive2DBridges() {
   window.addEventListener("touchmove", function (event) { forwardLive2DPointer(event, "mousemove"); }, { passive: true });
   window.addEventListener("touchend", function (event) { forwardLive2DPointer(event, "mouseup"); }, { passive: true });
   window.addEventListener("message", handleLive2DFrameMessage);
+  window.addEventListener("beforeunload", hideLive2DOnPageLeave);
+  window.addEventListener("pagehide", hideLive2DOnPageLeave);
+  window.addEventListener("pageshow", function (event) {
+    live2DPageLeaving = false;
+    // 后退缓存恢复旧页面时，重新加载角色，不让退出时的隐藏状态残留。
+    if (event.persisted && localStorage.getItem("live2dEnabled") === "1") initLive2DWidget();
+  });
+}
+
+// 此函数序列化后在 iframe 内执行，不依赖父页面的变量或函数。
+function observeLive2DFrame(state) {
+  var ready = false;
+  var failed = false;
+  var renderPending = false;
+  var renderFrame = null;
+  var loadTimer = null;
+  var contexts = [];
+  var restorers = [];
+  var NativeXHR = window.XMLHttpRequest;
+  var nativeGetContext = HTMLCanvasElement.prototype.getContext;
+
+  function tell(type, detail) {
+    parent.postMessage({ channel: "fomalhaut-live2d", type: type, detail: detail || "", token: state.token, remote: state.remote }, "*");
+  }
+
+  function hideFrameOnLeave() {
+    var frame = window.frameElement;
+    if (!frame || frame.getAttribute("data-live2d-token") !== String(state.token)) return;
+    // 独立于加载监听保留到文档退出；旧角色文档不能隐藏新角色的 iframe。
+    frame.setAttribute("data-live2d-ready", "0");
+    frame.style.opacity = "0";
+    frame.style.clipPath = "inset(100%)";
+  }
+
+  function cleanup() {
+    clearTimeout(loadTimer);
+    if (renderFrame !== null) cancelAnimationFrame(renderFrame);
+    if (HTMLCanvasElement.prototype.getContext === watchedGetContext) {
+      HTMLCanvasElement.prototype.getContext = nativeGetContext;
+    }
+    if (window.XMLHttpRequest === WatchedXHR) window.XMLHttpRequest = NativeXHR;
+    restorers.forEach(function (restore) { restore(); });
+    restorers = [];
+    window.removeEventListener("error", handleError, true);
+    window.removeEventListener("pagehide", cleanup);
+  }
+
+  function fail(detail) {
+    if (failed || ready) return;
+    failed = true;
+    cleanup();
+    tell("error", detail);
+  }
+
+  function rendered() {
+    if (ready || failed || renderPending) return;
+    renderPending = true;
+    // 首次有效绘制后再跨两帧，确保整次模型绘制已经提交，而非只完成网络请求。
+    renderFrame = requestAnimationFrame(function () {
+      renderFrame = requestAnimationFrame(function () {
+        renderFrame = null;
+        if (failed || ready) return;
+        ready = true;
+        cleanup();
+        tell("ready");
+      });
+    });
+  }
+
+  function watchedGetContext() {
+    var context = nativeGetContext.apply(this, arguments);
+    if (!context || typeof context.drawElements !== "function" || contexts.indexOf(context) !== -1) return context;
+    contexts.push(context);
+    ["drawElements", "drawArrays"].forEach(function (method) {
+      var nativeDraw = context[method];
+      if (typeof nativeDraw !== "function") return;
+      var hadOwnMethod = Object.prototype.hasOwnProperty.call(context, method);
+      var watchedDraw = function () {
+        var result = nativeDraw.apply(this, arguments);
+        var count = method === "drawElements" ? arguments[1] : arguments[2];
+        if (count > 0) rendered();
+        return result;
+      };
+      context[method] = watchedDraw;
+      restorers.push(function () {
+        if (context[method] !== watchedDraw) return;
+        if (hadOwnMethod) context[method] = nativeDraw;
+        else delete context[method];
+      });
+    });
+    return context;
+  }
+
+  function WatchedXHR() {
+    var xhr = new NativeXHR();
+    var sent = false;
+    xhr.addEventListener("loadend", function () {
+      if (sent && (xhr.status === 0 || xhr.status >= 400)) fail("xhr:" + xhr.status);
+    });
+    var nativeSend = xhr.send;
+    xhr.send = function () {
+      sent = true;
+      return nativeSend.apply(xhr, arguments);
+    };
+    return xhr;
+  }
+
+  function handleError(event) {
+    var target = event.target || {};
+    fail(target.src || target.href || event.message || "resource");
+  }
+
+  function checkTimeout() {
+    // 后台标签页可能暂停动画帧，不把浏览器暂停误判为模型加载失败。
+    if (document.hidden) {
+      loadTimer = setTimeout(checkTimeout, 20000);
+      return;
+    }
+    fail("render-timeout");
+  }
+
+  HTMLCanvasElement.prototype.getContext = watchedGetContext;
+  WatchedXHR.prototype = NativeXHR.prototype;
+  if (Object.setPrototypeOf) Object.setPrototypeOf(WatchedXHR, NativeXHR);
+  window.XMLHttpRequest = WatchedXHR;
+  window.addEventListener("error", handleError, true);
+  window.addEventListener("pagehide", cleanup);
+  window.addEventListener("beforeunload", hideFrameOnLeave);
+  window.addEventListener("pagehide", hideFrameOnLeave);
+  loadTimer = setTimeout(checkTimeout, 20000);
 }
 
 function live2DFrameHtml(modelUrl, frameToken, remote) {
   var config = JSON.stringify(live2DConfig(modelUrl));
   var monitor = JSON.stringify({ token: frameToken, remote: remote });
   return '<!doctype html><html><head><meta charset="utf-8">' +
-    '<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}</style>' +
-    '<script>(function(){' +
-      'var state=' + monitor + ';var pending=0;var started=false;var failed=false;var readyTimer=0;' +
-      'function tell(type,detail){parent.postMessage({channel:"fomalhaut-live2d",type:type,detail:detail||"",token:state.token,remote:state.remote},"*");}' +
-      'function fail(detail){if(failed)return;failed=true;clearTimeout(readyTimer);tell("error",detail);}' +
-      'function settle(){if(failed||!started||pending!==0)return;clearTimeout(readyTimer);readyTimer=setTimeout(function(){tell("ready");},250);}' +
-      'var NativeXHR=window.XMLHttpRequest;' +
-      'function WatchedXHR(){var xhr=new NativeXHR();var tracked=false;' +
-        'xhr.addEventListener("loadend",function(){if(!tracked)return;pending=Math.max(0,pending-1);if(xhr.status===0||xhr.status>=400)fail("xhr:"+xhr.status);else settle();});' +
-        'var nativeSend=xhr.send;xhr.send=function(){tracked=true;started=true;pending++;return nativeSend.apply(xhr,arguments);};return xhr;}' +
-      'WatchedXHR.prototype=NativeXHR.prototype;if(Object.setPrototypeOf)Object.setPrototypeOf(WatchedXHR,NativeXHR);window.XMLHttpRequest=WatchedXHR;' +
-      'window.addEventListener("error",function(event){var target=event.target||{};fail(target.src||target.href||event.message||"resource");},true);' +
-    '})();</' + 'script>' +
+    '<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent!important}#live2d-widget,#live2dcanvas{background:transparent!important}</style>' +
+    '<script>(' + observeLive2DFrame.toString() + ')(' + monitor + ');</' + 'script>' +
     '</head><body><script src="/live2dw/lib/L2Dwidget.min.js"></' + 'script>' +
     '<script>window.L2Dwidget.init(' + config + ');</' + 'script></body></html>';
 }
 
 function mountLive2D(modelUrl, remote) {
+  if (live2DPageLeaving) return;
   var frame = document.getElementById("live2d-frame");
+  var isNewFrame = !frame;
   if (!frame) {
     frame = document.createElement("iframe");
     frame.id = "live2d-frame";
@@ -259,23 +416,26 @@ function mountLive2D(modelUrl, remote) {
     frame.setAttribute("aria-hidden", "true");
     frame.setAttribute("tabindex", "-1");
     frame.style.position = "fixed";
-    frame.style.bottom = "25px";
-    frame.style.width = "150px";
-    frame.style.height = "300px";
     frame.style.border = "0";
     frame.style.background = "transparent";
     frame.style.pointerEvents = "none";
     frame.style.zIndex = "99999";
-    document.body.appendChild(frame);
   }
   bindLive2DBridges();
   positionLive2DFrame(frame);
   frame.style.display = "block";
+  frame.style.visibility = "visible";
+  // 保留布局与渲染循环，只隐藏画面；不使用 display:none 阻止 iframe 绘制。
+  setLive2DFrameReady(frame, false);
   live2DFrameToken++;
+  frame.setAttribute("data-live2d-token", String(live2DFrameToken));
   frame.srcdoc = live2DFrameHtml(modelUrl, live2DFrameToken, Boolean(remote));
+  // 新容器在透明样式和 srcdoc 就绪后才挂载，避免 about:blank 的白底首帧。
+  if (isNewFrame) document.body.appendChild(frame);
 }
 
 function initLive2DWidget() {
+  if (live2DPageLeaving) return;
   var loadToken = ++live2DLoadToken;
   if (localStorage.getItem("live2dEnabled") === "0") return;
   var model = findLive2DModel(localStorage.getItem("live2dModel"));
@@ -321,7 +481,9 @@ function setLive2DEnabled() {
     initLive2DWidget();
   } else if (frame) {
     live2DLoadToken++;
+    live2DFrameToken++;
     live2DPendingLabel = "";
+    setLive2DFrameReady(frame, false);
     frame.style.display = "none";
   }
   notifyLive2DSettings(enabled ? "已显示看板娘" : "已隐藏看板娘");
@@ -797,33 +959,12 @@ function changeBgColor() {
   changeBg(document.querySelector("#define_colors").value);
 }
 
-// 必应每日壁纸API（2026-09-30 修复：原 bing.img.run 已全站失效）
-let bingDayBg = "url(https://bing.biturl.top/?resolution=1920&format=image&index=0&mkt=zh-CN)";
-// 必应历史/随机壁纸API（2026-09-30 修复：原 bing.img.run 已全站失效）
-let bingHistoryBg = "url(https://bing.biturl.top/?resolution=1920&format=image&index=random&mkt=zh-CN)";
-// 二次元随机（2026-09-30 换到 loliapi；2026-10-06 改走同站横屏库 /acg/pc/ —— 原 /acg/ 每 3 次请求就有 1 次 404）
-let EEEDog = "url(https://www.loliapi.com/acg/pc/)";
-// 随机美图（2026-09-30 换到 api.dujin.org/pic/；2026-10-06 该接口开始返回 0 字节空图，改用 moe.jitsu.top 萌图）
-let seovx = "url(https://moe.jitsu.top/api?sort=pc)";
-// picsum随机
-let picsum = "url(https://picsum.photos/id/1043/1920/1080.webp)";
-// 小歪二次元
-// let waiDongman = "url(https://api.ixiaowai.cn/api/api.php)";
-// 高清壁纸（2026-09-30 修复：原 api.ixiaowai.cn 已失效）
-let waiBizhi = "url(https://www.loliapi.com/bg/)";
-// 手机竖屏二次元（2026-09-30 修复：原 api.btstu.cn 仅有 http，HTTPS 站会被浏览器按混合内容拦截）
-let btstu = "url(https://t.mwm.moe/mp)";
-// tuapi 动漫
-// let tuapi = "url(https://tuapi.eees.cc/api.php?category=dongman)";
-// 横屏二次元（2026-09-30 修复：原 source.unsplash.com 官方已停服）
-let unsplash = "url(https://t.mwm.moe/pc)";
-
-
 // 判断背景值是否合法（default / #颜色 / url(...) / 渐变 / http(s) 链接）
 function isValidBgVal(s) {
   if (s == undefined || s == null) return false;
   s = String(s).trim();
   if (s == "" || s == "undefined" || s == "null") return false;
+  if (/^media:(pc_\d+|home_mobile_\d+)$/.test(s)) return true;
   if (s.charAt(0) == "#") return true;
   if (s.indexOf("url(") == 0) return true;
   if (s.indexOf("linear-gradient") == 0 || s.indexOf("radial-gradient") == 0) return true;
@@ -833,16 +974,22 @@ function isValidBgVal(s) {
 // 从背景值里取出图片直链，取不到返回空串
 function bgValToUrl(s) {
   if (!isValidBgVal(s)) return "";
-  s = String(s).trim();
+  s = window.SiteMedia ? window.SiteMedia.resolve(String(s).trim()) : String(s).trim();
   var m = s.match(/^url\((["']?)(.*?)\1\)$/);
   if (m) s = m[2];
-  return /^https?:\/\//.test(s) ? s.trim() : "";
+  return /^(https?:\/\/|\/(?!\/))/.test(s) ? s.trim() : "";
 }
+// 每次选择使用自己的序号，旧图片探测结果不能覆盖更新的选择。
+let backgroundChoice = 0;
 // 更换背景(自己的代码)
 (function initBg() {
   var el = document.getElementById("defineBg");
   if (!el) return;
   var saved = localStorage.getItem("blogbg");
+  if (saved && window.SiteMedia && window.SiteMedia.resolve(saved) === "default") {
+    saved = "default";
+    localStorage.setItem("blogbg", saved);
+  }
   // 历史遗留的非法值（例如误写成的 "deafult"）自动纠正为默认背景
   if (saved != undefined && saved != "default" && !isValidBgVal(saved)) {
     saved = "default";
@@ -857,34 +1004,41 @@ function bgValToUrl(s) {
   // 自定义背景图取不到（死链/被墙）时自动回退默认背景
   var bgUrl = bgValToUrl(saved);
   if (!bgUrl) return;
+  var choice = backgroundChoice;
   checkImgExists(bgUrl).catch(function () {
+    if (choice !== backgroundChoice || localStorage.getItem("blogbg") !== saved) return;
     localStorage.setItem("blogbg", "default");
     resetBg_();
   });
 })();
 // 默认背景
 function resetBg_() {
+  backgroundChoice++;
+  document.documentElement.classList.remove("custom-site-background");
   var el = document.getElementById("defineBg");
   if (!el) return;
-  el.innerText = `:root{
-    --default-bg: url(https://picsum.photos/id/1015/1920/1080);
-    --darkmode-bg:url(https://picsum.photos/id/1044/1920/1080);
-    --mobileday-bg: url(https://picsum.photos/id/1018/1920/1080);
-    --mobilenight-bg: url(https://picsum.photos/id/1039/1920/1080);
-  }`;
+  el.innerText = window.SiteMedia ? window.SiteMedia.defaultCss() : "";
 }
 
 // 切换背景主函数
 function changeBg(s) {
+  if (!isValidBgVal(s)) return;
+  var choice = ++backgroundChoice;
+  function applyChoice() {
+    if (choice !== backgroundChoice) return;
+    setBg(s);
+    localStorage.setItem("blogbg", s);
+    document.dispatchEvent(new Event("site:background-change"));
+  }
   // 自定义颜色框
   defineColor = s.charAt(0) == "#" ? s : '#F4D88A';
   var bgUrl = bgValToUrl(s);
   if (bgUrl) {
     // 图片背景先探测可用性，避免选到已失效的壁纸源导致背景空白
     checkImgExists(bgUrl).then(function () {
-      setBg(s);
-      localStorage.setItem("blogbg", s);
+      applyChoice();
     }).catch(function () {
+      if (choice !== backgroundChoice) return;
       fomalNotify({
         title: "这个壁纸源失效了🥲",
         message: "该背景图链接无法加载，已保持当前背景。换一个试试吧～",
@@ -897,13 +1051,16 @@ function changeBg(s) {
     });
     return;
   }
-  setBg(s);
-  localStorage.setItem("blogbg", s);
+  applyChoice();
 }
 // 设置背景属性
 function setBg(s) {
+  s = window.SiteMedia ? window.SiteMedia.resolve(s) : s;
+  if (s === "default") { resetBg_(); return; }
+  if (window.SiteMedia) s = window.SiteMedia.withFallback(s);
   var el = document.getElementById("defineBg");
   if (!el) return;
+  document.documentElement.classList.add("custom-site-background");
   el.innerText = `:root{
     --default-bg: ${s};
     --darkmode-bg: ${s};
@@ -949,13 +1106,20 @@ function getPicture_() {
 function checkImgExists(imgurl) {
   return new Promise(function (resolve, reject) {
     var ImgObj = new Image();
-    ImgObj.src = imgurl;
+    var timer = setTimeout(function () { done(new Error("图片加载超时")); }, 10000);
+    function done(error, result) {
+      clearTimeout(timer);
+      ImgObj.onload = ImgObj.onerror = null;
+      if (error) reject(error);
+      else resolve(result);
+    }
     ImgObj.onload = function (res) {
-      resolve(res);
+      done(null, res);
     }
     ImgObj.onerror = function (err) {
-      reject(err);
-    }
+      done(err || new Error("图片加载失败"));
+    };
+    ImgObj.src = imgurl;
   })
 }
 
@@ -1208,54 +1372,10 @@ function createWinbox() {
 <h2>五、背景设置</h2>
 
 
-<h3>1. 风景 · 山野</h3>
-{% folding cyan, 查看二次元背景 %}
-<div class="bgbox">
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1018/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1018/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1041/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1041/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1016/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1016/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1043/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1043/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1044/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1044/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1018/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1018/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1016/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1016/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1018/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1018/1920/1080)')"></a>
+<h3>1. 横屏背景</h3>
+<div class="bgbox">${window.SiteMedia ? window.SiteMedia.buttons("desktop") : ""}</div>
 
-</div>
-{% endfolding %}
-
-
-<h3>2. 风景 · 水与森林</h3>
-
-{% folding cyan, 查看风景背景 %}
-<div class="bgbox">
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1041/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1041/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1043/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1043/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1044/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1044/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1015/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1015/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1016/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1016/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1018/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1018/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1036/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1036/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1039/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1039/1920/1080)')"></a>
-
-</div>
-{% endfolding %}
-
-<h3>3. 风景 · 更多</h3>
-
-{% folding cyan, 查看萌宠背景 %}
-<div class="bgbox">
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1036/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1036/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1039/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1039/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1041/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1041/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1043/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1043/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1044/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1044/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1015/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1015/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1016/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1016/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1018/1920/1080)" class="imgbox" onclick="changeBg('url(https://picsum.photos/id/1018/1920/1080)')"></a>
-</div>
-{% endfolding %}
-
-<h3>4. 渐变色</h3>
+<h3>2. 渐变色</h3>
 {% folding cyan, 查看渐变色背景 %}
 <div class="bgbox">
 <a href="javascript:;" rel="noopener external nofollow" class="box" style="background: linear-gradient(to right, #544a7d, #ffd452)" onclick="changeBg('linear-gradient(to right, #544a7d, #ffd452)')"></a>
@@ -1270,7 +1390,7 @@ function createWinbox() {
 {% endfolding %}
 
 
-<h3>5. 纯色</h3>
+<h3>3. 纯色</h3>
 {% folding cyan, 查看纯色背景 %}
 <div class="bgbox">
 <a href="javascript:;" rel="noopener external nofollow" class="box" style="background: #ecb1b1" onclick="changeBg('#ecb1b1')"></a> 
@@ -1286,40 +1406,14 @@ function createWinbox() {
 
 
 
-<h3>6. 适配手机</h3>
-{% folding cyan, 查看适配手机的背景 %}
-<div class="bgbox">
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1044/1920/1080)" class="pimgbox" onclick="changeBg('url(https://picsum.photos/id/1044/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1015/1920/1080)" class="pimgbox" onclick="changeBg('url(https://picsum.photos/id/1015/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1016/1920/1080)" class="pimgbox" onclick="changeBg('url(https://picsum.photos/id/1016/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1018/1920/1080)" class="pimgbox" onclick="changeBg('url(https://picsum.photos/id/1018/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1039/1920/1080)" class="pimgbox" onclick="changeBg('url(https://picsum.photos/id/1039/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1039/1920/1080)" class="pimgbox" onclick="changeBg('url(https://picsum.photos/id/1039/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1018/1920/1080)" class="pimgbox" onclick="changeBg('url(https://picsum.photos/id/1018/1920/1080)')"></a>
-<a href="javascript:;" rel="noopener external nofollow" style="background-image:url(https://picsum.photos/id/1041/1920/1080)" class="pimgbox" onclick="changeBg('url(https://picsum.photos/id/1041/1920/1080)')"></a>
-</div>
-{% endfolding %}
+<h3>4. 竖屏背景</h3>
+<div class="bgbox">${window.SiteMedia ? window.SiteMedia.buttons("mobile") : ""}</div>
 
 
-<h3>7. 壁纸API</h3>
-{% folding cyan, 查看壁纸API系列背景 %}
-<div class="bgbox">
-<a id="bingDayBox" rel="noopener external nofollow" style="background-image: ${bingDayBg}" class="box apiBox" onclick="changeBg('${bingDayBg}')"></a>
-<a id="bingHistoryBox" rel="noopener external nofollow" style="background-image: ${bingHistoryBg}" class="box apiBox" onclick="changeBg('${bingHistoryBg}')"></a>
-<a id="EEEDogBox" rel="noopener external nofollow" style="background-image: ${EEEDog}" class="box apiBox" onclick="changeBg('${EEEDog}')"></a>
-<a id="seovxBox" rel="noopener external nofollow" style="background-image: ${seovx}" class="box apiBox" onclick="changeBg('${seovx}')"></a>
-<a id="picsumBox" rel="noopener external nofollow" style="background-image: ${picsum}" class="box apiBox" onclick="changeBg('${picsum}')"></a>
-<a id="waiBizhiBox" rel="noopener external nofollow" style="background-image: ${waiBizhi}" class="box apiBox" onclick="changeBg('${waiBizhi}')"></a>
-<a id="btstuBox" rel="noopener external nofollow" style="background-image: ${btstu}" class="box apiBox" onclick="changeBg('${btstu}')"></a>
-<a id="unsplashBox" rel="noopener external nofollow" style="background-image: ${unsplash}" class="box apiBox" onclick="changeBg('${unsplash}')"></a>
-</div>
-{% endfolding %}
-
-
-<h3>8. 自定义背景</h3>
+<h3>5. 自定义背景</h3>
 {% folding cyan, 设置自定义背景 %}
 <p><center>
-<input type="text" id="pic-link" size="70%" maxlength="1000" placeholder="请输入有效的图片链接，如 https://picsum.photos/id/1015/1920/1080">
+<input type="text" id="pic-link" size="70%" maxlength="1000" placeholder="请输入图片路径，如 /assets/home/pc_01.png">
 </center></p>
 <p><center>
 <button class="winbox_btn picbtn" type="button" onclick="getPicture()" title="用上面填写的图片链接切换网站背景">切换背景</button>

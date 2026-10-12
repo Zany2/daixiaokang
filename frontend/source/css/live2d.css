@@ -1,0 +1,29 @@
+/* 保持模型的内部画布不变，移动端缩放整个容器，避免角色悬在大画布中央。 */
+#live2d-frame {
+  width: 150px;
+  height: 300px;
+  left: 0;
+  right: auto;
+  bottom: 25px;
+  transform-origin: left bottom;
+}
+
+#live2d-frame[data-live2d-position="right"] {
+  left: auto;
+  right: 0;
+  transform-origin: right bottom;
+}
+
+@media (max-width: 768px), (max-height: 500px) and (pointer: coarse) {
+  #live2d-frame {
+    left: calc(4px + env(safe-area-inset-left, 0px));
+    bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+    transform: scale(0.5);
+  }
+
+  #live2d-frame[data-live2d-position="right"] {
+    left: auto;
+    /* 为右侧悬浮工具栏留出空间。 */
+    right: calc(58px + env(safe-area-inset-right, 0px));
+  }
+}

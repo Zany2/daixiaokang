@@ -79,3 +79,14 @@ mixin rightsideItem(array)
 
     button#go-down(type="button" title="直达底部" onclick="btf.scrollToDest(document.body.scrollHeight, 500)")
       i.fas.fa-arrow-down
+
+  //- 独立的首页控制组：位置仍在工具栏末尾，不受普通侧边部件的隐藏开关影响。
+  //- 所有页面保留容器，方便 PJAX 在离开、返回首页时同步替换。
+  #rightside-home-controls
+    if useHomeCinematic
+      button#home-intro-sound.home-intro-control(type='button' hidden title='关闭视频声音' aria-label='关闭视频声音' aria-pressed='true')
+        i.fas.fa-volume-high(aria-hidden='true')
+      button#home-intro-skip.home-intro-control(type='button' hidden title='跳过动画' aria-label='跳过首页开场视频，显示首页内容')
+        i.fas.fa-forward-step(aria-hidden='true')
+      button#home-intro-replay.home-intro-control(type='button' hidden title='重播背景视频' aria-label='从头重播首页背景视频')
+        i.fas.fa-rotate-right(aria-hidden='true')

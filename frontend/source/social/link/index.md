@@ -238,23 +238,23 @@ type: "link"
 {% tabs link %}
 <!-- tab 🙋 butterfly-💭candy -->
 ```yml
-    - name: Demo
+    - name: Zany
       link: https://example.com/
-      avatar: https://picsum.photos/id/1016/1200/675
+      avatar: /assets/fallback/avatar.png
       descr: Future is now 🍭🍭🍭
-      siteshot: https://picsum.photos/id/1039/800/450
+      siteshot: /assets/home/optimized/pc_01-cover.webp
 ```
 <!-- endtab -->
 
 <!-- tab 🥗Volantis -->
 ```JSON
 {
-  "title": "Demo",
-  "screenshot": "https://picsum.photos/id/1039/800/450",
+  "title": "Zany",
+  "screenshot": "/assets/home/optimized/pc_01-cover.webp",
   "url": "https://example.com/",
-  "avatar": "https://picsum.photos/id/1016/1200/675",
+  "avatar": "/assets/fallback/avatar.png",
   "description": "Future is now 🍭🍭🍭",
-  "keywords": "Demo"
+  "keywords": "Zany"
 }
 ```
 <!-- endtab -->
@@ -263,12 +263,12 @@ type: "link"
 
 | 名称       | 数值                                                         |
 | ---------- | ------------------------------------------------------------ |
-| 站点名称   | Demo                                                   |
-| 站点截图   | https://picsum.photos/id/1039/800/450 |
+| 站点名称   | Zany                                                   |
+| 站点截图   | /assets/home/optimized/pc_01-cover.webp |
 | 站点链接   | https://example.com/                                        |
-| 站长头像   | https://picsum.photos/id/1016/1200/675                         |
+| 站长头像   | /assets/fallback/avatar.png                         |
 | 站点描述   | Future is now🍭🍭🍭                         |
-| 站点关键词 | Demo,个人博客,代码                                     |
+| 站点关键词 | Zany,个人博客,代码                                     |
 
 <!-- endtab -->
 {% endtabs %}

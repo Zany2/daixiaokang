@@ -1422,12 +1422,12 @@ button#go-up:hover #percent {
 
 /* 个人信息卡片背景图 */
 [data-theme="light"] #aside-content > .card-widget.card-info {
-  --author-card-cover: url(https://picsum.photos/id/1043/1920/1080);
+  --author-card-cover: url(/assets/home/optimized/pc_04-cover.webp);
   background-image: none;
   background-color: var(--card-bg);
 }
 [data-theme="dark"] #aside-content > .card-widget.card-info {
-  --author-card-cover: url(https://picsum.photos/id/1036/1920/1080);
+  --author-card-cover: url(/assets/home/optimized/pc_06-cover.webp);
   background-image: none;
   background-color: var(--card-bg);
 }
@@ -2808,7 +2808,6 @@ li.categoryBar-list-item {
 .neko {
   width: 64px;
   height: 64px;
-  /* https://bu.dusays.com/2022/07/20/62d812db74be9.png */
   position: absolute;
   right: 56px !important;
   background-repeat: no-repeat;
@@ -2828,8 +2827,10 @@ li.categoryBar-list-item {
   display: none;
   width: 100px;
   height: 100px;
-  background-image: url("https://bu.dusays.com/2022/07/20/62d812d95e6f5.png");
-  background-size: contain;
+  background: #fff;
+  border: 2px solid #e7c9b4;
+  border-radius: 20px;
+  box-shadow: 0 3px 10px rgb(0 0 0 / 12%);
   z-index: 9999;
   position: absolute;
   right: 50%;
@@ -3348,7 +3349,7 @@ figure.highlight pre .deletion {
   padding: 1rem;
   position: relative;
   border-radius: 12px;
-  background-image: url(https://tuchuang.voooe.cn/images/2023/01/02/tunian.webp);
+  background-image: url(/assets/home/optimized/pc_03-cover.webp), url(/assets/fallback/image.webp);
   background-size: cover;
   background-position: center;
 }

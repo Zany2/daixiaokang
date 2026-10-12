@@ -261,14 +261,14 @@ date: 2022-08-10 16:05:11
 </div>
 <br>
 
-## 3.关于这个演示站📃
+## 3.关于本站📃
 
 <div class="ab2">
   <div class="ab2-profile">
-    <div class="ab2-avatar">D</div>
+    <div class="ab2-avatar">Z</div>
     <div style="min-width:0">
-      <div class="ab2-profile-name">Demo</div>
-      <div class="ab2-profile-role">示例站点 · 主题演示</div>
+      <div class="ab2-profile-name">Zany</div>
+      <div class="ab2-profile-role">个人站点 · 学习与生活记录</div>
       <ul class="ab2-tags">
         <li>Hexo</li>
         <li>Fomalhaut</li>
@@ -277,7 +277,7 @@ date: 2022-08-10 16:05:11
     </div>
   </div>
   <div class="ab2-kv">
-    <div class="ab2-kv-row"><span class="ab2-kv-k">站点名称</span><span class="ab2-kv-v">Demo</span></div>
+    <div class="ab2-kv-row"><span class="ab2-kv-k">站点名称</span><span class="ab2-kv-v">Zany</span></div>
     <div class="ab2-kv-row"><span class="ab2-kv-k">主题</span><span class="ab2-kv-v">hexo-theme-fomalhaut v1.0.2（基于 Butterfly 4.3.1 二次开发）</span></div>
     <div class="ab2-kv-row"><span class="ab2-kv-k">邮箱</span><span class="ab2-kv-v"><a href="mailto:you@example.com">you@example.com</a></span></div>
     <div class="ab2-kv-row"><span class="ab2-kv-k">源码</span><span class="ab2-kv-v"><a href="https://github.com/yourname/hexo-theme-fomalhaut" target="_blank" rel="noopener">github.com/yourname/hexo-theme-fomalhaut</a></span></div>

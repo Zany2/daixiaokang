@@ -481,7 +481,7 @@ npx hexo clean && npx hexo generate && npx gulp
 | `mobile-scrollbar.test.cjs` | 手机端自绘滚动条的读 / 写两阶段 |
 | `scroll-listeners.test.cjs` | 滚动节流、`cancel()` 与 pjax 解绑 |
 
-跑法：`node --test "tools/tests/*.test.cjs"`（共 50 个用例；部分脚本支持用环境变量指向 `bak/` 里的基线做前后对比）。
+跑法：从仓库根目录先执行 `cd frontend`，再运行 `node --test "tools/tests/*.test.cjs"`（部分脚本支持用环境变量指向 `bak/` 里的基线做前后对比）。
 
 ### 7.7 `themes/fomalhaut/` —— 主题本体
 

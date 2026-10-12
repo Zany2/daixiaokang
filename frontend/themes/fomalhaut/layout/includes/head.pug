@@ -74,6 +74,69 @@ include ./head/noscript.pug
 
 !=fragment_cache('injectHeadJs', function(){return inject_head_js()})
 
+include ./site-media.pug
+
 !=fragment_cache('injectHead', function(){return injectHtml(theme.inject.head)})
 
 include ./custom/sun_moon.pug
+
+//- 全站加载小型控制脚本，支持从其他页面通过 PJAX 回到首页。
+if homeCinematic.enable
+  link(rel='stylesheet' href=url_for('/css/home-cinematic.css?v=20261012-local2'))
+  - var homeMediaJson = JSON.stringify(homeMediaPools).replace(/</g, '\\u003c')
+  //- 按端首次使用时抽取，PJAX / 重播复用；刷新后排除该端上一次选中的组。
+  script.
+    (function (pools) {
+      window.__HOME_CINEMATIC_MEDIA__ = window.__HOME_CINEMATIC_MEDIA__ || {};
+      if (typeof window.__selectHomeCinematicMedia__ === 'function') return;
+      window.__selectHomeCinematicMedia__ = function (variant) {
+        var selected = window.__HOME_CINEMATIC_MEDIA__;
+        if (selected[variant]) return selected[variant];
+        var groups = pools[variant];
+        if (!Array.isArray(groups) || !groups.length) return null;
+        var key = 'home-cinematic:last-group:' + variant;
+        var lastId = '';
+        try {
+          lastId = window.localStorage.getItem(key) || '';
+        } catch (error) {
+          // 禁用存储时仍允许播放，不让选片失败阻塞首屏。
+        }
+        var candidates = groups.filter(function (group) { return group.id !== lastId; });
+        // 只剩一组或配置为固定素材时，保留原有兜底行为。
+        if (!candidates.length) candidates = groups;
+        var media = candidates[Math.floor(Math.random() * candidates.length)];
+        selected[variant] = media;
+        try {
+          // 只记录本次使用的端，另一端的未播放素材不更新历史。
+          window.localStorage.setItem(key, media.id);
+        } catch (error) {
+          // 存储不可用时退回普通随机，不影响视频与静态背景。
+        }
+        return media;
+      };
+    })(!{homeMediaJson});
+  script(defer src=url_for('/js/modules/home-cinematic.js?v=20261012-local3'))
+  if useHomeCinematic
+    //- 只预加载当前端抽中的图片，不加载默认组或其他组的图片。
+    script.
+      (function () {
+        var variant = window.matchMedia('(max-width: 900px)').matches ? 'mobile' : 'desktop';
+        var media = window.__selectHomeCinematicMedia__(variant);
+        if (!media) return;
+        var preload = document.createElement('link');
+        preload.rel = 'preload';
+        preload.as = 'image';
+        preload.href = media.poster;
+        document.head.appendChild(preload);
+      })();
+      // 首屏保护：脚本加载失败时，8 秒后恢复内容。
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+          !document.documentElement.classList.contains('custom-site-background') &&
+          !(navigator.connection && navigator.connection.saveData)) {
+        window.__homeIntroBootExpired = false;
+        document.documentElement.classList.add('home-intro-pending');
+        window.__homeIntroBootTimer = setTimeout(function () {
+          window.__homeIntroBootExpired = true;
+          document.documentElement.classList.remove('home-intro-pending');
+        }, 8000);
+      }
