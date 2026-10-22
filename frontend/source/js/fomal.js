@@ -11,7 +11,8 @@
  *   /js/data/holidays.js        法定休息日判断（2024~2026 内置 + 2027 起 CDN 拉取）
  *   /js/modules/console-art.js  控制台字符画
  *   /js/modules/shell.js        快捷键拦截 / 夜间模式动画 / 恶搞标题 / 搜索框修复 / 手机滚动条
- *   /js/modules/effects.js      雪花 / 星空 / 表情放大
+ *   /js/modules/effect-engine.js 雪花 / 星空 / 流星及可保存的参数
+ *   /js/modules/effects.js      评论表情放大
  *   /js/modules/reading.js      阅读进度条 / FPS 计数
  *   /js/modules/nav.js          导航栏标题 / 首屏欢迎语 / 分享按钮
  *   /js/modules/cursor.js       小猫咪 / 右键菜单 / 听话鼠标
@@ -71,6 +72,7 @@ window.__fomal = {
     "scrollToTop", "setColor"],
   // 拆分后各模块应该提供的代表性全局名，用来粗查"某个文件是不是没加载"
   modules: {
+    "effect-engine.js": ["FomalEffects"],
     "console-art.js": ["createtime2"],
     "shell.js": ["debounce"],
     "effects.js": ["owoBig"],
