@@ -2,6 +2,7 @@
 title: 友人帐
 date: 2022-08-10 15:39:15
 type: "link"
+comments: false
 ---
 
 <!--
@@ -239,10 +240,10 @@ type: "link"
 <!-- tab 🙋 butterfly-💭candy -->
 ```yml
     - name: Zany
-      link: https://example.com/
-      avatar: /assets/fallback/avatar.png
+      link: https://daixiaokang.com/
+      avatar: https://daixiaokang.com/assets/avatar.png
       descr: Future is now 🍭🍭🍭
-      siteshot: /assets/home/optimized/pc_01-cover.webp
+      siteshot: https://daixiaokang.com/assets/home/optimized/pc_01-cover.webp
 ```
 <!-- endtab -->
 
@@ -250,9 +251,9 @@ type: "link"
 ```JSON
 {
   "title": "Zany",
-  "screenshot": "/assets/home/optimized/pc_01-cover.webp",
-  "url": "https://example.com/",
-  "avatar": "/assets/fallback/avatar.png",
+  "screenshot": "https://daixiaokang.com/assets/home/optimized/pc_01-cover.webp",
+  "url": "https://daixiaokang.com/",
+  "avatar": "https://daixiaokang.com/assets/avatar.png",
   "description": "Future is now 🍭🍭🍭",
   "keywords": "Zany"
 }
@@ -264,9 +265,9 @@ type: "link"
 | 名称       | 数值                                                         |
 | ---------- | ------------------------------------------------------------ |
 | 站点名称   | Zany                                                   |
-| 站点截图   | /assets/home/optimized/pc_01-cover.webp |
-| 站点链接   | https://example.com/                                        |
-| 站长头像   | /assets/fallback/avatar.png                         |
+| 站点截图   | https://daixiaokang.com/assets/home/optimized/pc_01-cover.webp |
+| 站点链接   | https://daixiaokang.com/                                        |
+| 站长头像   | https://daixiaokang.com/assets/avatar.png                         |
 | 站点描述   | Future is now🍭🍭🍭                         |
 | 站点关键词 | Zany,个人博客,代码                                     |
 

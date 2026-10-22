@@ -4,6 +4,7 @@
  *
  * 用法：相册页 front-matter 里写 gallery_per_page: 12（每页几张），
  * 正文按顺序写 ![说明](图片链接) 即可；不必手写页码、不必写 {% gallery %}。
+ * 也可填写 gallery_media: all / desktop / mobile，自动加入当前自有素材目录的图片。
  * 生成器会自动分页，并调用 Hexo 的 paginator helper（与主题列表页同一个 helper，
  * 样式沿用 _config.fomalhaut.yml 里注入的 #pagination 规则），页码外观与首页一致。
  *
@@ -17,6 +18,7 @@
 const pagination = require('hexo-pagination');
 const { readFile } = require('fs/promises');
 const { join } = require('path');
+const { catalog } = require('../lib/site-media');
 
 const DEFAULT_PER_PAGE = 12;
 const FORMAT = 'p%d.html';
@@ -55,7 +57,21 @@ async function readRaw(ctx, page) {
 
 async function buildAlbum(ctx, locals, page) {
   const perPage = Math.max(1, parseInt(page.gallery_per_page, 10) || DEFAULT_PER_PAGE);
-  const raw = String(await readRaw(ctx, page)).replace(/\r\n/g, '\n');
+  let raw = String(await readRaw(ctx, page)).replace(/\r\n/g, '\n');
+  if (page.gallery_media) {
+    const pools = catalog(ctx);
+    const variant = page.gallery_media;
+    if (!['all', 'desktop', 'mobile'].includes(variant)) {
+      throw new Error('gallery_media 只支持 all、desktop 或 mobile');
+    }
+    const groups = variant === 'all' ? pools.desktop.concat(pools.mobile) : pools[variant];
+    const urlFor = ctx.extend.helper.get('url_for');
+    const images = groups.map(group => {
+      const label = group.id.startsWith('pc_') ? '横屏背景' : '竖屏背景';
+      return '![' + label + ' ' + group.id + '](' + urlFor.call(ctx, group.poster) + ')';
+    });
+    raw += '\n\n' + images.join('\n');
+  }
 
   const before = [];
   const after = [];

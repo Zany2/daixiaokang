@@ -9,7 +9,7 @@ description: "Future is now 🍭🍭🍭"
 keywords: "Hexo,Butterfly,Fomalhaut,博客,主题,卡片式UI"
 author: Zany🥝
 language: zh-CN
-timezone: ""
+timezone: Asia/Shanghai
 
 # abbrlink config
 abbrlink:
@@ -18,7 +18,7 @@ abbrlink:
 
 # URL
 ## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
-url: http://134.175.50.80
+url: https://daixiaokang.com
 permalink: posts/:abbrlink.html
 permalink_defaults:
 pretty_urls:
@@ -37,6 +37,7 @@ i18n_dir: :lang
 skip_render:
   - 'js/tag-map/*' # leaflet / proj4 第三方库原文件，原样复制，不做 Nunjucks 渲染
   - 'js/ai-chat.js' # AI 助手前端本体（含大段 CSS/JS 字面量），原样复制，不做 Nunjucks 渲染
+  - 'js/encrypted-page.js' # 加密页面交互脚本原样复制，避免被当作页面重复创建
   - 'box/astronomy/voyager.html' # 旅行者号交互星图，是完整独立页面（自带样式与脚本），由 index.md 用 iframe 引入，原样复制
 
 # Writing
@@ -186,9 +187,9 @@ plugin:
   - hexo-generator-feed
 #Feed Atom
 feed:
-type: atom
-path: atom.xml
-limit: 20
+  type: atom
+  path: atom.xml
+  limit: 20
 
 # 站点地图
 sitemap:
@@ -199,7 +200,7 @@ baidusitemap:
 # 主动推送百度，被百度收录
 baidu_url_submit:
   count: 10 # 提交最新的10个链接
-  host: https://example.com # 百度站长平台中注册的域名
+  host: https://daixiaokang.com # 百度站长平台中注册的域名，Token 需单独配置
   token: YOUR_BAIDU_TOKEN # 秘钥，百度站长平台 > 推送接口 > 接口调用地址中token字段
   path: baidu_urls.txt # 文本文档的地址， 新链接会保存在此文本文档里，不用改
 
@@ -236,9 +237,8 @@ gitcalendar:
   #   name: content
   #   index: 0
   # simplemode: true
-  user: yourname # git用户名
-  apiurl: "https://gitcalendar.example.com" # 你的 gitcalendar 服务地址
-  jsonurl: "https://cdn.jsdelivr.net/gh/yourname/gitcalendar-data@main/data.json" # 方案B：GitHub Action 定时更新的数据
+  user: Zany2 # GitHub 用户名
+  jsonurl: "https://github-contributions-api.jogruber.de/v4/Zany2?y=last" # 公开贡献数据，最近一年；无需 Token
   minheight:
     pc: 320px #桌面端最小高度
     mibile: 0px #移动端最小高度
@@ -255,7 +255,7 @@ gitcalendar:
   # color: "['#ebedf0', '#f1f8ff', '#dbedff', '#c8e1ff', '#79b8ff', '#2188ff', '#0366d6', '#005cc5', '#044289', '#032f62', '#05264c']" #天青色调
   container: .recent-post-item(style='width:100%;height:auto;padding:10px;') #父元素容器，需要使用pug语法
   gitcalendar_css: /css/gitcalendar.css #自托管，勿改回 CDN（2026-10-01）
-  gitcalendar_js: /js/gitcalendar.js #自托管 + 已打「失败也摘转圈」补丁
+  gitcalendar_js: /js/gitcalendar.js?v=20261013-fallback2 # 自托管，按真实月份与 GitHub 分级绘图，失败时显示默认值
 
 # 新版的搜索插件
 plugins:

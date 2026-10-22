@@ -3,7 +3,8 @@ if theme.pjax.exclude
   each val in theme.pjax.exclude
     - pjaxExclude = pjaxExclude + `:not([href="${val}"])`
 
-- let pjaxSelectors = ['head > title','#config-diff','#body-wrap','#rightside-config-hide','#rightside-config-show','#rightside-home-controls','#web_bg','.js-pjax', 'body > title', '#app', '#tag-echarts', '#posts-echart', '#categories-echarts']
+//- 图表容器随 #body-wrap 替换；单独选择仅在统计页存在的节点会导致 PJAX 退回整页刷新。
+- let pjaxSelectors = ['head > title','#config-diff','#body-wrap','#rightside-config-hide','#rightside-config-show','#rightside-home-controls','#web_bg','.js-pjax']
 
 - let choose = theme.comments.use
 if choose

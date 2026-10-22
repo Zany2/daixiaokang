@@ -305,8 +305,17 @@
 .census-chart--trends { height: 320px; }
 .census-chart--sources { height: 400px; }
 
-/* 图表加载失败时的占位（DOM 由 census.js 的 showChartFallback 生成） */
+/* 图表资源不可用时仍展示默认值。 */
 .census-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 220px;
+  padding: 16px;
+  box-sizing: border-box;
+  text-align: center;
+  color: var(--census-muted);
   border-radius: 12px;
   background: var(--census-soft);
   border: 1px dashed var(--census-line);

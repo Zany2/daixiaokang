@@ -180,11 +180,14 @@ setTimeout(function () {
 /* 原 fomal.js 1237-1267 行，原样搬运，未改逻辑 */
 /* 分享按钮 start */
 // 分享本页
-function share_() {
+async function share_() {
   let url = window.location.origin + window.location.pathname
+  const pagePath = window.location.pathname;
   try {
     var subTitle = getCurrentPageTitle();
-    navigator.clipboard.writeText(getCurrentSiteName() + '的站内分享\n标题：' + subTitle + '\n链接：' + url + '\n欢迎来访！🍭🍭🍭');
+    if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') throw new Error('clipboard unavailable');
+    await navigator.clipboard.writeText(getCurrentSiteName() + '的站内分享\n标题：' + subTitle + '\n链接：' + url + '\n欢迎来访！🍭🍭🍭');
+    if (pagePath !== window.location.pathname) return;
     fomalNotify({
           title: "成功复制分享信息🎉",
           message: "您现在可以通过粘贴直接跟小伙伴分享了！",
@@ -195,7 +198,8 @@ function share_() {
           duration: 5000
         })
   } catch (err) {
-    console.error('复制失败！', err);
+    if (pagePath !== window.location.pathname) return;
+    window.fomalToast('复制未成功，请允许剪贴板权限，或手动复制页面链接。', 'warning', { title: '分享提示' });
   }
   // new ClipboardJS(".share", { text: function () { return '标题：' + document.title + '\n链接：' + url } });
   // btf.snackbarShow("本页链接已复制到剪切板，快去分享吧~")

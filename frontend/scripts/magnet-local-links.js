@@ -28,7 +28,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-var MARKER = '/categories/';
+var MARKER = hexo.config.magnet && hexo.config.magnet.type === 'tags' ? '/tags/' : '/categories/';
 
 // 站点绝对前缀：https://example.com/categories/  以及对应的站内路径 /categories/
 function absolutePrefix() {
@@ -52,7 +52,9 @@ function rewrite(html, prefix, rel) {
   var out = html.replace(re, function (m, head, href, tail) {
     if (href.indexOf(prefix) !== 0) return m;
     n++;
-    return head + rel + encodeURI(href.slice(prefix.length)) + tail;
+    var suffix = href.slice(prefix.length);
+    var destination = !suffix || /^[?#]/.test(suffix) ? rel.replace(/\/(tags|categories)\/$/, '/article/$1/') : rel;
+    return head + destination + encodeURI(suffix) + tail;
   });
   return { out: out, n: n };
 }

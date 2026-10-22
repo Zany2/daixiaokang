@@ -2,10 +2,42 @@
 //- redirect_title 可选，用于说明目标页面；未配置时使用通用提示，不猜测目标名称。
 - var redirectTo = url_for(page.redirect_to || '/')
 - var redirectTitle = page.redirect_title || ''
-meta(http-equiv="refresh" content='0;url=' + redirectTo)
-script.
-  location.replace("!{redirectTo}");
+noscript
+  meta(http-equiv="refresh" content='0;url=' + redirectTo)
 #redirect-tip(style="text-align:center;padding:1.5rem 0;line-height:2")
   p= redirectTitle ? '该页面已迁移至「' + redirectTitle + '」，正在自动跳转……' : '该页面已迁移，正在自动跳转……'
   p
     a(href=redirectTo) 如果没有自动跳转，请点这里
+- var redirectJson = JSON.stringify(redirectTo).replace(/</g, '\\u003c')
+script.
+  (function (target) {
+    var tip = document.getElementById('redirect-tip');
+    var navigation = window.pjax;
+    // 等当前 PJAX 切换完成再导航，避免在替换正文过程中发起第二次请求。
+    setTimeout(function () {
+      if (!tip || !tip.isConnected) return;
+      if (navigation && typeof navigation.loadUrl === 'function' &&
+          new URL(target, location.href).origin === location.origin) {
+        var source = location.href;
+        var destination = new URL(target, source).href;
+        function clearRedirect() {
+          document.removeEventListener('pjax:complete', completeRedirect);
+          document.removeEventListener('pjax:error', clearRedirect);
+        }
+        function completeRedirect() {
+          clearRedirect();
+          if (location.href !== source || !navigation.state ||
+              new URL(navigation.state.href, source).href !== destination) return;
+          // 替换旧地址这一条历史记录，避免后退到旧地址后再次自动前进。
+          history.replaceState(Object.assign({}, history.state, {
+            url: destination, title: document.title, scrollPos: [0, 0]
+          }), document.title, destination);
+        }
+        document.addEventListener('pjax:complete', completeRedirect);
+        document.addEventListener('pjax:error', clearRedirect);
+        navigation.loadUrl(target, { history: false });
+      } else {
+        location.replace(target);
+      }
+    }, 0);
+  })(!{redirectJson});

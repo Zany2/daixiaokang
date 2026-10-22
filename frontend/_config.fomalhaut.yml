@@ -25,7 +25,6 @@ menu:
     友人帐: /social/link/ || icon-lianjie || faa-tada
   网站 || icon-wangye || faa-tada || hide:
     网站统计: /site/census/ || icon--tongjibiao || faa-tada
-    文章统计: /site/echarts/ || icon-shujutongji1 || faa-tada
     旧时光: /site/time/ || icon-xianxingshalou || faa-tada
   个人 || icon-maoliang || faa-tada || hide:
     开源项目: /personal/bb/ || icon-codeoptimization || faa-tada
@@ -137,10 +136,11 @@ site_media:
 # 首页动态背景：宽度大于 900px 使用 PC 素材，其余使用移动端素材
 home_cinematic:
   enable: true # 关闭后恢复原首页背景
-  random: true # 每次打开/刷新随机一组；站内返回和重播保持本次选择
+  random: true # 首页首次打开/刷新随机一组；子页面刷新、站内返回和重播保持当前标签页的选择
   # 自动识别 source/assets/home 中同名的 MP4 + PNG，缺少其中一个不加入随机池。
   # PC 命名 pc_01.mp4 / pc_01.png；移动端命名 home_mobile_01.mp4 / home_mobile_01.png。
-  # 新增素材后重启前端服务或重新生成页面即可，无需逐组写代码。
+  # 首页、美化设置和文章封面共用此目录；当前 PC 01–30、手机 01–05。
+  # 新增素材后生成优化图片，再重启前端服务或重新生成页面，无需逐组写代码。
   video: /assets/home/pc_01.mp4 # 关闭随机或没有完整分组时使用的 PC 默认视频
   poster: /assets/home/pc_01.png # PC 默认末帧
   mobile_video: /assets/home/home_mobile_01.mp4 # 移动端默认视频
@@ -180,29 +180,8 @@ cover:
   # left/right/both
   position: both
   # When cover is not set, the default cover is displayed (當沒有設置cover時，默認的封面顯示)
-  # 文章缺省封面由自有素材按文章标识固定分配；此列表供其他主题组件兼容使用。
-  default_cover:
-    - /assets/home/optimized/pc_01-cover.webp
-    - /assets/home/optimized/pc_02-cover.webp
-    - /assets/home/optimized/pc_03-cover.webp
-    - /assets/home/optimized/pc_04-cover.webp
-    - /assets/home/optimized/pc_05-cover.webp
-    - /assets/home/optimized/pc_06-cover.webp
-    - /assets/home/optimized/pc_07-cover.webp
-    - /assets/home/optimized/pc_08-cover.webp
-    - /assets/home/optimized/pc_09-cover.webp
-    - /assets/home/optimized/pc_10-cover.webp
-    - /assets/home/optimized/pc_11-cover.webp
-    - /assets/home/optimized/pc_12-cover.webp
-    - /assets/home/optimized/pc_13-cover.webp
-    - /assets/home/optimized/pc_14-cover.webp
-    - /assets/home/optimized/pc_15-cover.webp
-    - /assets/home/optimized/pc_16-cover.webp
-    - /assets/home/optimized/pc_17-cover.webp
-    - /assets/home/optimized/pc_18-cover.webp
-    - /assets/home/optimized/pc_19-cover.webp
-    - /assets/home/optimized/pc_20-cover.webp
-    - /assets/home/optimized/pc_21-cover.webp
+  # 生成时自动填充全部横屏自有封面，文章按标识固定分配，无需手写素材清单。
+  default_cover: []
 
 # A simple 404 page
 error_404:
@@ -328,11 +307,19 @@ addtoany:
 # Comments System
 # --------------------------------------
 
+# 自建评论与留言 UI：正式域名走同源 /api，由服务器反向代理到 FastAPI。
+# 仅通过 localhost / 127.0.0.1 / ::1 访问前端时使用 local_api_base。
+feedback:
+  enable: true
+  api_base: /api
+  local_api_base: http://localhost:8000/api
+  request_timeout_ms: 12000
+
 comments:
+  # 评论区仅在文章详情页展示，独立页面不挂载（见主题 page.pug / post.pug）。
   # Up to two comments system, the first will be shown as default
   # Choose: Disqus/Disqusjs/Livere/Gitalk/Valine/Waline/Utterances/Facebook Comments/Twikoo/Giscus/Remark42
-  use:
-    - Twikoo # Valine,Disqus,...
+  use: [] # 自建 UI 接管文章评论，避免同时加载 Twikoo
   text: true # Display the comment name next to the button
   # lazyload: The comment system will be load when comment element enters the browser's viewport.
   # If you set it to true, the comment count will be invalid
@@ -503,7 +490,7 @@ footer:
         value: Zany
         icon: icon-home
         color: '#7028cf'
-        link: # 本站域名确定后填写；当前仅展示，不跳转至其他网站。
+        link: https://daixiaokang.com/
       - label: Hosted
         value: 待部署
         icon: icon-wangye
@@ -514,11 +501,11 @@ footer:
         icon: icon-shujutongji1
         color: '#168ba8'
         link: https://www.vercount.one/
-      - label: ICP备案
-        value: 待填写
+      - label: 萌ICP备
+        value: '20268555'
         icon: icon-guidang1
         color: '#b82c71'
-        link: # 有真实备案编号后再填写编号与对应查询链接。
+        link: https://icp.gov.moe/?keyword=20268555 # 萌备查询；正式 ICP 备案另设位置。
       - label: Bucket
         value: 待接入
         icon: icon-xiangzi
@@ -1026,15 +1013,14 @@ inject:
     - <link rel="preconnect" href="https://sdk.51.la" crossorigin> # 灵雀监控走 CORS
     - <link rel="dns-prefetch" href="https://at.alicdn.com">
     - <link rel="dns-prefetch" href="https://lib.baomitu.com">
-    # 文章统计页（网站 › 文章统计，/tags/）专用样式。选择器都带 #page:has(#posts-echart) 守卫，
+    # 文章统计页（文章 › 文章统计，/tags/）专用样式。选择器都带 #page:has(#posts-echart) 守卫，
     # 所以全站注入也只在该页生效；:has() 不支持时整块失效，页面退回主题原样。
     - <link rel="stylesheet" href="/css/stats.css?v=20261005">
     - <link rel="stylesheet" href="/css/article-taxonomy.css?v=20261009"> # 标签入口与分类卡片，跟随主题色和明暗模式
     - <link rel="stylesheet" href="/css/footer-badges.css?v=20261010"> # 页脚站点信息双段式标识
-    # Twikoo 评论美化（站点独立样式，不改主题源码）：表单/列表/交互统一到主题色与卡片语言。
-    # 源文件 source/css/twikoo.css；只写 Twikoo 2.x 的 .tk-* 类名，配色派生自 --theme-color。
-    # 回滚：删掉这一行即可（备份 bak/announcement-20261004-twikoo-ui/before/_config.fomalhaut.yml）。
-    - <link rel="stylesheet" href="/css/twikoo.css?v=20261006b">
+    # 自建评论与留言 UI：表单、列表与交互统一到主题色与卡片语言。
+    # 自建评论与留言板，配色跟随 --theme-color，独立作用域为 .zf。
+    - <link rel="stylesheet" href="/css/feedback.css?v=20261013-ui8"> # 自建评论、留言板及手机端布局
     # 已移除 Element-UI CSS（236KB，head 同步阻塞）：全站仅 fomal.js 的 15 处 $notify 用到，已改由 /js/notify.js 承担
     # - <link rel="stylesheet" href="https://registry.npmmirror.com/element-ui/2.15.7/files/lib/theme-chalk/index.css"> # 引入组件库
     # 综合美化模块样式引入
@@ -1078,15 +1064,6 @@ inject:
     # （配置备份 bak/20261009-timeline-archive/before/_config.fomalhaut.yml）。
     - <link rel="stylesheet" href="/css/timeline-archive.css?v=20261011">
     - <script defer src="/js/timeline-archive.js?v=20261011"></script>
-    # ── 关于页改版（站点独立样式 + 脚本，不改主题源码）──────────────────────────
-    # source/css/about-page.css：/personal/about/ 专用外观，全部选择器以 .ab2 开头；
-    #   含 Hero、6 张线路卡、实测参数对照表、技术栈六层分层、个人档案卡 + 昵称由来列表。
-    #   配色由 --theme-color / --font-color / --card-bg 派生，深色模式只覆盖 .ab2 上的变量。
-    # source/js/inject/about-route-probe.js：给每张线路卡挂「实时延迟」徽标（可点击重测），
-    #   页面静置 5 分钟静默复测一轮；找不到 .ab2 线路卡时整段直接 return，别的页面零开销。
-    # 改这两个文件记得把 ?v= 一起提版本。回滚：删掉下面两行即可
-    # （页面源码备份 bak/2026-10-04-about-redesign/before/index.md）。
-    - <link rel="stylesheet" href="/css/about-page.css?v=20261006">
     # ── 公告栏线路延时徽标（站点独立脚本，不改主题源码）────────────────────────
     # source/js/inject/ping-route-boot.js 放可调参数；ping-route.js 在每条线路胶囊后
     # 插一个 <span class="a-ms">，显示「本机 → 该线路」一次网络往返（如 82ms）。
@@ -1117,6 +1094,8 @@ inject:
     - <link rel="stylesheet" href="/css/live2d.css?v=20261012-mobile1"> # 看板娘位置与移动端安全区
 
   bottom:
+    - <script defer src="/js/notify.js?v=20261013-theme2"></script> # 通知与确认框，先于各交互模块加载
+    - <script defer src="/js/feedback.js?v=20261022-domain1"></script> # 评论、留言分页与发表交互，支持 PJAX
     - <script defer charset="UTF-8" id="LA_COLLECT" src="https://sdk.51.la/js-sdk-pro.min.js"></script> # 51la统计（+defer 解除阻塞）
     - <script defer src="https://sdk.51.la/perf/js-sdk-perf.min.js" crossorigin="anonymous"></script> # 灵雀监控（+defer 解除阻塞）
     - <script defer src="/js/51la.js"></script> # 统计
@@ -1134,7 +1113,6 @@ inject:
     # - <script async src="https://cdn.wpon.cn/2022-sucai/Gold-ingot.js"></script> # 新年元宝
     - <canvas id="universe"></canvas> # 星空画布
     - <canvas id="snow"></canvas> # 雪花画布
-    - <script defer src="/js/notify.js"></script> # 轻量通知，替代 Vue + Element-UI
     - <script defer src="/js/lunar.js"></script> # 农历 / 二十四节气换算（festival.js 依赖，必须排在它前面）
     # ↓↓↓ 站点自有 JS：2026-10-03 把原来近 3000 行的 /js/fomal.js 拆成了下面这些文件。
     # 加载顺序 = 依赖顺序：data/ 是两个纯数据模型（页脚计时器要用），modules/ 各自独立，
@@ -1143,24 +1121,24 @@ inject:
     - <script defer src="/js/data/holidays.js"></script> # 法定休息日判断（页脚计时器依赖）
     - <script defer src="/js/modules/console-art.js?v=20261012-zany1"></script> # 控制台字符画
     - <script defer src="/js/modules/shell.js?v=20261005-animation1"></script> # 快捷键拦截/夜间动画/恶搞标题/搜索框修复/手机滚动条
-    - <script defer src="/js/modules/effects.js?v=20261004q"></script> # 雪花/星空/表情放大
+    - <script defer src="/js/modules/effect-engine.js?v=20261023-controls1"></script> # 雪花/星空/流星参数与动画，先于美化面板加载
+    - <script defer src="/js/modules/effects.js?v=20261023-controls1"></script> # 评论表情放大
     - <script defer src="/js/modules/reading.js?v=20261005-animation1"></script> # 阅读进度条/FPS
-    - <script defer src="/js/modules/nav.js?v=20261012-zany1"></script> # 导航栏标题/首屏欢迎语/分享
-    - <script defer src="/js/modules/cursor.js?v=20261009-navmotion1"></script> # 小猫咪/右键菜单/听话鼠标
+    - <script defer src="/js/modules/nav.js?v=20261013-notify2"></script> # 导航栏标题/首屏欢迎语/分享
+    - <script defer src="/js/modules/cursor.js?v=20261013-notify1"></script> # 小猫咪/右键菜单/听话鼠标
     - <script defer src="/js/modules/footer-time.js?v=20261010"></script> # 页脚计时器
-    - <script defer src="/js/modules/settings.js?v=20261012-mobile1"></script> # 美化模块（含 Live2D 首帧加载、刷新退出保护和角色局部切换）
-    - <script defer src="/js/fomal.js?v=20261009-articles1"></script> # 站点主引导：模块地图 + 控制台策略 + 全局入口清单
+    - <script defer src="/js/modules/settings.js?v=20261023-controls1"></script> # 美化面板：特效滑块实时调节、保存及恢复默认
+    - <script defer src="/js/fomal.js?v=20261023-controls1"></script> # 站点主引导：模块地图 + 控制台策略 + 全局入口清单
     - <script defer src="/js/wechat-qr.js?v=20261008-hover1"></script> # 微信二维码悬浮预览，点击同页弹层展示
     - <script defer src="/js/festival.js"></script> # 节日提醒卡片（左上角通知）
-    - <script defer src="/js/author-status.js"></script> # 侧栏头像状态胶囊：按时间/节假日自动切换（放假/上班/下班/睡觉）
+    - <script defer src="/js/author-status.js?v=20261013-badge1"></script> # 侧栏头像状态胶囊：按时间/节假日自动切换（放假/上班/下班/睡觉）
     - <script defer src="/js/stats.js?v=20261009-statlabels1"></script> # 文章统计页（/tags/）：分节标题、图表恢复与主题色适配
-    - <script defer src="/js/pjax-guard.js?v=20261005"></script> # 修 pjax 选择器不匹配：/tags/ 图表容器 id 导致换页退回整页刷新 + 加载遮罩一直转圈
+    - <script defer src="/js/pjax-guard.js?v=20261013-navigation3"></script> # PJAX 选择器兼容及加载遮罩兜底
     - <script defer src="/js/inject/search-lazy.js?v=20261004"></script> # Algolia 搜索按需加载：空闲预取 + 点开才执行（省 88KB 压缩流量 / 277KB 解析，见 source/js/inject/search-lazy.js）
     - <script src="/js/inject/scroll-gap-fix.js"></script> # 锚点跳转补偿：常驻顶栏留 70px
     - <script src="/js/inject/webinfo-card.js"></script> # 小站资讯卡：KPI 数字滚动 + 运行天数
     - <script src="/js/inject/ft-ad-extra.js"></script> # 页脚友链补一个「广告位招租」
     - <script src="/js/inject/pc-local-link.js"></script> # 版权卡「文章链接」显示当前域名
-    - <script defer src="/js/inject/about-route-probe.js?v=20261006"></script> # 关于页线路卡「实时延迟」徽标（.ab2 作用域）
 
     # 公告栏 meta 数据条的填充脚本（数字来自侧栏「小站资讯」卡，卡不在或还没渲染就保持 —）
     - |
@@ -1187,9 +1165,9 @@ CDN:
   custom_format:
 
   option:
-    # main_css:
+    main_css: /css/index.css?v=20261023-controls1
     main: /js/main.js?v=20261009-navmotion2
-    utils: /js/utils.js?v=20261005-scroll1
+    utils: /js/utils.js?v=20261013-notify1
     # translate: https://cdn.tianli0.top/npm/js-heo@1.0.6/translate/tw_cn.js
     # local_search:
     # algolia_js:
@@ -1306,7 +1284,7 @@ wowjs:
 # envelope_comment
 # see https://akilar.top/posts/e2d3c450/
 envelope_comment:
-  enable: true #控制开关
+  enable: false # /comments/ 改由 source/comments/index.md 生成自建留言板
   custom_pic:
     cover: https://npm.elemecdn.com/hexo-butterfly-envelope/lib/violet.jpg #信笺头部图片
     line: https://npm.elemecdn.com/hexo-butterfly-envelope/lib/line.png #信笺底部图片
@@ -1316,13 +1294,13 @@ envelope_comment:
     - 本站有哪些做得好或者不好的地方？
     - 或者你有什么改进的建议？
     - 又或者你有什么具体的问题需要咨询？
-    - 都可以在下方评论区留言哦~~~
+    - 欢迎交流网站体验与改进建议。
   bottom: 加班加点修复bug中 #仅支持单行文本
   height: #1050px，信封划出的高度
   path: #【可选】comments 的路径名称。默认为 comments，生成的页面为 comments/index.html
   front_matter: #【可选】comments页面的 front_matter 配置
     title: 留言板
-    comments: true
+    comments: false # 旧信封插件已关闭，自建留言板在 source/comments/index.md
 
 # 友链样式，butterfly为默认样式，volantis为站点卡片样式.flexcard为弹性卡片样式
 flink_style: volantis # butterfly | volantis | flexcard

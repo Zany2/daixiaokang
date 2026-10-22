@@ -1,3 +1,6 @@
+// 网站统计请求、默认值与图表共用一个页面生命周期。
+;(function () {
+if (typeof window.__disposeCensus === 'function') window.__disposeCensus()
 var start_date = '20200101' // 开始日期
 var date = new Date();
 var end_date = '' + date.getFullYear() + (date.getMonth() > 8 ? (date.getMonth() + 1) : ("0" + (date.getMonth() + 1))) + (date.getDate() > 9 ? date.getDate() : ("0" + date.getDate())); // 结束日期
@@ -7,14 +10,12 @@ var end_date = '' + date.getFullYear() + (date.getMonth() > 8 ? (date.getMonth()
 // 要看API Key与Secret Key见 http://developer.baidu.com/console#app/27508680
 // 如果前面的refresh token不行就用这个
 // refresh_token: <你的 refresh_token>
-var access_token = 'YOUR_BAIDU_ACCESS_TOKEN' // accessToken（2026-10-01 更新，有效期 30 天；refresh_token 一次性，刷新后须同步第 4/9 行）
+var access_token = 'YOUR_BAIDU_ACCESS_TOKEN' // 未配置时直接显示默认值；后续接入再填写。
 var site_id = 'YOUR_BAIDU_SITE_ID' // 网址 id
 var dataUrl = 'https://baidu-tongji.example.com/api?access_token=' + access_token + '&site_id=' + site_id
 // var dataUrl = 'https://baidu-tongji.example.com/api?site_id=' + site_id
 var metrics = 'pv_count' // 统计访问次数 PV 填写 'pv_count'，统计访客数 UV 填写 'visitor_count'，二选一
 var metricsName = (metrics === 'pv_count' ? '访问次数' : (metrics === 'visitor_count' ? '访客数' : ''))
-// 这里为了统一颜色选取的是“明暗模式”下的两种字体颜色，也可以自己定义
-var color = document.documentElement.getAttribute('data-theme') === 'light' ? '#4c4948' : 'rgba(255,255,255,0.7)'
 
 // —— 主题色读取与派生 ——
 // 主题色由主题运行时写进 <style id="themeColor">，内容是 :root{--theme-color:rgb(57, 197, 187)}
@@ -140,439 +141,283 @@ function censusSeriesPalette() {
   })
 }
 
-// —— 图表加载兜底 ——
-// 百度统计接口异常时统一抛出可读错误（例如 token 过期会返回 error_code 111）
-function censusResult(data) {
-  if (!data || !data.result || !data.result.items) {
-    var msg = (data && data.error_code) ? (data.error_code + ' ' + (data.error_msg || '')) : '返回数据格式异常'
-    throw new Error('百度统计接口不可用：' + msg)
-  }
-  return data.result
-}
 
-// 图表容器内显示占位提示，避免接口异常时只剩一片空白
-function showChartFallback(id, error) {
-  var el = document.getElementById(id)
-  if (!el || el.getAttribute('data-census-fallback') === '1') return
-  el.setAttribute('data-census-fallback', '1')
-  var detail = (error && error.message) ? String(error.message) : '网络请求失败'
+var page = document.querySelector('.census')
+if (!page) return
+var active = true, charts = [], controllers = [], observers = [], themeRenderers = []
+function isCurrent() { return active && page.isConnected }
+function disposeCensus() {
+  if (!active) return
+  active = false
+  controllers.forEach(function (controller) { controller.abort() })
+  charts.forEach(function (chart) { chart.dispose() })
+  observers.forEach(function (observer) { observer.disconnect() })
+  window.removeEventListener('resize', resizeCharts)
+  document.removeEventListener('pjax:complete', disposeAfterNavigation)
+  document.removeEventListener('pjax:error', disposeAfterNavigation)
+}
+function disposeAfterNavigation() { if (!page.isConnected) disposeCensus() }
+window.__disposeCensus = disposeCensus
+// 目标页成功替换后再释放，导航失败仍停留本页时保留图表。
+document.addEventListener('pjax:complete', disposeAfterNavigation)
+document.addEventListener('pjax:error', disposeAfterNavigation)
+function resizeCharts() {
+  if (isCurrent()) charts.forEach(function (chart) { chart.resize() })
+}
+window.addEventListener('resize', resizeCharts)
+
+// 同一文档共享加载任务，按图表库 → 地图的顺序加载，避免 PJAX 重复执行覆盖已注册的地图。
+function loadChartScript(url, ready) {
+  if (ready()) return Promise.resolve()
+  return new Promise(function (resolve, reject) {
+    var script = document.createElement('script')
+    var timer = setTimeout(function () { finish(new Error('图表资源加载超时')) }, 10000)
+    function finish(error) {
+      clearTimeout(timer)
+      script.onload = script.onerror = null
+      if (error) { script.remove(); reject(error) }
+      else resolve()
+    }
+    script.src = url
+    script.onload = function () { finish(ready() ? null : new Error('图表资源不可用')) }
+    script.onerror = function () { finish(new Error('图表资源加载失败')) }
+    document.head.appendChild(script)
+  })
+}
+function hasChartLibrary() { return !!(window.echarts && typeof window.echarts.init === 'function') }
+function hasChinaMap() { return hasChartLibrary() && !!window.echarts.getMap('china') }
+function ensureChartLibrary() {
+  if (hasChartLibrary()) return Promise.resolve()
+  if (!window.__censusChartLibrary) {
+    window.__censusChartLibrary = loadChartScript('https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js', hasChartLibrary)
+      .catch(function (error) { window.__censusChartLibrary = null; throw error })
+  }
+  return window.__censusChartLibrary
+}
+function ensureChinaMap() {
+  if (hasChinaMap()) return Promise.resolve()
+  if (!window.__censusChinaMap) {
+    window.__censusChinaMap = loadChartScript('https://npm.elemecdn.com/echarts@4.9.0/map/js/china.js', hasChinaMap)
+      .catch(function (error) { window.__censusChinaMap = null; throw error })
+  }
+  return window.__censusChinaMap
+}
+function requestCensus(url, type) {
+  var controller = new AbortController()
+  controllers.push(controller)
+  var timer = setTimeout(function () { controller.abort() }, 10000)
+  return fetch(url, { signal: controller.signal }).then(function (response) {
+    if (!response.ok) throw new Error('统计接口 HTTP ' + response.status)
+    return type === 'text' ? response.text() : response.json()
+  }).finally(function () {
+    clearTimeout(timer)
+    controllers = controllers.filter(function (item) { return item !== controller })
+  })
+}
+// 默认值固定为 0，明确标识，避免把未接入或失败的统计当作真实数据。
+function setStatus(id, fallback) {
+  var el = page.querySelector('[data-census-status="' + id + '"]')
+  if (el) el.textContent = fallback ? '默认数据 · 暂无可用统计' : '统计数据已更新'
+}
+function numericValue(value) {
+  if (value === '--') return 0
+  if (typeof value !== 'number' && typeof value !== 'string') throw new Error('统计数值异常')
+  var text = String(value).replace(/,/g, '').trim()
+  if (!/^\d+$/.test(text)) throw new Error('统计数值异常')
+  var number = Number(text)
+  if (!Number.isSafeInteger(number) || number < 0) throw new Error('统计数值异常')
+  return number
+}
+function resultRows(data) {
+  if (!data || data.error_code || !data.result || !Array.isArray(data.result.items)) throw new Error('百度统计返回数据异常')
+  var items = data.result.items
+  if (!Array.isArray(items[0]) || !Array.isArray(items[1]) || items[0].length !== items[1].length) throw new Error('百度统计列表异常')
+  return items[0].map(function (item, index) {
+    var name = Array.isArray(item) ? item[0] : null
+    name = name && typeof name === 'object' ? name.name : name
+    if (typeof name !== 'string' || !name.trim() || !Array.isArray(items[1][index])) throw new Error('百度统计记录异常')
+    return { name: name, value: numericValue(items[1][index][0]) }
+  })
+}
+var statistic = page.querySelector('#statistic'), updated = page.querySelector('#census-updated')
+function renderKpis(values, fallback) {
+  if (!isCurrent() || !statistic) return
+  statistic.querySelectorAll('[data-census-field]').forEach(function (el) {
+    el.textContent = values[Number(el.getAttribute('data-census-field'))].toLocaleString('en-US')
+  })
+  statistic.setAttribute('data-state', fallback ? 'fallback' : 'ready')
+  if (updated) updated.textContent = fallback ? '默认数据 · 暂无可用统计' : '统计数据已更新'
+}
+function loadKpis() {
+  var defaults = [0, 0, 0, 0, 0, 0, 0]
+  renderKpis(defaults, true)
+  var widgetId = 'YOUR_51LA_ID'
+  if (widgetId.indexOf('YOUR_') === 0) return
+  requestCensus('https://v6-widget.51.la/v6/' + encodeURIComponent(widgetId) + '/quote.js', 'text')
+    .then(function (text) {
+      var values = [], matches = text.matchAll(/<\/span><span>(.*?)<\/span><\/p>/g)
+      for (var match of matches) values.push(numericValue(match[1]))
+      if (values.length < 7) throw new Error('51LA 返回数据异常')
+      renderKpis(values, false)
+    }).catch(function (error) {
+      if (!isCurrent()) return
+      console.warn('51LA:', error)
+      renderKpis(defaults, true)
+    })
+}
+function defaultMonths() {
+  var current = new Date(), rows = []
+  for (var i = 11; i >= 0; i--) {
+    var month = new Date(current.getFullYear(), current.getMonth() - i, 1)
+    rows.push({ name: month.getFullYear() + '-' + String(month.getMonth() + 1).padStart(2, '0'), value: 0 })
+  }
+  return rows
+}
+function chartDefaults(id) {
+  if (id === 'map-chart') {
+    var map = typeof echarts !== 'undefined' && echarts.getMap('china')
+    var geo = map && (map.geoJSON || map.geoJson)
+    return geo && Array.isArray(geo.features) ? geo.features.map(function (feature) {
+      return { name: feature.properties.name, value: 0 }
+    }) : []
+  }
+  if (id === 'trends-chart') return defaultMonths()
+  return ['直接访问', '搜索引擎', '外部链接', '其他来源'].map(function (name) { return { name: name, value: 0 } })
+}
+function chartOption(id, rows) {
+  var textColor = censusIsDark() ? 'rgba(255,255,255,0.7)' : '#4c4948'
+  if (id === 'map-chart') {
+    var p = censusMapPalette()
+    return {
+      tooltip: { trigger: 'item', formatter: function (item) {
+        // 省份名称来自地图资源，数值缺失时显示 0。
+        return item.name + '：' + (Number.isFinite(item.value) ? item.value : 0)
+      } },
+      visualMap: {
+        min: 0, max: Math.max(1, ...rows.map(function (row) { return row.value })),
+        left: 'left', bottom: 0, text: ['多', '少'], inRange: { color: [p.pale, p.strong] },
+        textStyle: { color: textColor }, calculable: true
+      },
+      series: [{
+        name: metricsName, type: 'map', map: 'china',
+        label: { show: false }, emphasis: { label: { color: p.hoverText }, itemStyle: { areaColor: p.hover } },
+        itemStyle: { areaColor: p.none, borderColor: p.border, borderWidth: 1 }, data: rows
+      }]
+    }
+  }
+  if (id === 'trends-chart') {
+    var line = censusAreaGradient()
+    return {
+      grid: { top: 36, left: 8, right: 36, bottom: 6, containLabel: true }, tooltip: { trigger: 'axis' },
+      xAxis: {
+        type: 'category', boundaryGap: false, data: rows.map(function (row) { return row.name }),
+        axisLabel: { color: textColor }, axisLine: { lineStyle: { color: textColor } }, axisTick: { show: false }
+      },
+      yAxis: {
+        name: metricsName, type: 'value', minInterval: 1, nameTextStyle: { color: textColor },
+        axisLabel: { color: textColor }, splitLine: { show: false }
+      },
+      series: [{
+        name: metricsName, type: 'line', smooth: true, showSymbol: false,
+        lineStyle: { width: 2, color: line.color }, itemStyle: { color: line.color },
+        areaStyle: { color: censusGradient(line) }, data: rows.map(function (row) { return row.value }),
+        markLine: { data: [{ name: '平均值', type: 'average', label: { color: textColor } }] }
+      }]
+    }
+  }
+  var hasSources = rows.some(function (row) { return row.value > 0 })
+  return {
+    color: censusSeriesPalette(), legend: { bottom: 0, textStyle: { color: textColor } }, tooltip: { trigger: 'item' },
+    graphic: hasSources ? [] : [{
+      type: 'text', left: 'center', top: '44%',
+      style: { text: '0', fill: textColor, fontSize: 28, fontWeight: 'bold' }
+    }],
+    series: [{
+      name: metricsName, type: 'pie', radius: ['52%', '80%'], center: ['50%', '47%'],
+      stillShowZeroSum: false, showEmptyCircle: true, emptyCircleStyle: { color: censusIsDark() ? '#2b2b2b' : '#ebedf0' },
+      minAngle: hasSources ? 6 : 0,
+      label: { show: hasSources, color: textColor, formatter: '{b} : {c} ({d}%)' },
+      labelLine: { lineStyle: { color: textColor } },
+      data: hasSources ? rows : [], itemStyle: { borderColor: censusCardBg(), borderWidth: 2 }
+    }]
+  }
+}
+function chartTextFallback(el) {
   var tip = document.createElement('div')
   tip.className = 'census-fallback'
-  tip.setAttribute('style', 'display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:220px;gap:6px;text-align:center;color:' + color + ';opacity:.75;')
-  var t1 = document.createElement('div')
-  t1.setAttribute('style', 'font-size:15px;')
-  t1.textContent = '📉 统计服务暂不可用'
-  var t2 = document.createElement('div')
-  t2.setAttribute('style', 'font-size:12px;opacity:.8;max-width:90%;word-break:break-all;')
-  t2.textContent = detail
-  var t3 = document.createElement('div')
-  t3.setAttribute('style', 'font-size:12px;opacity:.6;')
-  t3.textContent = '数据来源：百度统计 · 稍后刷新重试'
-  tip.appendChild(t1); tip.appendChild(t2); tip.appendChild(t3)
-  el.appendChild(tip)
+  tip.textContent = '0 · 默认数据，暂无可用统计'
+  el.replaceChildren(tip)
 }
-
-// 访问地图
-function mapChart() {
-  let script = document.createElement("script")
-  // let paramUrl = '&start_date=' + start_date + '&end_date=' + end_date + '&metrics=' + metrics + '&method=visit/district/a'; // 更换请求地址
-  let paramUrl = '&start_date=' + start_date + '&end_date=' + end_date + '&metrics=' + metrics + '&method=overview/getDistrictRpt';
-  fetch(dataUrl + paramUrl).then(data => data.json()).then(data => {
-    let result = censusResult(data)
-    let mapName = result.items[0]
-    let mapValue = result.items[1]
-    let mapArr = []
-    let max = mapValue[0][0]
-    for (let i = 0; i < mapName.length; i++) {
-      // mapArr.push({ name: mapName[i][0].name, value: mapValue[i][0] })
-      mapArr.push({ name: mapName[i][0], value: mapValue[i][0] })
-    }
-    let mapArrJson = JSON.stringify(mapArr)
-    let mapPalette = censusMapPalette()
-    script.innerHTML = `
-      var mapChart = echarts.init(document.getElementById('map-chart'), 'light');
-      var mapOption = {
-        title: {
-          show: false, // 标题已移到 HTML 卡片头部（census.css），这里只留占位对象供 switchVisitChart 改色
-          text: '网站访客地域分布图🌏',
-          x: 'center',
-          textStyle: {
-            color: '${color}'
-          }
-        },
-        tooltip: {
-          trigger: 'item'
-        },
-        visualMap: {
-          min: 0,
-          max: ${max},
-          left: 'left',
-          top: 'bottom',
-          text: ['多','少'],
-          color: ['${mapPalette.strong}', '${mapPalette.pale}'],
-          textStyle: {
-            color: '${color}'
-          },
-          calculable: true
-        },
-        series: [{
-          name: '${metricsName}',
-          type: 'map',
-          mapType: 'china',
-          showLegendSymbol: false,
-          label: {
-            normal: {
-              show: false
-            },
-            emphasis: {
-              show: true,
-              color: '${mapPalette.hoverText}'
-            }
-          },
-          itemStyle: {
-            normal: {
-              areaColor: '${mapPalette.none}',
-              borderColor: '${mapPalette.border}',
-              borderWidth: 1
-            },
-            emphasis: {
-              areaColor: '${mapPalette.hover}'
-            }
-          },
-          data: ${mapArrJson}
-        }]
-      };
-      mapChart.setOption(mapOption);
-      window.addEventListener("resize", () => { 
-        mapChart.resize();
-      });`
-    document.getElementById('map-chart').after(script);
-  }).catch(function (error) {
-    console.log('mapChart:', error);
-    showChartFallback('map-chart', error);
-  });
-}
-
-// 访问趋势
-function trendsChart() {
-  let script = document.createElement("script")
-  let paramUrl = '&start_date=' + start_date + '&end_date=' + end_date + '&metrics=' + metrics + '&method=trend/time/a&gran=month'
-  fetch(dataUrl + paramUrl).then(data => data.json()).then(data => {
-    let monthArr = []
-    let monthValueArr = []
-    let result = censusResult(data)
-    let monthName = result.items[0]
-    let monthValue = result.items[1]
-    for (let i = monthName.length - 1; i >= 0; i--) {
-      monthArr.push(monthName[i][0].substring(0, 7).replace('/', '-'))
-      monthValueArr.push(monthValue[i][0] !== '--' ? monthValue[i][0] : 0)
-    }
-    let monthArrJson = JSON.stringify(monthArr)
-    let monthValueArrJson = JSON.stringify(monthValueArr)
-    // 面积渐变跟随主题色（模板字符串在下面插值）
-    let line = censusAreaGradient()
-    script.innerHTML = `
-      var trendsChart = echarts.init(document.getElementById('trends-chart'), 'light');
-      var trendsOption = {
-        title: {
-          show: false, // 标题已移到 HTML 卡片头部
-          text: '网站访客日期分布图📅',
-          x: 'center',
-          textStyle: {
-            color: '${color}'
-          }
-        },
-        // 没有 echarts 标题了，显式收一下绘图区，避免顶部留一大块空白
-        grid: { top: 16, left: 8, right: 18, bottom: 6, containLabel: true },
-        tooltip: {
-          trigger: 'axis'
-        },
-        xAxis: {
-          name: '日期',
-          type: 'category',
-          boundaryGap: false,
-          nameTextStyle: {
-            color: '${color}'
-          },
-          axisTick: {
-            show: false
-          },
-          axisLabel: {
-            show: true,
-            color: '${color}'
-          },
-          axisLine: {
-            show: true,
-            lineStyle: {
-              color: '${color}'
-            }
-          },
-          data: ${monthArrJson}
-        },
-        yAxis: {
-          name: '${metricsName}',
-          type: 'value',
-          nameTextStyle: {
-            color: '${color}'
-          },
-          splitLine: {
-            show: false
-          },
-          axisTick: {
-            show: false
-          },
-          axisLabel: {
-            show: true,
-            color: '${color}'
-          },
-          axisLine: {
-            show: true,
-            lineStyle: {
-              color: '${color}'
-            }
-          }
-        },
-        series: [{
-          name: '${metricsName}',
-          type: 'line',
-          smooth: true,
-          // 底下铺色带，上面压一条同主题色的细线，比纯色块更像「趋势」
-          lineStyle: {
-            width: 2,
-            color: '${line.color}'
-          },
-          showSymbol: false,
-          itemStyle: {
-            opacity: 1,
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
-              offset: 0,
-              color: '${line.top}'
-            },
-            {
-              offset: 1,
-              color: '${line.bottom}'
-            }])
-          },
-          areaStyle: {
-            opacity: 1,
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
-              offset: 0,
-              color: '${line.top}'
-            }, {
-              offset: 1,
-              color: '${line.bottom}'
-            }])
-          },
-          data: ${monthValueArrJson},
-          markLine: {
-            data: [{
-              name: '平均值',
-              type: 'average',
-              label: {
-                color: '${color}'
-              }
-            }]
-          }
-        }]
-      };
-      trendsChart.setOption(trendsOption);
-      window.addEventListener("resize", () => { 
-        trendsChart.resize();
-      });`
-    document.getElementById('trends-chart').after(script);
-  }).catch(function (error) {
-    console.log('trendsChart:', error);
-    showChartFallback('trends-chart', error);
-  });
-}
-
-// 访问来源
-function sourcesChart() {
-  let script = document.createElement("script")
-  let paramUrl = '&start_date=' + start_date + '&end_date=' + end_date + '&metrics=' + metrics + '&method=source/all/a';
-  fetch(dataUrl + paramUrl).then(data => data.json()).then(data => {
-    let result = censusResult(data)
-    let sourcesName = result.items[0]
-    let sourcesValue = result.items[1]
-    let sourcesArr = []
-    for (let i = 0; i < sourcesName.length; i++) {
-      sourcesArr.push({ name: sourcesName[i][0].name, value: sourcesValue[i][0] })
-    }
-    let sourcesArrJson = JSON.stringify(sourcesArr)
-    // 饼图配色跟随主题色
-    let sourcesPaletteJson = JSON.stringify(censusSeriesPalette())
-    // 环形扇区之间的留白缝隙 = 卡片底色
-    let sourcesBorder = censusCardBg()
-    script.innerHTML = `
-      var sourcesChart = echarts.init(document.getElementById('sources-chart'), 'light');
-      var sourcesOption = {
-        title: {
-          show: false, // 标题已移到 HTML 卡片头部
-          text: '网站访客来源分布图🎨',
-          x: 'center',
-          textStyle: {
-            color: '${color}'
-          }
-        },
-        color: ${sourcesPaletteJson},
-        legend: {
-          top: 'bottom',
-          textStyle: {
-            color: '${color}'
-          }
-        },
-        tooltip: {
-          trigger: 'item'
-        },
-        series: [{
-          name: '${metricsName}',
-          type: 'pie',
-          // 原来是 radius [34,92] + roseType 'area'：扇形半径按数值缩放，而这份数据极度倾斜
-          // （直接访问 86.7% / 外部链接 13% / 搜索引擎 0.25% / 自定义来源 0.01%），
-          // 结果三个来源缩成看不见的细线、整张图只剩一把"扇子"。改成规整环形图，
-          // 并用 minAngle 保住极小占比的可见性。
-          radius: ['52%', '80%'],
-          center: ['50%', '47%'],
-          minAngle: 6,
-          avoidLabelOverlap: true,
-          label: {
-            color: '${color}',
-            formatter: "{b} : {c} ({d}%)"
-          },
-          labelLine: {
-            lineStyle: {
-              color: '${color}'
-            }
-          },
-          data: ${sourcesArrJson},
-          itemStyle: {
-            borderColor: '${sourcesBorder}',
-            borderWidth: 2,
-            emphasis: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: 'rgba(255, 255, 255, 0.5)'
-            }
-          }
-        }]
-      };
-      sourcesChart.setOption(sourcesOption);
-      window.addEventListener("resize", () => { 
-        sourcesChart.resize();
-      });`
-    document.getElementById('sources-chart').after(script);
-  }).catch(function (error) {
-    console.log('sourcesChart:', error);
-    showChartFallback('sources-chart', error);
-  });
-}
-
-function switchVisitChart() {
-  // 这里为了统一颜色选取的是“明暗模式”下的两种字体颜色，也可以自己定义
-  let color = document.documentElement.getAttribute('data-theme') === 'light' ? '#4c4948' : 'rgba(255,255,255,0.7)'
-  if (document.getElementById('map-chart') && mapOption) {
+function loadChart(id, method) {
+  var el = page.querySelector('#' + id)
+  if (!el) return
+  var chart = null, rows = chartDefaults(id), fallbackState = true
+  function render(fallback) {
+    if (!isCurrent()) return
+    fallbackState = fallback
+    if (fallback) rows = chartDefaults(id)
+    setStatus(id, fallback)
     try {
-      let mapOptionNew = mapOption
-      mapOptionNew.title.textStyle.color = color
-      mapOptionNew.visualMap.textStyle.color = color
-      mapChart.setOption(mapOptionNew)
-    } catch (error) {
-      console.log(error)
-    }
-  }
-  if (document.getElementById('trends-chart') && trendsOption) {
-    try {
-      let trendsOptionNew = trendsOption
-      trendsOptionNew.title.textStyle.color = color
-      trendsOptionNew.xAxis.nameTextStyle.color = color
-      trendsOptionNew.yAxis.nameTextStyle.color = color
-      trendsOptionNew.xAxis.axisLabel.color = color
-      trendsOptionNew.yAxis.axisLabel.color = color
-      trendsOptionNew.xAxis.axisLine.lineStyle.color = color
-      trendsOptionNew.yAxis.axisLine.lineStyle.color = color
-      trendsOptionNew.series[0].markLine.data[0].label.color = color
-      trendsChart.setOption(trendsOptionNew)
-    } catch (error) {
-      console.log(error)
-    }
-  }
-  if (document.getElementById('sources-chart') && sourcesOption) {
-    try {
-      let sourcesOptionNew = sourcesOption
-      sourcesOptionNew.title.textStyle.color = color
-      sourcesOptionNew.legend.textStyle.color = color
-      sourcesOptionNew.series[0].label.color = color
-      sourcesChart.setOption(sourcesOptionNew)
-    } catch (error) {
-      console.log(error)
-    }
-  }
-  // 这个函数挂在 document 的 click 上，顺手当作「明暗模式变了没」的检测点：
-  // 变了就整块重算配色（地图底色、折线渐变、饼图调色板都依赖明暗）
-  var dark = censusIsDark()
-  if (dark !== censusLastDark) {
-    censusLastDark = dark
-    applyCensusThemeColor()
-  }
-}
-
-// 记录上一次渲染时的明暗模式（主题色切换由 MutationObserver 兜住）
-var censusLastDark = censusIsDark()
-
-// 主题色在运行时被切换时（设置面板里换色），重新给三张图绑定配色
-// 注意：地图的底色/描边、折线的渐变、饼图的调色板都跟主题色和明暗模式有关，一起刷新
-function applyCensusThemeColor() {
-  try {
-    if (typeof mapChart !== 'undefined' && mapChart && typeof mapChart.setOption === 'function' &&
-      typeof mapOption !== 'undefined' && mapOption && mapOption.series) {
-      var p = censusMapPalette()
-      mapOption.visualMap.color = [p.strong, p.pale]
-      mapOption.series[0].itemStyle.normal.areaColor = p.none
-      mapOption.series[0].itemStyle.normal.borderColor = p.border
-      mapOption.series[0].itemStyle.emphasis.areaColor = p.hover
-      mapOption.series[0].label.emphasis.color = p.hoverText
-      mapChart.setOption(mapOption)
-    }
-    if (typeof trendsChart !== 'undefined' && trendsChart && typeof trendsChart.setOption === 'function' &&
-      typeof trendsOption !== 'undefined' && trendsOption && trendsOption.series) {
-      var line = censusAreaGradient()
-      trendsOption.series[0].lineStyle.color = line.color
-      trendsOption.series[0].itemStyle.color = censusGradient(line)
-      trendsOption.series[0].areaStyle.color = censusGradient(line)
-      trendsChart.setOption(trendsOption)
-    }
-    if (typeof sourcesChart !== 'undefined' && sourcesChart && typeof sourcesChart.setOption === 'function' &&
-      typeof sourcesOption !== 'undefined' && sourcesOption && sourcesOption.series) {
-      sourcesOption.color = censusSeriesPalette()
-      // 扇区缝隙用卡片底色，明暗切换后必须跟着换，否则深色下会留一圈白缝
-      if (sourcesOption.series[0].itemStyle) {
-        sourcesOption.series[0].itemStyle.borderColor = censusCardBg()
+      if (typeof echarts === 'undefined' || (id === 'map-chart' && !echarts.getMap('china'))) throw new Error('图表资源未加载')
+      if (!chart) {
+        el.replaceChildren()
+        chart = echarts.init(el)
+        charts.push(chart)
       }
-      sourcesChart.setOption(sourcesOption)
+      chart.setOption(chartOption(id, rows), true)
+    } catch (error) {
+      console.warn('Census chart:', error)
+      if (chart) {
+        chart.dispose()
+        charts = charts.filter(function (item) { return item !== chart })
+        chart = null
+      }
+      setStatus(id, true)
+      chartTextFallback(el)
     }
-  } catch (error) {
-    console.log('applyCensusThemeColor:', error)
   }
+  render(true)
+  themeRenderers.push(function () { render(fallbackState) })
+  if (access_token.indexOf('YOUR_') === 0 || site_id.indexOf('YOUR_') === 0 || dataUrl.indexOf('.example.com') !== -1) return
+  var params = '&start_date=' + start_date + '&end_date=' + end_date + '&metrics=' + metrics + '&method=' + method
+  requestCensus(dataUrl + params).then(function (data) {
+    var values = resultRows(data)
+    if (!values.length) throw new Error('暂无统计记录')
+    if (id === 'trends-chart') {
+      values.forEach(function (row) {
+        row.name = row.name.slice(0, 7).replace('/', '-')
+        if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(row.name)) throw new Error('趋势日期异常')
+      })
+      values.sort(function (a, b) { return a.name.localeCompare(b.name) })
+    }
+    rows = values
+    render(false)
+  }).catch(function (error) {
+    if (!isCurrent()) return
+    console.warn('Census:', error)
+    rows = chartDefaults(id)
+    render(true)
+  })
 }
-
-// 换主题色 = 改 <style id="themeColor"> 的文本，所以用 MutationObserver 跟着变
-function watchCensusThemeColor() {
-  var el = document.getElementById('themeColor')
-  if (!el || !window.MutationObserver) return
-  new window.MutationObserver(function () { applyCensusThemeColor() })
-    .observe(el, { childList: true, characterData: true, subtree: true })
+function refreshTheme() {
+  if (isCurrent()) themeRenderers.forEach(function (render) { render() })
 }
-watchCensusThemeColor()
-
-if (document.getElementById('map-chart')) mapChart()
-if (document.getElementById('trends-chart')) trendsChart()
-if (document.getElementById('sources-chart')) sourcesChart()
-
-// 切换夜间模式字体颜色适应
-var censusTimer;
-try {
-  document.addEventListener("click", function () {
-    clearTimeout(censusTimer);
-    censusTimer = setTimeout(switchVisitChart, 100);
-  });
-} catch (err) { }
+if (window.MutationObserver) {
+  var observer = new MutationObserver(refreshTheme)
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'style'] })
+  var theme = document.getElementById('themeColor')
+  if (theme) observer.observe(theme, { childList: true, characterData: true, subtree: true })
+  observers.push(observer)
+}
+loadKpis()
+loadChart('map-chart', 'overview/getDistrictRpt')
+loadChart('trends-chart', 'trend/time/a&gran=month')
+loadChart('sources-chart', 'source/all/a')
+ensureChartLibrary().then(function () {
+  // 地图资源失败时折线与来源图仍可正常显示。
+  refreshTheme()
+  return ensureChinaMap()
+}).then(refreshTheme).catch(function (error) {
+  if (isCurrent()) console.warn('Census resources:', error)
+})
+})()

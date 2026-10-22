@@ -5,6 +5,13 @@ const media = require('../lib/site-media')
 const urlFor = require('hexo-util').url_for.bind(hexo)
 hexo.extend.helper.register('site_media_url', value => urlFor(media.assetUrl(hexo, value)))
 hexo.extend.helper.register('site_media_cover', key => urlFor(media.fallbackCover(hexo, key)))
+// Keep theme/plugin defaults aligned with the same scanned pool as articles and settings.
+hexo.extend.filter.register('before_generate', function () {
+  const covers = media.catalog(hexo).desktop.map(group => group.cover)
+  const config = hexo.theme.config
+  config.cover = config.cover || {}
+  config.cover.default_cover = covers.length ? covers : ['/assets/fallback/image.webp']
+}, 5)
 hexo.extend.helper.register('site_media_config', () => {
   const pools = media.catalog(hexo)
   for (const group of [...pools.desktop, ...pools.mobile]) {

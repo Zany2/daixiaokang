@@ -42,26 +42,64 @@ function GitCalendarRefresh() {
 
 /* 每次初始化都会领一个递增的编号；旧的那次 fetch 回来时发现自己已经不是最新，就整段丢弃。
    这样「页面刚打开就切主题色」「连点两下颜色」这类并发都不会叠出两份画布。 */
-var git_init_seq = 0;
+var git_init_seq = window.__gitCalendarSequence || 0;
 
 /* 画布当前（或正在路上）这一份所依据的主题色值。用它来判断「要不要重画」：
    和现在一样就什么都不做 —— 页面加载时那次 setColor 正是这种情况，插手会和首次渲染撞车；
    不一样才清空重画（换主题色、「恢复默认设置」都走这条路）。 */
 var git_painted_theme = '';
 
+// 同时兼容公开接口的逐日记录与原插件的按周 JSON；不依赖固定的 53 周。
+function git_calendar_data(data) {
+  if (!data || !Array.isArray(data.contributions) || !data.contributions.length) throw new Error('贡献数据为空');
+  var records = Array.isArray(data.contributions[0]) ? [].concat.apply([], data.contributions) : data.contributions;
+  var byDate = new Map();
+  records.forEach(function (record) {
+    var date = record && record.date;
+    var count = record && record.count;
+    if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+        !Number.isSafeInteger(count) || count < 0) throw new Error('贡献数据格式异常');
+    var time = Date.parse(date + 'T00:00:00Z');
+    if (!Number.isFinite(time) || new Date(time).toISOString().slice(0, 10) !== date) throw new Error('贡献日期异常');
+    if (record.level != null && (!Number.isInteger(record.level) || record.level < 0 || record.level > 4)) {
+      throw new Error('贡献颜色分级异常');
+    }
+    byDate.set(date, { date: date, count: count, level: record.level });
+  });
+  var days = Array.from(byDate.values()).sort(function (a, b) { return a.date.localeCompare(b.date); });
+  if (!days.length) throw new Error('贡献数据为空');
+  var weeks = [];
+  var previousWeek = null;
+  days.forEach(function (day) {
+    var time = Date.parse(day.date + 'T00:00:00Z');
+    var week = time - new Date(time).getUTCDay() * 86400000;
+    if (week !== previousWeek) { weeks.push([]); previousWeek = week; }
+    weeks[weeks.length - 1].push(day);
+  });
+  return { days: days, contributions: weeks, total: days.reduce(function (sum, day) { return sum + day.count; }, 0) };
+}
+
 function GitCalendarInit(git_gitapiurl, git_color, git_user) {
-  if (document.getElementById('git_container')) {
+  if (typeof window.__disposeGitCalendar === 'function') window.__disposeGitCalendar();
+  var git_container = document.getElementById('git_container');
+  if (git_container) {
+    // 插件把加载动画放在容器旁边；动画内的 style 会隐藏所有 #git_container。
+    var git_mount = git_container.closest('#gitZone') || git_container.parentElement;
     /* 记住原始参数，主题色变了才好在原地重画（见 GitCalendarRefresh） */
     window.__gitCalendarArgs = [git_gitapiurl, git_color, git_user];
     var git_themecolor = git_theme_palette();
     if (git_themecolor) git_color = git_themecolor;
     git_painted_theme = (getComputedStyle(document.documentElement).getPropertyValue('--theme-color') || '').trim();
     var git_seq = ++git_init_seq;
+    window.__gitCalendarSequence = git_seq;
+    var git_active = true;
+    function git_is_current() {
+      return git_active && git_seq === window.__gitCalendarSequence && git_container.isConnected;
+    }
     var git_canlendar = (git_user, git_gitapiurl, git_color) => {
       var git_fixed = 'fixed';
       var git_px = 'px';
       var git_month = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
-      var git_monthchange = [];
       var git_oneyearbeforeday = '';
       var git_thisday = '';
       var git_amonthago = '';
@@ -72,20 +110,13 @@ function GitCalendarInit(git_gitapiurl, git_color, git_user) {
       var git_datadate = '';
       var git_git_data = [];
       var git_positionplusdata = [];
-      var git_firstweek = [];
-      var git_lastweek = [];
-      var git_beforeweek = [];
+      var git_data = [];
       var git_thisweekdatacore = 0;
       var git_mounthbeforeday = 0;
       var git_mounthfirstindex = 0;
       var git_crispedges = 'crispedges';
-      var git_thisdayindex = 0;
       var git_amonthagoindex = 0;
       var git_amonthagoweek = [];
-      var git_firstdate = [];
-      var git_first2date = [];
-      var git_montharrbefore = [];
-      var git_monthindex = 0;
 
       var retinaCanvas = (canvas, context, ratio) => {
         if (ratio > 1) {
@@ -113,20 +144,22 @@ function GitCalendarInit(git_gitapiurl, git_color, git_user) {
       }
 
       var responsiveChart = () => {
-        if (document.getElementById("gitcanvas")) {
-          var git_tooltip_container = document.getElementById('git_tooltip_container');
+        if (!git_is_current() || !git_data.length) return;
+        if (git_container.querySelector('#gitcanvas')) {
+          var git_tooltip_container = git_container.querySelector('#git_tooltip_container');
           var ratio = window.devicePixelRatio || 1
           var git_x = '';
           var git_y = '';
           var git_span1 = '';
           var git_span2 = '';
-          var git_calendar_c = document.getElementById("gitcanvas");
+          var git_calendar_c = git_container.querySelector('#gitcanvas');
           git_calendar_c.style.width = '100%';
           git_calendar_c.style.height = '';
-          var cmessage = document.getElementById("gitmessage");
           var git_calendar_ctx = git_calendar_c.getContext("2d");
-          width = git_calendar_c.width = document.getElementById("gitcalendarcanvasbox").offsetWidth;
-          height = git_calendar_c.height = 9 * 0.96 * git_calendar_c.width / git_data.length;
+          if (!git_calendar_ctx) throw new Error('贡献日历画布不可用');
+          var width = git_calendar_c.width = git_container.querySelector('#gitcalendarcanvasbox').offsetWidth;
+          if (!width) return;
+          var height = git_calendar_c.height = 9 * 0.96 * git_calendar_c.width / git_data.length;
           retinaCanvas(git_calendar_c, git_calendar_ctx, ratio)
           var linemaxwitdh = height / 9;
           var lineminwitdh = 0.8 * linemaxwitdh;
@@ -134,8 +167,11 @@ function GitCalendarInit(git_gitapiurl, git_color, git_user) {
             x: 0.02 * width,
             y: 0.025 * width
           };
+          git_positionplusdata = [];
+          var monthLabels = [];
+          var lastMonth = '';
           for (var week in git_data) {
-            weekdata = git_data[week];
+            var weekdata = git_data[week];
             for (var day in weekdata) {
               var dataitem = {
                 date: "",
@@ -144,7 +180,14 @@ function GitCalendarInit(git_gitapiurl, git_color, git_user) {
                 y: 0
               };
               git_positionplusdata.push(dataitem);
-              git_calendar_ctx.fillStyle = git_thiscolor(git_color, weekdata[day].count);
+              var month = weekdata[day].date.slice(0, 7);
+              if (month !== lastMonth) {
+                monthLabels.push({ x: setposition.x, text: git_month[Number(month.slice(5)) - 1] });
+                lastMonth = month;
+              }
+              git_calendar_ctx.fillStyle = git_thiscolor(git_color, weekdata[day].count, weekdata[day].level);
+              // 首周可能从周中开始，按真实星期落格，避免首列错位。
+              setposition.y = 0.025 * width + new Date(weekdata[day].date + 'T00:00:00Z').getUTCDay() * linemaxwitdh;
               setposition.y = Math.round(setposition.y * 100) / 100;
               dataitem.date = weekdata[day].date;
               dataitem.count = weekdata[day].count;
@@ -152,23 +195,24 @@ function GitCalendarInit(git_gitapiurl, git_color, git_user) {
               dataitem.y = setposition.y;
               // 圆角小方块：半径 = 边长 30%（上限半边长），小方块自动退化
               git_fillroundrect(git_calendar_ctx, setposition.x, setposition.y, lineminwitdh, lineminwitdh, lineminwitdh * 0.3);
-              setposition.y = setposition.y + linemaxwitdh
             }
             setposition.y = 0.025 * width;
             setposition.x = setposition.x + linemaxwitdh;
           }
           if (document.body.clientWidth > 700) {
-            git_calendar_ctx.font = "600  Arial";
+            git_calendar_ctx.font = "11px Arial";
             git_calendar_ctx.fillStyle = '#aaa';
             git_calendar_ctx.fillText("日", 0, 1.9 * linemaxwitdh);
             git_calendar_ctx.fillText("二", 0, 3.9 * linemaxwitdh);
             git_calendar_ctx.fillText("四", 0, 5.9 * linemaxwitdh);
             git_calendar_ctx.fillText("六", 0, 7.9 * linemaxwitdh);
-            var monthindexlist = git_calendar_c.width / 24;
-            for (var index in git_monthchange) {
-              git_calendar_ctx.fillText(git_monthchange[index], monthindexlist, 0.7 * linemaxwitdh);
-              monthindexlist = monthindexlist + git_calendar_c.width / 12
-            }
+            // 按月份首个实际日期所在周定位；坐标使用 CSS 尺寸，避免高 DPI 屏幕错位。
+            monthLabels.forEach(function (label, index) {
+              var textWidth = git_calendar_ctx.measureText(label.text).width;
+              var x = Math.min(label.x, width - textWidth);
+              if (index < monthLabels.length - 1 && x + textWidth + 4 > monthLabels[index + 1].x) return;
+              git_calendar_ctx.fillText(label.text, x, 0.7 * linemaxwitdh);
+            });
           }
           git_calendar_c.onmousemove = function(event) {
             if (document.querySelector('.gitmessage')) {
@@ -184,8 +228,8 @@ function GitCalendarInit(git_gitapiurl, git_color, git_user) {
 
           var getMousePos = (canvas, event) => {
             var rect = canvas.getBoundingClientRect();
-            var x = event.clientX - rect.left * (canvas.width / rect.width);
-            var y = event.clientY - rect.top * (canvas.height / rect.height);
+            var x = (event.clientX - rect.left) * width / rect.width;
+            var y = (event.clientY - rect.top) * height / rect.height;
             for (var item of git_positionplusdata) {
               var lenthx = x - item.x;
               var lenthy = y - item.y;
@@ -195,7 +239,7 @@ function GitCalendarInit(git_gitapiurl, git_color, git_user) {
                   git_span2 = item.count;
                   git_x = event.clientX - 100;
                   git_y = event.clientY - 60;
-                  html = tooltip_html(git_x, git_y, git_span1, git_span2);
+                  var html = tooltip_html(git_x, git_y, git_span1, git_span2);
                   append_div_gitcalendar(git_tooltip_container, html)
                 }
               }
@@ -204,111 +248,91 @@ function GitCalendarInit(git_gitapiurl, git_color, git_user) {
         }
       }
 
-      var addlastmonth = () => {
-        if (git_thisdayindex === 0) {
-          thisweekcore(52);
-          thisweekcore(51);
-          thisweekcore(50);
-          thisweekcore(49);
-          thisweekcore(48);
-          git_thisweekdatacore += git_firstdate[6].count;
-          git_amonthago = git_firstdate[6].date
-        } else {
-          thisweekcore(52);
-          thisweekcore(51);
-          thisweekcore(50);
-          thisweekcore(49);
-          thisweek2core();
-          git_amonthago = git_first2date[git_thisdayindex - 1].date
-        }
+      var git_abort = new AbortController();
+      var git_timeout = setTimeout(function () { git_abort.abort() }, 10000);
+      function disposeCalendar() {
+        if (!git_active) return;
+        git_active = false;
+        git_abort.abort();
+        clearTimeout(git_timeout);
+        window.removeEventListener('resize', responsiveChart);
+        window.removeEventListener('scroll', hideCalendarTooltip);
+        document.removeEventListener('pjax:complete', disposeAfterNavigation);
+        document.removeEventListener('pjax:error', disposeAfterNavigation);
       }
-
-      var thisweek2core = () => {
-        for (var i = git_thisdayindex - 1; i < git_first2date.length; i++) {
-          git_thisweekdatacore += git_first2date[i].count
-        }
+      function disposeAfterNavigation() { if (!git_container.isConnected) disposeCalendar() }
+      function hideCalendarTooltip() {
+        var tooltip = git_container.querySelector('#git_tooltip_container');
+        if (tooltip) tooltip.textContent = '';
       }
-
-      var thisweekcore = (index) => {
-        for (var item of git_data[index]) {
-          git_thisweekdatacore += item.count
+      window.__disposeGitCalendar = disposeCalendar;
+      window.addEventListener('resize', responsiveChart);
+      window.addEventListener('scroll', hideCalendarTooltip, { passive: true });
+      document.addEventListener('pjax:complete', disposeAfterNavigation);
+      document.addEventListener('pjax:error', disposeAfterNavigation);
+      fetch(git_gitapiurl, { signal: git_abort.signal }).then(function (response) {
+        if (!response.ok) throw new Error('贡献数据请求失败');
+        return response.json();
+      }).then(git_calendar_data).then(data => {
+        renderCalendar(data, false);
+      }).catch(function(error) {
+        if (!git_is_current()) { return }
+        console.warn('GitCalendar:', error);
+        // 请求失败时生成最近一年的零贡献日历，标识默认值，不伪造活跃记录。
+        var today = new Date();
+        var end = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+        var days = [];
+        for (var time = end - 364 * 86400000; time <= end; time += 86400000) {
+          days.push({ date: new Date(time).toISOString().slice(0, 10), count: 0, level: 0 });
         }
-      }
-
-      var addlastweek = () => {
-        for (var item of git_lastweek) {
-          git_weekdatacore += item.count
+        try {
+          renderCalendar(git_calendar_data({ contributions: days }), true);
+        } catch (renderError) {
+          // 绘图也失败时仍保留默认数值，避免产生未处理的 Promise 异常。
+          git_container.setAttribute('data-gitcalendar-fallback', '1');
+          git_container.textContent = '默认数据 · 过去一年贡献：0 · 最近 30 天贡献：0 · 最近 7 天贡献：0';
+          console.warn('GitCalendar render:', renderError);
         }
-      }
+      }).finally(function () { clearTimeout(git_timeout) });
 
-      var addbeforeweek = () => {
-        for (var i = git_thisdayindex; i < git_beforeweek.length; i++) {
-          git_weekdatacore += git_beforeweek[i].count
-        }
-      }
-
-      var addweek = (data) => {
-        if (git_thisdayindex === 6) {
-          git_aweekago = git_lastweek[0].date;
-          addlastweek()
-        } else {
-          lastweek = data.contributions[51];
-          git_aweekago = lastweek[git_thisdayindex + 1].date;
-          addlastweek();
-          addbeforeweek()
-        }
-      }
-
-      fetch(git_gitapiurl).then(data => data.json()).then(data => {
-        if (git_seq !== git_init_seq) { return }  // 已经被更新的一次初始化取代，丢弃这次结果
-        if (document.getElementById('git_loading')) {
-          document.getElementById('git_loading').remove()
-        };
+      function renderCalendar(data, fallback) {
+        if (!git_is_current()) { return }
+        git_mount.querySelectorAll('#git_loading').forEach(function (loading) { loading.remove() });
         git_data = data.contributions;
         git_total = data.total;
-        git_first2date = git_data[48];
-        git_firstdate = git_data[47];
-        git_firstweek = data.contributions[0];
-        git_lastweek = data.contributions[52];
-        git_beforeweek = data.contributions[51];
-        git_thisdayindex = git_lastweek.length - 1;
-        git_thisday = git_lastweek[git_thisdayindex].date;
-        git_oneyearbeforeday = git_firstweek[0].date;
-        git_monthindex = git_thisday.substring(5, 7) * 1;
-        git_montharrbefore = git_month.splice(git_monthindex, 12 - git_monthindex);
-        git_monthchange = git_montharrbefore.concat(git_month);
-        addweek(data);
-        addlastmonth();
-        var html = git_main_box(git_monthchange, git_data, git_user, git_color, git_total, git_thisweekdatacore, git_weekdatacore, git_oneyearbeforeday, git_thisday, git_aweekago, git_amonthago);
+        git_weekdatacore = 0;
+        git_thisweekdatacore = 0;
+        git_thisday = data.days[data.days.length - 1].date;
+        git_oneyearbeforeday = data.days[0].date;
+        var latest = Date.parse(git_thisday + 'T00:00:00Z');
+        git_aweekago = new Date(latest - 6 * 86400000).toISOString().slice(0, 10);
+        git_amonthago = new Date(latest - 29 * 86400000).toISOString().slice(0, 10);
+        data.days.forEach(function (day) {
+          if (day.date >= git_aweekago) git_weekdatacore += day.count;
+          if (day.date >= git_amonthago) git_thisweekdatacore += day.count;
+        });
+        var html = git_main_box(git_data, git_user, git_color, git_total, git_thisweekdatacore, git_weekdatacore, git_oneyearbeforeday, git_thisday, git_aweekago, git_amonthago);
         git_container.innerHTML = '';  // 只保留这一份渲染结果，重复初始化时不会叠出两份画布
         append_div_gitcalendar(git_container, html);
-        responsiveChart()
-      }).catch(function(error) {
-        if (git_seq !== git_init_seq) { return }  // 同上：别让旧的失败结果盖住新的渲染
-        // —— 本站补丁（2026-10-01）——
-        // 原版只在这里 console.log，加载动画 #git_loading 永远不会被摘掉，页面会一直转圈。
-        // 任何失败（接口 500、返回的不是 JSON、数据形状不对）都必须收尾：摘掉转圈 + 原地给出提示。
-        console.log('GitCalendar:', error);
-        var git_loading_el = document.getElementById('git_loading');
-        if (git_loading_el) { git_loading_el.remove() }
-        var git_fallback_box = document.getElementById('git_container') || git_container;
-        if (git_fallback_box && !git_fallback_box.getAttribute('data-gitcalendar-fallback')) {
-          git_fallback_box.setAttribute('data-gitcalendar-fallback', '1');
-          git_fallback_box.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:220px;gap:6px;text-align:center;opacity:.75;">'
-            + '<div style="font-size:15px;">📅 贡献日历暂不可用</div>'
-            + '<div style="font-size:12px;opacity:.8;">数据来源：GitHub · 稍后刷新重试</div>'
-            + '</div>'
+        if (fallback) {
+          git_container.setAttribute('data-gitcalendar-fallback', '1');
+          var notice = document.createElement('div');
+          notice.className = 'text-muted';
+          notice.style.textAlign = 'center';
+          notice.style.width = '100%';
+          notice.textContent = '默认数据 · 暂无可用贡献记录，贡献数均为 0';
+          git_container.prepend(notice);
+        } else {
+          git_container.removeAttribute('data-gitcalendar-fallback');
         }
-      });
-      window.onresize = function() {
         responsiveChart()
-      };
-      window.onscroll = function() {
-        if (document.querySelector('.gitmessage')) {
-          git_tooltip_container.innerHTML = ""
+      }
+      var git_thiscolor = (color, x, level) => {
+        // 新接口提供 GitHub 的 0～4 级深浅，使用原始分级并映射到本站主题色。
+        if (Number.isInteger(level) && level >= 0 && level <= 4) {
+          return color[[0, 2, 4, 6, 9][x === 0 ? 0 : level]];
         }
-      };
-      var git_thiscolor = (color, x) => {
+        // 兼容没有 level 字段的旧版按周 JSON。
         if (x === 0) {
           var i = parseInt(x / 2);
           return color[0]
@@ -326,7 +350,7 @@ function GitCalendarInit(git_gitapiurl, git_color, git_user) {
         html += `<div class="gitmessage" style="top:${y}px;left: ${x}px;position: fixed;z-index:9999">
                           <div class="angle-wrapper" style="display:block;">
                             <span>${span1}&nbsp;</span>
-                            <span>${span2}次上传</span>
+                            <span>${span2} 次贡献</span>
                           </div>
                         </div>`;
         return html
@@ -343,7 +367,7 @@ function GitCalendarInit(git_gitapiurl, git_color, git_user) {
         html += `<div id="git_tooltip_container"></div>
                         <div class="contrib-footer clearfix mt-1 mx-3 px-3 pb-1">
                           <div class="float-left text-gray">数据来源
-                            <a href="https://github.com/${user}" target="blank">@${user}</a>
+                            <a href="https://github.com/${user}" target="_blank" rel="noopener noreferrer">@${user}</a>
                           </div>
                           <div class="contrib-legend text-gray">Less
                             <ul class="legend">
@@ -351,13 +375,13 @@ function GitCalendarInit(git_gitapiurl, git_color, git_user) {
                             <li style="background-color:${color[2]}"></li>
                             <li style="background-color:${color[4]}"></li>
                             <li style="background-color:${color[6]}"></li>
-                            <li style="background-color:${color[8]}"></li>
+                            <li style="background-color:${color[9]}"></li>
                             </ul>More
                           </div>
                         </div>`;
         return html
       };
-      var git_main_box = (monthchange, git_data, user, color, total, thisweekdatacore, weekdatacore, oneyearbeforeday, thisday, aweekago, amonthago) => {
+      var git_main_box = (git_data, user, color, total, thisweekdatacore, weekdatacore, oneyearbeforeday, thisday, aweekago, amonthago) => {
         var html = '';
         var canvasbox = git_canvas_box();
         var infobox = git_info_box(user, color);
@@ -372,17 +396,17 @@ function GitCalendarInit(git_gitapiurl, git_color, git_user) {
 
         html += `<div style="display:flex;width:100%">
                           <div class="contrib-column contrib-column-first table-column">
-                            <span class="text-muted">过去一年提交</span>
+                            <span class="text-muted">过去一年贡献</span>
                             <span class="contrib-number">${total}</span>
                             <span class="text-muted">${oneyearbeforeday}&nbsp;-&nbsp;${thisday}</span>
                           </div>
                           <div class="contrib-column table-column">
-                            <span class="text-muted">最近一月提交</span>
+                            <span class="text-muted">最近 30 天贡献</span>
                             <span class="contrib-number">${thisweekdatacore}</span>
                             <span class="text-muted">${amonthago}&nbsp;-&nbsp;${thisday}</span>
                           </div>
                           <div class="contrib-column table-column">
-                            <span class="text-muted">最近一周提交</span>
+                            <span class="text-muted">最近 7 天贡献</span>
                             <span class="contrib-number">${weekdatacore}</span>
                             <span class="text-muted">${aweekago}&nbsp;-&nbsp;${thisday}</span>
                           </div>
@@ -403,8 +427,6 @@ function GitCalendarInit(git_gitapiurl, git_color, git_user) {
         parent.appendChild(text)
       }
     };
-    var git_container = document.getElementById('git_container');
-    var git_loading = document.getElementById('git_loading');
     git_canlendar(git_user, git_gitapiurl, git_color)
   }
 }

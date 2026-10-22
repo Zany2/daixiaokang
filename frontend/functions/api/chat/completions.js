@@ -12,9 +12,9 @@
  *
  * 环境变量（Cloudflare Pages → 项目 → 设置 → 变量和密钥）：
  *   DEEPSEEK_API_KEY       必填，真密钥（选「加密」类型）；只在服务端使用，不进页面
- *   AI_PROXY_ORIGINS       可选，默认已放行 example.com / example.com 全家族（含所有子域），
+ *   AI_PROXY_ORIGINS       可选，默认已放行 daixiaokang.com 全家族（含所有子域），
  *                          通常一个字都不用填；要额外域名才写，支持裸域名与 *.example.com，填 * 全放行
- *   AI_PROXY_ALLOW_SUFFIXES 可选，改默认域名后缀（默认 example.com,example.com）
+ *   AI_PROXY_ALLOW_SUFFIXES 可选，改默认域名后缀（默认 daixiaokang.com）
  *   DEEPSEEK_MODEL         可选，默认 deepseek-chat
  *   DEEPSEEK_API_BASE      可选，默认 https://api.deepseek.com
  *   AI_PROXY_MAX_PER_HOUR  可选，默认 120（每个 isolate 内存计数，冷启动会重置，不是严格全局配额）
@@ -34,13 +34,13 @@ function json(obj, status) {
 function fail(status, message) { return json({ error: { message: message } }, status); }
 
 /* ------------------------------------------------------------------ 来源白名单
- * 默认就放行 example.com / example.com 及其所有子域，所以正常情况下一个环境变量都不用加。
+ * 默认就放行 daixiaokang.com 及其所有子域，所以正常情况下一个环境变量都不用加。
  *   AI_PROXY_ORIGINS         可选：要额外放行的域名，逗号分隔；裸域名自动补 https://，
  *                            支持 *.example.com 通配；填 * 表示全放行。
- *   AI_PROXY_ALLOW_SUFFIXES  可选：改默认域名后缀，默认 example.com,example.com
+ *   AI_PROXY_ALLOW_SUFFIXES  可选：改默认域名后缀，默认 daixiaokang.com
  * 另外始终放行：localhost / 127.0.0.1 / ::1 / *.local（本地调试）
  * 与 *.vercel.app / *.pages.dev（平台预览域名）。 */
-const DEFAULT_SUFFIXES = 'example.com';
+const DEFAULT_SUFFIXES = 'daixiaokang.com';
 
 function normOrigin(s) {
   s = String(s == null ? '' : s).trim().replace(/\/+$/, '');
@@ -116,7 +116,7 @@ export function onRequestOptions() {
 export async function onRequestPost({ request, env }) {
   if (!originAllowed(request, env)) {
     return fail(403, '来源不在白名单：' + (request.headers.get('origin') || request.headers.get('referer') || '(空)') +
-      '。example.com / example.com 全家族本来就放行；别的域名要放行就加进 Cloudflare 环境变量 AI_PROXY_ORIGINS（逗号分隔，裸域名会自动补 https://）。');
+      '。daixiaokang.com 全家族本来就放行；别的域名要放行就加进 Cloudflare 环境变量 AI_PROXY_ORIGINS（逗号分隔，裸域名会自动补 https://）。');
   }
   const key = String((env && env.DEEPSEEK_API_KEY) || '').trim();
   if (!key) {

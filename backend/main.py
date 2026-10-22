@@ -5,12 +5,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from app.api.feedback import router as feedback_router
 from app.cache.redis import close_redis, init_redis, redis_is_ready
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
 from app.db.session import close_database, database_is_ready, init_database
 from app.middleware.request_context import RequestContextMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.services.feedback_runtime import FeedbackRuntime
 
 settings = get_settings()
 configure_logging(settings)
@@ -21,6 +23,7 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("application.starting", extra={"environment": settings.environment})
     await init_redis(app)
+    app.state.feedback_runtime = FeedbackRuntime(app.state.redis, settings)
     try:
         if settings.database_auto_create:
             await init_database()
@@ -64,11 +67,27 @@ def create_app() -> FastAPI:
         allow_credentials=settings.cors_allow_credentials,
         allow_methods=settings.cors_allow_methods,
         allow_headers=settings.cors_allow_headers,
+        expose_headers=["Retry-After"],
     )
     application.add_middleware(SecurityHeadersMiddleware)
     application.add_middleware(RequestContextMiddleware)
+    application.include_router(feedback_router)
 
     return application
 
 
 app = create_app()
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    # 直接 python main.py 时启动服务；导入 main:app 时仍交由外部 Uvicorn 管理。
+    uvicorn.run(
+        app,
+        host=settings.host,
+        port=settings.port,
+        log_level=settings.log_level.lower(),
+        log_config=None,
+        access_log=False,
+    )

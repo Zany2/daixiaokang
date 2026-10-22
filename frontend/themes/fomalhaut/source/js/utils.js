@@ -66,16 +66,9 @@ const btf = {
   },
 
   snackbarShow: (text, showAction = false, duration = 2000) => {
-    const { position, bgLight, bgDark } = GLOBAL_CONFIG.Snackbar
-    const bg = document.documentElement.getAttribute('data-theme') === 'light' ? bgLight : bgDark
-    Snackbar.show({
-      text: text,
-      backgroundColor: bg,
-      showAction: showAction,
-      duration: duration,
-      pos: position,
-      customClass: 'snackbar-css'
-    })
+    // 保留主题调用入口，通知统一使用本站组件。
+    if (typeof window.fomalToast !== 'function') return
+    return window.fomalToast(text, 'info', { duration: duration, showClose: showAction })
   },
 
   diffDate: (d, more = false) => {

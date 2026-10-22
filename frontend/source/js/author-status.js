@@ -1,5 +1,5 @@
 /*!
- * author-status.js —— 侧栏个人信息卡片右上角「状态胶囊」随时间和节假日自动切换
+ * author-status.js —— 侧栏头像右下角「状态胶囊」随时间和节假日自动切换
  * ==================================================================
  * 模板里的表情与文字是写死的（card_author.pug 的 🎯 专注学习中），所以这里用 JS 覆盖。
  * 四种状态，第一命中即用：
@@ -67,10 +67,12 @@
     var box = (root || document).querySelector('.card-info .author-status');
     if (!box) return null;
     var s = compute();
-    var em = box.querySelector('g-emoji');
-    var sp = box.querySelector('span');
+    var em = box.querySelector('.g-emoji');
+    var sp = box.querySelector('.author-status-text');
     if (em && em.textContent.trim() !== s.emoji) em.textContent = s.emoji;
     if (sp && sp.textContent !== s.text) sp.textContent = s.text;
+    box.parentElement.setAttribute('aria-label', s.text);
+    box.parentElement.setAttribute('title', s.text);
     return s;
   }
 

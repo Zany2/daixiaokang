@@ -6,7 +6,7 @@
   const mobile = window.matchMedia("(max-width: 900px)");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let current = null;
-  // PJAX 共用当前文档；刷新/新打开会重置，不写入持久化存储。
+  // 首页刷新允许重新播放；子页面刷新只恢复会话中的静态背景。
   let hasEnteredHome = false;
 
   function clearBootState() {
@@ -14,7 +14,7 @@
     document.documentElement.classList.remove("home-intro-pending");
   }
 
-  function retainSiteBackground(media) {
+  function retainSiteBackground(media, variant) {
     if (!media || !media.poster) return;
     let background = document.getElementById("site-cinematic-background");
     if (!background) {
@@ -28,7 +28,10 @@
     background.style.backgroundImage = window.SiteMedia ? window.SiteMedia.withFallback(image) : image;
     background.style.backgroundPosition = media.position || "center";
     background.dataset.mediaGroup = media.id;
-    // 标记保存在 html 上，不写入本地存储；刷新仍会重新随机。
+    // 标签页会话记录实际末帧（包括兜底图），子页面刷新后恢复同一背景。
+    if (typeof window.__rememberHomeCinematicMedia__ === 'function') {
+      window.__rememberHomeCinematicMedia__(variant, media);
+    }
     document.documentElement.classList.add("cinematic-site-background");
   }
 
@@ -119,7 +122,7 @@
       // 超时只临时隐藏背景；迟到的真实末帧解码成功后可以恢复。
       if (posterReady && !posterUnavailable) {
         background.hidden = false;
-        retainSiteBackground(Object.assign({}, media, { poster: poster.src }));
+        retainSiteBackground(Object.assign({}, media, { poster: poster.src }), variant);
       }
       wrap.dataset.homeIntro = "still";
       video.classList.remove("is-frame-ready");
@@ -282,6 +285,11 @@
       wrap: wrap,
       variant: variant,
       finish: finish,
+      retainBackground: function () {
+        if (disposed || posterUnavailable || !media) return;
+        // 图片解码尚未完成时先保留同组 URL，避免离开首页后退回默认壁纸。
+        retainSiteBackground(Object.assign({}, media, { poster: poster.src }), variant);
+      },
       dispose: function () {
         disposed = true;
         removers.splice(0).forEach(function (remove) { remove(); });
@@ -414,6 +422,12 @@
       hasEnteredHome = true;
       current = createIntro(wrap, background, variant, autoPlay, false);
     }
+    if (!background && !document.getElementById('site-cinematic-background') &&
+        typeof window.__restoreHomeCinematicMedia__ === 'function') {
+      // 不创建视频、不重新抽签，分类、文章详情及其他子页面均沿用本标签页的末帧。
+      const retained = window.__restoreHomeCinematicMedia__(variant, true);
+      if (retained) retainSiteBackground(retained, retained.variant || variant);
+    }
     clearBootState();
   }
 
@@ -425,7 +439,10 @@
   document.addEventListener("pjax:complete", init);
   document.addEventListener("pjax:send", function () {
     // 开始离开首页就停止声音，不等目标页面下载完成。
-    if (current) current.finish();
+    if (current) {
+      current.finish();
+      current.retainBackground();
+    }
   });
   document.addEventListener("site:background-change", function () {
     if (current) current.finish();

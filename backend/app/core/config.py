@@ -30,14 +30,34 @@ class Settings(BaseSettings):
     database_auto_create: bool = True
 
     redis_url: str = "redis://localhost:6379/0"
+    redis_operation_timeout_seconds: float = Field(default=0.5, ge=0.05, le=5)
+
+    feedback_rate_limit_enabled: bool = True
+    feedback_write_interval_seconds: int = Field(default=10, ge=1, le=3600)
+    feedback_read_requests_per_minute: int = Field(default=120, ge=1, le=10000)
+    feedback_cache_enabled: bool = True
+    feedback_cache_ttl_seconds: int = Field(default=30, ge=1, le=300)
+    feedback_cache_lock_seconds: int = Field(default=3, ge=1, le=30)
+    feedback_cache_wait_ms: int = Field(default=200, ge=0, le=1000)
+    feedback_database_read_concurrency: int = Field(default=10, ge=1, le=100)
+    feedback_database_read_wait_seconds: float = Field(default=1, ge=0.05, le=10)
 
     cors_origins: list[str] = Field(
-        default_factory=lambda: ["http://localhost:4000", "http://127.0.0.1:4000"]
+        default_factory=lambda: [
+            "http://localhost:4000",
+            "http://127.0.0.1:4000",
+            "https://daixiaokang.com",
+            "https://www.daixiaokang.com",
+        ]
     )
     cors_allow_credentials: bool = True
     cors_allow_methods: list[str] = Field(default_factory=lambda: ["*"])
     cors_allow_headers: list[str] = Field(default_factory=lambda: ["*"])
-    trusted_hosts: list[str] = Field(default_factory=lambda: ["localhost", "127.0.0.1"])
+    trusted_hosts: list[str] = Field(
+        default_factory=lambda: [
+            "localhost", "127.0.0.1", "daixiaokang.com", "www.daixiaokang.com"
+        ]
+    )
 
     log_level: str = "INFO"
     log_json: bool = False

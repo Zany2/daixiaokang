@@ -29,8 +29,8 @@ mixin rightsideItem(array)
           button#chat_btn(type="button" title=_p("rightside.chat"))
             i.fas.fa-sms
       when 'comment'
-        if commentsJsLoad
-          a#to_comment(href="#post-comment" title=_p("rightside.scroll_to_comment"))
+        if commentsJsLoad || customFeedbackLoaded
+          a#to_comment(href=page.type === 'guestbook' ? '#guestbook-board' : '#post-comment' title=_p("rightside.scroll_to_comment"))
             i.fas.fa-comments
       //- when 'bg'
       //-   button(type="button" title='切换背景' onclick="toggleWinbox()")

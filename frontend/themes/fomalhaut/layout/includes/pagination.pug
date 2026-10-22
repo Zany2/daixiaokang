@@ -38,7 +38,7 @@ else
       if is_home() && config.magnet && config.magnet.enable
         - const moreIsTags = config.magnet.type === 'tags'
         a.home-more-button(
-          href=url_for(moreIsTags ? '/tags/' : '/categories/')
+          href=url_for(moreIsTags ? '/article/tags/' : '/article/categories/')
           aria-label=(moreIsTags ? '查看全部标签' : '查看全部分类')
           title=(moreIsTags ? '查看全部标签' : '查看全部分类')
         )

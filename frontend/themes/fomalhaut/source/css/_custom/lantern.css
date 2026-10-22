@@ -231,7 +231,8 @@
     right: 51px;
     width: 75px;
     border-radius: 57px/89px;
-    background: url(https://picsum.photos/id/1016/1920/1080) no-repeat;
+    background-image: var(--site-decoration-cover);
+    background-repeat: no-repeat;
     background-position: center;
     background-size: 105px auto;
 }

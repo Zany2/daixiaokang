@@ -30,7 +30,11 @@ block content
     if theme.related_post && theme.related_post.enable
       != related_posts(page,site.posts)
 
-    if page.comments !== false && theme.comments && theme.comments.use
+    if page.comments !== false && theme.feedback && theme.feedback.enable
+      - var customFeedbackLoaded = true
+      include includes/feedback.pug
+      +feedbackPanel('comments', feedback_article_key(page))
+    else if page.comments !== false && theme.comments && theme.comments.use && theme.comments.use.length
       - var commentsJsLoad = true
       !=partial('includes/third-party/comments/index', {}, {cache: true})
       

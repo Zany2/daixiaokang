@@ -18,13 +18,15 @@ class Base(DeclarativeBase):
 
 class TimestampMixin:
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        DateTime(timezone=False),
         server_default=func.now(),
         nullable=False,
+        comment="创建时间，TIMESTAMP 不带时区；插入时默认由数据库生成当前时间",
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        DateTime(timezone=False),
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+        comment="最后修改时间，TIMESTAMP 不带时区；插入时默认当前时间，SQLAlchemy 更新记录时自动更新",
     )

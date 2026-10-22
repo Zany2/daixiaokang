@@ -2760,8 +2760,8 @@ li.categoryBar-list-item {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  /* 星空在底层避免干扰阅读 */
-  z-index: -2;
+  /* 特效叠在背景与首页独立堆叠层上方，pointer-events:none 保证页面可操作。 */
+  z-index: 1;
 }
 
 /* 星空手机模式消失 */
@@ -2776,15 +2776,15 @@ li.categoryBar-list-item {
   display: none !important;
 }
 
-/* 雪花特效 */
-[data-theme="light"] #snow {
+/* 画布定位不依赖主题初始化；夜间与移动端通过下方规则隐藏。 */
+#snow {
   position: fixed;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: -2;
+  z-index: 1;
 }
 
 /* 雪花夜间模式不显示 */
@@ -3269,18 +3269,35 @@ i.fas.fa-cog.right_side {
   padding: 0 5px;
 }
 
-.card-info-avatar .author-status-box:hover {
+.card-info-avatar .author-status-box .g-emoji {
+  display: block;
+  flex: 0 0 18px;
+  width: 18px;
+  font-size: 16px;
+  line-height: 28px;
+  text-align: center;
+}
+
+.card-info-avatar .author-status-box:hover,
+.card-info-avatar .author-status-box:focus {
   width: 105px;
 }
 
-.card-info-avatar .author-status-box:hover .author-status span {
+.card-info-avatar .author-status-box:focus-visible {
+  outline: 2px solid var(--theme-color);
+  outline-offset: 2px;
+}
+
+.card-info-avatar .author-status-box:hover .author-status-text,
+.card-info-avatar .author-status-box:focus .author-status-text {
   width: 105px;
   margin-left: 4px;
 }
 
-.card-info-avatar .author-status-box .author-status span {
+.card-info-avatar .author-status-box .author-status-text {
   width: 0;
   font-size: 12px;
+  line-height: 28px;
   height: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4095,6 +4112,104 @@ a.social-wechat:focus-visible {
 
 /* 开关行里的一段「文字 + 开关」。原先两者是 .content 的直接子元素，
    窄屏换行时会被拆散（文字留在一行、开关掉到下一行），包一层就不会分家了 */
+.settings .effect-settings {
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid var(--light-grey, #ddd);
+  border-radius: 14px;
+  color: var(--font-color);
+}
+.settings .effect-settings-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.settings .effect-settings-heading button {
+  margin: 0;
+  white-space: nowrap;
+}
+#meihuaBox .effect-settings-note {
+  margin: 8px 0 12px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--font-color);
+  opacity: 0.8;
+}
+.settings .effect-group {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--light-grey, #ddd);
+  border-radius: 10px;
+}
+.settings .effect-group > summary {
+  font-weight: bold;
+  cursor: pointer;
+}
+.settings .effect-control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 22px;
+  padding-top: 14px;
+}
+.settings .effect-control {
+  display: block;
+  min-width: 0;
+  font-size: 13px;
+}
+.settings .effect-control-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.settings .effect-control output {
+  color: var(--theme-color);
+  font-variant-numeric: tabular-nums;
+}
+.settings .effect-control input[type="range"] {
+  width: 100%;
+  height: 6px;
+  margin: 12px 0;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+.settings .effect-control input[type="range"]::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--theme-color);
+}
+.settings .effect-control input[type="color"] {
+  display: block;
+  width: 100%;
+  height: 30px;
+  margin: 6px 0 0;
+  padding: 2px;
+  border: 1px solid var(--light-grey, #ddd);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+.settings .effect-control input:focus-visible,
+.settings .effect-group > summary:focus-visible {
+  outline: 2px solid var(--theme-color);
+  outline-offset: 4px;
+}
+@media screen and (max-width: 600px) {
+  .settings .effect-control-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings .effect-settings {
+    padding: 10px;
+  }
+}
+
 .settings .content > .opt {
   display: flex;
   align-items: center;

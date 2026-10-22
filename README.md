@@ -131,7 +131,7 @@
 **来源背景**：作者从 2022 年起用 Butterfly 4.3.1 搭建个人博客，三年间持续魔改，把散落在配置与主题里的大量改动逐步抽成独立文件；2026-10 做了一次完整的重构（内部代号「屎山重构」），把 2973 行的单文件 `fomal.js` 拆成模块、把配置里的 26 段内联样式与脚本抽成独立文件，最终整理为 **v1.0.0** 开源。
 
 > ⚠️ **示例数据说明**：仓库里的站点名（Demo）、域名（example.com）、头像、友链、文章、统计 ID 全部是占位示例；
-> 图片与字体走公共 CDN（jsDelivr / picsum.photos），不依赖任何私人服务，克隆后开箱即可运行。
+> 图片和视频使用项目内静态素材，当前无需 OSS/CDN；字体等第三方依赖使用各自配置。
 
 ---
 
@@ -215,7 +215,7 @@ v1.0.0 是一次结构性重写，主要变化：
 - **pjax 守卫**：`source/js/pjax-guard.js` 修复换页后状态残留；
 - **CDN 预连接**：配置里对首屏外部域名做 `preconnect` / `dns-prefetch`；
 - **字体**：11 款自建字体改为公共 CDN（jsDelivr 的 `@fontsource/*`），并精简为 **6 款开源可商用字体**；
-- **图片外链**：原本指向作者私人对象存储的封面 / 壁纸 / 站点截图，全部改为公共占位图服务；
+- **图片外链**：封面 / 壁纸 / 站点截图现统一使用本站自有静态素材；
 - **配置瘦身**：`fomal.js` 2973 → 105 行，`custom.css` 删掉 341 行死代码并补上索引地图。
 
 ---
@@ -287,7 +287,7 @@ social:                            # 社交图标，格式： 名称: 链接 || 
   Github: https://github.com/yourname || icon-github || faa-tada
   邮箱: mailto:you@example.com || icon-youxiang || faa-tada
 
-index_img: /assets/head.jpg        # 首页大图
+index_img:                         # 首页使用 home_cinematic 中的视频和同组图片
 
 footer:
   owner:
@@ -323,6 +323,10 @@ npx hexo clean && npx hexo generate && npx gulp
 ### 首页
 
 顶部是全屏大图 + 站点名 + 打字机副标题，右侧固定悬浮按钮列（设置 / AI 助手 / 分享 / 回到顶部）。
+
+首页首次打开或刷新会随机选择一组视频与末帧；离开首页时停止视频，保留同组静态背景。当前标签页通过 `sessionStorage` 记录素材组和实际显示的末帧，分类、文章详情及其他子页面刷新时恢复这张背景，不重新选片。站内返回和重播沿用当前组，自定义背景优先显示。
+
+当前自有素材包含 30 组横屏和 5 组竖屏视频及同名 PNG。首页、美化设置、文章封面与壁纸相册共用 `frontend/source/assets/home/` 扫描得到的完整素材池。新增素材后执行 `npm run media:prepare` 生成 WebP，再重新生成页面或重启开发服务即可。详见 [媒体说明](frontend/tools/SITE-MEDIA.md)。
 
 ![首页](repoPic/screenshot/01-home.jpg)
 
@@ -525,8 +529,8 @@ menu:
 
 ```yaml
 disable_top_img: false
-index_img: /assets/head.jpg        # 首页顶部大图（留空 = 不显示，露出站点背景图）
-default_top_img: /assets/head.jpg  # 其他页面默认顶部图
+index_img:                         # 首页视频与图片由 home_cinematic 自动选择
+default_top_img: /assets/home/optimized/pc_01-background.webp
 archive_img:                       # 归档页顶部图（留空跟随 default_top_img）
 category_img:                      # 分类页顶部图
 
@@ -534,13 +538,11 @@ cover:
   index_enable: true    # 首页文章卡片显示封面
   aside_enable: true    # 侧栏文章卡片显示封面
   archives_enable: true # 归档页显示封面
-  default_cover:        # 文章没写 cover 时从这里随机取一张
-    - https://picsum.photos/id/1015/1200/675
-    - https://picsum.photos/id/1018/1200/675
+  default_cover: []     # 生成页面时自动填充全部自有横屏封面
 ```
 
 - 单篇文章想指定封面：在文章 Front-matter 写 `cover: 图片链接`。
-- `cover.default_cover` 现在填的是**固定的 picsum 图片 ID**（不是随机 seed），所以每次刷新不会变图、也不会出现奇怪内容。换成你自己的图床地址即可。
+- 未填写封面的文章按 source/slug 从完整横屏素材池固定分配图片；普通刷新不会换图，新增或删除素材后可能重新分配。`cover: false` 继续隐藏封面。
 
 ### 8.3 主题色与暗色模式
 
@@ -714,23 +716,26 @@ new LingQue.Monitor().init({ id: "YOUR_LINGQUE_ID", sendSpaPv: true });
 var start_date = '20200101'                     // 统计开始日期
 var access_token = 'YOUR_BAIDU_ACCESS_TOKEN'    // 百度统计 access_token（30 天有效）
 var site_id = 'YOUR_BAIDU_SITE_ID'              // 站点 ID
-// 刷新 token 的接口见文件第 4 行注释
+// 刷新 token 的接口见 census.js 文件开头注释
 ```
 
 不想用就把 `source/site/census/` 整个目录删掉，并去掉菜单里的「网站统计」。
 
+51LA 访客指标的 ID 也在 `source/js/census.js` 的 `widgetId` 配置。未填写配置时直接使用默认值；接口请求超时（10 秒）、HTTP 错误或数据格式异常时同样使用默认值：访客指标为 0、地域分布为零值地图、最近 12 个月趋势为零值折线、来源为空环形图。图表资源加载失败时显示数字 0 占位，页面明确标注「默认数据」，不表示实际统计为零。
+
 #### ⑤ GitHub 贡献日历
 
-根 `_config.yml` 里的 `gitcalendar` 段（**默认已关闭**，因为它需要你自己搭数据源）：
+`frontend/_config.yml` 的 `gitcalendar` 已开启，展示 `Zany2` 的最近一年贡献，数据通过公开第三方接口获取，不需要 GitHub Token：
 
 ```yaml
 gitcalendar:
-  enable: true                       # 想用就改成 true
+  enable: true
   enable_page: /site/census/
-  user: yourname                     # GitHub 用户名
-  apiurl: "https://gitcalendar.example.com"   # 自建的 gitcalendar 服务
-  jsonurl: "https://cdn.jsdelivr.net/gh/yourname/gitcalendar-data@main/data.json" # 或 GitHub Action 定时产出的 JSON
+  user: Zany2
+  jsonurl: "https://github-contributions-api.jogruber.de/v4/Zany2?y=last"
 ```
+
+日历脚本兼容逐日数据和旧版按周 JSON，按真实星期绘制热力图，并统计最近 30 天、7 天的贡献。数据接口超时或异常时生成最近一年的零贡献日历，并标注「默认数据」；也可以把 `jsonurl` 换成自建服务或 GitHub Actions 定时生成的同格式 JSON。
 
 ### 8.8 美化设置面板（每一项都干什么）
 
@@ -752,16 +757,16 @@ gitcalendar:
 | **二、主题色设置** | 13 个预设色 | red / orange / yellow / green / puregreen / blue / heoblue / darkblue / purple / purepurple / pink / gray / black，点一下全站换色 |
 | **三、字体设置** | 常规字体 3 款 | 霞鹜文楷（默认）/ 思源宋体 / 霞鹜新晰黑，另有「系统默认」 |
 | | 代码块字体 3 款 | JetBrains Mono / Fira Code / Source Code Pro |
-| **四、背景设置** | 1 风景 · 山野 / 2 风景 · 水与森林 / 3 风景 · 更多 | 三组风景壁纸（各 8 张，走 picsum 公共 CDN） |
-| | 4 渐变色 / 5 纯色 | 免图片的渐变与纯色背景 |
-| | 6 适配手机 | 竖屏比例的背景图 |
-| | 7 壁纸 API | 每次刷新随机换一张的在线壁纸接口 |
-| | 8 自定义背景 | 自己粘贴图片链接 |
+| **四、看板娘** | 角色与位置 | 控制角色显示、模型及左右位置 |
+| **五、背景设置** | 1 横屏背景 | 自动展示全部自有横屏图片，使用 WebP 缩略图 |
+| | 2 渐变色 / 3 纯色 | 免图片的渐变与纯色背景 |
+| | 4 竖屏背景 | 自动展示全部自有手机图片 |
+| | 5 自定义背景 | 填写本地图片路径或图片链接 |
 
 **改面板本身**：
 
 - 想改**默认值**（访客没动过面板时用什么）：改 `_config.fomalhaut.yml` 的 `font` / `theme_color` / `background` 段，以及 `source/js/inject/beauty-boot.js`；
-- 想改**可选列表**（加字体、加壁纸、加主题色）：改 `source/js/modules/settings.js` 的 `FONT_LIST` / `CODE_FONT_LIST`（第 108–111 行）与面板 HTML（第 845–1050 行），新增字体的 `@font-face` 写在 `themes/fomalhaut/source/css/_custom/custom.css` 的「字体引入」一节；
+- 新增壁纸：在 `source/assets/home/` 添加同名 MP4 + PNG 并生成优化图，面板自动更新。字体和主题色选项修改 `source/js/modules/settings.js`，字体的 `@font-face` 写在 `themes/fomalhaut/source/css/_custom/custom.css`；
 - 想**直接关掉面板**：`_config.fomalhaut.yml` 的 `beautify.enable: false`，然后去掉 `inject.bottom` 里 `settings.js` 那一行。
 
 ### 8.9 刷新与性能相关开关
@@ -820,16 +825,16 @@ ai_chat:
 3. 请求打到 `api/chat/completions.js`（Vercel）或 `functions/api/chat/completions.js`（Cloudflare Pages），由它在服务端读环境变量再去请求服务商。
 
 代理函数自带：每 IP 限流、`max_tokens` 上限（`MAX_TOKENS_CAP = 8192`）、CORS 白名单。
-白名单默认放行 `example.com`，改法：
+白名单默认放行 `daixiaokang.com` 及其子域，添加其他部署域名时可调整：
 
 ```bash
 # 方式一：直接改两个常量（api/chat/completions.js 与 functions/api/chat/completions.js 都要改）
-const DEFAULT_ORIGINS = 'https://example.com,https://www.example.com'
-const DEFAULT_SUFFIXES = 'example.com'
+const DEFAULT_ORIGINS = 'https://daixiaokang.com,https://www.daixiaokang.com'
+const DEFAULT_SUFFIXES = 'daixiaokang.com'
 
 # 方式二：不改代码，用环境变量覆盖
-AI_PROXY_ORIGINS=https://your-domain.com
-AI_PROXY_ALLOW_SUFFIXES=your-domain.com
+AI_PROXY_ORIGINS=https://daixiaokang.com,https://www.daixiaokang.com
+AI_PROXY_ALLOW_SUFFIXES=daixiaokang.com
 ```
 
 #### 换成别的大模型
@@ -862,9 +867,9 @@ AI_PROXY_ALLOW_SUFFIXES=your-domain.com
   link_list:
     - name: 示例站点
       link: https://example.com/
-      avatar: https://example.com/avatar.jpg   # 建议 100x100 以内
+      avatar: /assets/avatar.png              # 使用本站头像
       descr: 一句话介绍
-      siteshot: https://example.com/shot.jpg   # 可选，站点截图
+      siteshot: /assets/home/optimized/pc_22-cover.webp # 可选，不填写则自动分配自有封面
 ```
 
 友人帐有三种样式，改 `flink_style: volantis`（可选 `butterfly` / `volantis` / `flexcard`）。
@@ -929,9 +934,8 @@ tags:                           # 标签（可多个）
   - Hexo
   - Fomalhaut
 
-cover: https://picsum.photos/id/1015/1200/675   # 卡片封面；不写则从 cover.default_cover 随机取
-top_img: /assets/head.jpg       # 文章页顶部大图；不写则跟随 default_top_img
-randomcover: false              # true = 每次刷新从 default_cover 随机换一张
+cover: /assets/home/optimized/pc_22-cover.webp # 可选；不写则按文章标识固定分配自有图片
+top_img: /assets/home/optimized/pc_22-background.webp # 可选顶部图
 
 sticky: 1                       # 置顶（数值越大越靠前）；也可在正文写 <!-- sticky --> 
 
@@ -991,9 +995,9 @@ comments: false
 
 | 方式 | 写法 | 适用 |
 | --- | --- | --- |
-| 站内相对路径 | `![描述](/assets/pic.jpg)` | 图片放 `source/assets/` |
+| 本站背景素材 | `![描述](/assets/home/optimized/pc_22-cover.webp)` | 复用已经生成的自有 WebP 图片 |
 | 同目录相对路径 | `![描述](./pic.jpg)` | 需要在 `_config.yml` 打开 `post_asset_folder: true`，图片与文章同目录 |
-| 外链 / 图床 | `![描述](https://your-cdn.com/pic.jpg)` | 图片多时推荐 |
+| OSS/CDN | 设置 `site_media.base_url` | 后续域名完善后统一加速自有素材，当前留空 |
 
 ### 9.5 本地预览与发布
 
@@ -1020,8 +1024,8 @@ npx hexo deploy            # 按 _config.yml 的 deploy 段推送
 | 首页标题下的副标题 | `_config.fomalhaut.yml` 的 `subtitle` |
 | 主题色 | `_config.fomalhaut.yml` 的 `theme_color.main`，或让访客用面板自己选 |
 | 头像 | `_config.fomalhaut.yml` 的 `avatar.img`（默认 `/assets/avatar.webp`） |
-| 首页大图 | `_config.fomalhaut.yml` 的 `index_img`；全站背景改 `inject.head` 里 `#defineBg` 那行的 `--default-bg` |
-| 文章默认封面池 | `_config.fomalhaut.yml` 的 `cover.default_cover` |
+| 首页视频 / 背景图片 | `source/assets/home/` 的成对 MP4 + PNG；配置入口 `_config.fomalhaut.yml` 的 `home_cinematic` / `site_media` |
+| 文章默认封面池 | 自动扫描 `source/assets/home/` 的横屏素材；生成时同步到 `cover.default_cover` |
 | 顶部导航 | `_config.fomalhaut.yml` 的 `menu` |
 | 页脚文案 / 版权 / 徽章 | `themes/fomalhaut/layout/includes/footer.pug`（改完要重启 server）+ `footer.owner` / `footer.custom_text` |
 | 侧栏卡片开关 | `_config.fomalhaut.yml` 的 `aside` 段 |
@@ -1106,10 +1110,10 @@ npx hexo clean && npx hexo generate && npx gulp
 改**根目录**的 `_config.fomalhaut.yml`。主题目录里那份只是默认值模板，会被根目录那份覆盖。
 
 **Q：首页文章列表没有封面图？**
-在文章 Front-matter 写 `cover: 图片链接`，或在 `_config.fomalhaut.yml` 的 `cover.default_cover` 里配置封面池。
+确认 `source/assets/home/` 存在同名 MP4 + PNG，执行 `npm run media:prepare` 生成优化图。文章默认使用自有素材，也可在 Front-matter 写 `cover: /assets/home/optimized/pc_22-cover.webp`。
 
 **Q：字体 / 图片挂了？**
-默认走公共 CDN（`cdn.jsdelivr.net` 的 `@fontsource/*` 与 `picsum.photos`）。若所在网络访问不畅，把 `themes/fomalhaut/source/css/_custom/custom.css` 里的 `@font-face` 换成你自己的字体，把 `cover.default_cover` 换成你自己的图床即可。
+图片和视频当前从本站静态目录加载；优先使用 WebP，首页末帧失败先回退同组 PNG，再使用本站应急图。字体仍使用独立配置。未来通过 `site_media.base_url` 统一设置媒体 CDN 地址。
 
 **Q：想彻底不用某个页面？**
 删掉 `source/` 下对应目录，并把 `_config.fomalhaut.yml` 的 `menu:` 与其面板配置一并去掉。
@@ -1126,7 +1130,7 @@ npx hexo clean && npx hexo generate && npx gulp
 
 - 本项目基于 [hexo-theme-butterfly](https://github.com/jerryc127/hexo-theme-butterfly)（Apache-2.0，作者 [Jerry](https://butterfly.js.org/)）二次开发，**继续沿用 Apache-2.0 协议**：仓库根目录的 `LICENSE` 覆盖整套站点、配置与文档，主题本体另见 `themes/fomalhaut/LICENSE`（保留上游许可证与版权声明）；
 - 部分美化思路参考了 Hexo 社区的公开方案（[akilar](https://akilar.top/)、[anzhiyu](https://blog.anheyu.com/) 等），在此致谢；
-- 示例图片来自 [picsum.photos](https://picsum.photos/)，字体来自 [jsDelivr](https://www.jsdelivr.com/) 上的 `@fontsource/*` 开源字体包（全部为 SIL OFL 许可）；
+- 当前示例背景与封面来自项目内 `source/assets/home/` 的自有素材，字体来自 [jsDelivr](https://www.jsdelivr.com/) 上的 `@fontsource/*` 开源字体包（全部为 SIL OFL 许可）；
 - 站点里的示例数据（域名、邮箱、友链、统计 ID）均为占位内容，请替换为你自己的。
 
 ---

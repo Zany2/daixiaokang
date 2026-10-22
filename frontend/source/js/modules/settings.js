@@ -546,7 +546,8 @@ function initItem() {
   localStorage.setItem("rs", "block");
   localStorage.setItem("mouse", "on");
   localStorage.setItem("light", "true");
-  localStorage.setItem("snow", "none");
+  localStorage.setItem("snow", "block");
+  localStorage.setItem("snowPreference", "block");
   localStorage.setItem("aside", "1");
   localStorage.setItem("asidePos", "1");
   localStorage.setItem("nav", "1");
@@ -681,19 +682,32 @@ function setUniverse() {
   }
 }
 
-// 雪花开关
-if (localStorage.getItem("snow") == undefined) {
-  localStorage.setItem("snow", "none");
-}
-document.getElementById("snow").style.display = localStorage.getItem("snow");
-function setSnow() {
-  if (document.getElementById("snowSet").checked) {
-    document.getElementById("snow").style.display = "block";
-    localStorage.setItem("snow", "block");
-  } else {
-    document.getElementById("snow").style.display = "none";
-    localStorage.setItem("snow", "none");
+// 旧版 snow=none 既可能是默认值，也可能是手动关闭，无法区分。
+// 独立记录新版偏好：首次迁移只开启雪花，不重置其他设置；之后保留手动选择。
+function getSnowPreference() {
+  var preference = localStorage.getItem("snowPreference");
+  if (preference !== "block" && preference !== "none") {
+    preference = "block";
+    localStorage.setItem("snowPreference", preference);
   }
+  // 保留旧字段，兼容现有面板和其他读取入口。
+  if (localStorage.getItem("snow") !== preference) {
+    localStorage.setItem("snow", preference);
+  }
+  return preference;
+}
+
+var snowCanvas = document.getElementById("snow");
+var snowPreference = getSnowPreference();
+if (snowCanvas) snowCanvas.style.display = snowPreference;
+function setSnow() {
+  var control = document.getElementById("snowSet");
+  if (!control) return;
+  var preference = control.checked ? "block" : "none";
+  localStorage.setItem("snowPreference", preference);
+  localStorage.setItem("snow", preference);
+  var canvas = document.getElementById("snow");
+  if (canvas) canvas.style.display = preference;
 }
 
 // 导航栏常驻开关
@@ -1251,6 +1265,68 @@ function setBgFilter() {
 // 创建窗口
 var winbox = "";
 
+function effectValueLabel(rule, value) {
+  return String(value) + (rule.unit || "");
+}
+
+function effectSettingsMarkup() {
+  var effects = window.FomalEffects;
+  if (!effects) return "";
+  var sections = effects.groups.map(function (group) {
+    var options = effects.get(group.key);
+    var controls = Object.keys(effects.schema[group.key]).map(function (key) {
+      var rule = effects.schema[group.key][key];
+      var value = options[key];
+      var id = "effect-" + group.key + "-" + key;
+      var type = rule.type === "color" ? "color" : "range";
+      var limits = type === "range" ? ' min="' + rule.min + '" max="' + rule.max + '" step="' + rule.step + '"' : "";
+      return '<label class="effect-control" for="' + id + '">' +
+        '<span class="effect-control-caption"><span>' + rule.label + '</span>' +
+        '<output id="' + id + '-value" for="' + id + '">' + effectValueLabel(rule, value) + '</output></span>' +
+        '<input id="' + id + '" type="' + type + '" value="' + value + '"' + limits +
+        ' data-effect-group="' + group.key + '" data-effect-key="' + key + '" oninput="setEffectParameter(this)"></label>';
+    }).join("");
+    return '<details class="effect-group"><summary>' + group.title + '</summary>' +
+      '<div class="effect-control-grid">' + controls + '</div></details>';
+  }).join("");
+  return '<section class="effect-settings" aria-label="雪花、星空和流星参数">' +
+    '<div class="effect-settings-heading"><strong>特效参数</strong>' +
+    '<button class="winbox_btn" type="button" onclick="resetEffectParameters()">恢复特效参数</button></div>' +
+    '<p class="effect-settings-note">调整立即生效并自动保存。白天显示雪花，夜间显示星空和流星；手机端保持关闭。流星方向：0°向右，90°向下，180°向左，270°向上。</p>' +
+    sections + '</section>';
+}
+
+function setEffectParameter(input) {
+  var effects = window.FomalEffects;
+  if (!effects || !input) return;
+  var group = input.getAttribute("data-effect-group");
+  var key = input.getAttribute("data-effect-key");
+  if (!Object.prototype.hasOwnProperty.call(effects.schema, group) ||
+      !Object.prototype.hasOwnProperty.call(effects.schema[group], key)) return;
+  effects.set(group, key, input.value);
+  var value = effects.get(group)[key];
+  input.value = value;
+  var output = document.getElementById(input.id + "-value");
+  if (output) output.textContent = effectValueLabel(effects.schema[group][key], value);
+}
+
+function resetEffectParameters(showNotice) {
+  var effects = window.FomalEffects;
+  if (!effects) return;
+  effects.reset();
+  document.querySelectorAll("#meihuaBox [data-effect-group]").forEach(function (input) {
+    var group = input.getAttribute("data-effect-group");
+    var key = input.getAttribute("data-effect-key");
+    var value = effects.get(group)[key];
+    input.value = value;
+    var output = document.getElementById(input.id + "-value");
+    if (output) output.textContent = effectValueLabel(effects.schema[group][key], value);
+  });
+  if (showNotice !== false && typeof window.fomalToast === "function") {
+    window.fomalToast("雪花、星空与流星参数已恢复默认", "success");
+  }
+}
+
 function createWinbox() {
   let div = document.createElement("div");
   document.body.appendChild(div);
@@ -1326,6 +1402,8 @@ function createWinbox() {
   <label class="opt"><span class="content-text" style="font-weight:bold"> 侧栏显隐 (默认显示) </span><input type="checkbox" id="asideSet" onclick="setAside()"></label>
   <label class="opt"><span class="content-text" style="font-weight:bold"> 侧栏位置 (默认右边) </span><input type="checkbox" id="asidePosSet" onclick="setAsidePos()"></label>
 </div>
+
+${effectSettingsMarkup()}
 
 <h2>二、主题色设置</h2>
 <div class="content colorRow">
@@ -1468,11 +1546,7 @@ function createWinbox() {
   }
   setFontBorder();
   setCodeFontBorder();
-  if (localStorage.getItem("snow") == "block") {
-    document.getElementById("snowSet").checked = true;
-  } else if (localStorage.getItem("snow") == "none") {
-    document.getElementById("snowSet").checked = false;
-  }
+  document.getElementById("snowSet").checked = getSnowPreference() === "block";
   if (localStorage.getItem("nav") == "1") {
     document.getElementById("navSet").checked = true;
   } else if (localStorage.getItem("nav") == "0") {
@@ -1510,12 +1584,13 @@ function resetBg() {
 // 恢复默认设置(不刷新页面)
 function reset() {
   initItem();
+  resetEffectParameters(false);
 
   setFont(FONT_DEFAULT);
   setCodeFont(CODE_FONT_DEFAULT);
   setColor("green");
   document.getElementById("universe").style.display = "block";
-  document.getElementById("snow").style.display = "none";
+  document.getElementById("snow").style.display = "block";
 
   document.getElementById("aside-show").innerText = `:root{--layout-justify-content: unset; --aside-content-display: block;}`;
   document.getElementById("aside-pos").innerText = `:root{--first-child-order: 0; --recent-post-item-margin: 0px 1% 20px 0px;}`;
@@ -1541,7 +1616,7 @@ function reset() {
   document.getElementById("fpson").checked = true;
   document.getElementById("rightSideSet").checked = true;
   document.getElementById("lightSet").checked = true;
-  document.getElementById("snowSet").checked = false;
+  document.getElementById("snowSet").checked = true;
   document.getElementById("navSet").checked = true;
   document.getElementById("asideSet").checked = true;
   document.getElementById("asidePosSet").checked = true;

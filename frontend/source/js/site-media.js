@@ -45,6 +45,20 @@
   document.addEventListener('error', function (event) {
     var img = event.target;
     if (!img || img.tagName !== 'IMG' || img.hasAttribute('data-home-still')) return;
+    // 游戏截图必须对应游戏；外链失效时保留卡片入口，不用本站壁纸替代。
+    if (img.classList.contains('gallery-group-img') && img.closest('[data-game-gallery]')) {
+      img.onerror = null;
+      img.hidden = true;
+      var gameCard = img.closest('figure.gallery-group');
+      if (gameCard && !gameCard.classList.contains('game-cover-missing')) {
+        gameCard.classList.add('game-cover-missing');
+        var hint = document.createElement('span');
+        hint.className = 'game-cover-unavailable';
+        hint.textContent = '封面暂不可用';
+        gameCard.appendChild(hint);
+      }
+      return;
+    }
     var avatar = img.closest('.avatar-img, .flink-item-icon, .flink .info, .link-card .left') || img.classList.contains('card-friend-avatar');
     var target = avatar ? config.avatar : config.fallback;
     img.onerror = null;

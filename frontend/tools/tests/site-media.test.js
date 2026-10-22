@@ -15,10 +15,10 @@ function runScript(file, hexo) {
   const filename = path.join(root, file)
   vm.runInNewContext(fs.readFileSync(filename, 'utf8'), { hexo, require: createRequire(filename), console }, { filename })
 }
-test('complete media catalog has 21 desktop and 4 mobile groups with optimized images', () => {
+test('complete media catalog has 30 desktop and 5 mobile groups with optimized images', () => {
   const pools = media.catalog(fakeHexo())
-  assert.equal(pools.desktop.length, 21)
-  assert.equal(pools.mobile.length, 4)
+  assert.equal(pools.desktop.length, 30)
+  assert.equal(pools.mobile.length, 5)
   for (const group of [...pools.desktop, ...pools.mobile]) for (const prop of ['video', 'poster', 'cover', 'thumbnail']) {
     assert.ok(fs.existsSync(path.join(root, 'source', group[prop])), group[prop])
     if (prop !== 'video') assert.match(group[prop], /\.webp$/)
@@ -29,8 +29,8 @@ test('CDN root changes media paths but keeps emergency fallbacks and external UR
   assert.equal(media.assetUrl(hexo, '/assets/home/pc_01.mp4'), 'https://cdn.example.test/assets/home/pc_01.mp4')
   assert.equal(media.assetUrl(hexo, '/assets/fallback/image.webp'), '/assets/fallback/image.webp')
   assert.equal(media.assetUrl(hexo, 'https://other.test/assets/x.png'), 'https://other.test/assets/x.png')
-  assert.equal(media.catalog(hexo).desktop[20].id, 'pc_21')
-  assert.match(media.catalog(hexo).mobile[3].poster, /^https:\/\/cdn\.example\.test\/assets\/home\/optimized\/home_mobile_04-background.webp$/)
+  assert.equal(media.catalog(hexo).desktop[29].id, 'pc_30')
+  assert.match(media.catalog(hexo).mobile[4].poster, /^https:\/\/cdn\.example\.test\/assets\/home\/optimized\/home_mobile_05-background.webp$/)
 })
 test('missing article cover remains stable, authored cover and false are preserved despite cached covers', () => {
   const hexo = fakeHexo()
@@ -50,8 +50,8 @@ test('home random pool is unchanged, video and poster always use the same group'
   runScript('themes/fomalhaut/scripts/helpers/home_cinematic.js', hexo)
   const context = { theme: hexo.theme.config, url_for: value => value }
   const pools = hexo.callbacks.home_cinematic_media.call(context)
-  assert.equal(pools.desktop.length, 21)
-  assert.equal(pools.mobile.length, 4)
+  assert.equal(pools.desktop.length, 30)
+  assert.equal(pools.mobile.length, 5)
   for (const group of [...pools.desktop, ...pools.mobile]) {
     assert.ok(group.video.endsWith('/' + group.id + '.mp4'))
     assert.ok(group.poster.endsWith('/' + group.id + '-background.webp'))
@@ -105,7 +105,7 @@ test('browser catalog resolves saved IDs after CDN switch; fallbacks do not loop
   vm.runInNewContext(fs.readFileSync(path.join(root,'source/js/site-media.js'),'utf8'), { window, document, URL, location: { href: 'https://site.test/' } })
   assert.equal(window.SiteMedia.resolve('media:pc_21'), 'url("https://cdn.example.test/assets/home/optimized/pc_21-background.webp")')
   assert.equal(window.SiteMedia.resolve('media:removed'), 'default')
-  assert.equal((window.SiteMedia.buttons('desktop').match(/<button /g) || []).length, 21)
+  assert.equal((window.SiteMedia.buttons('desktop').match(/<button /g) || []).length, 30)
   function image(avatar) { return { tagName: 'IMG', src: 'https://broken.test/a.png', dataset: {}, hasAttribute: () => false, closest: () => avatar, classList: { contains: () => false }, removeAttribute: () => {} } }
   const img = image(false)
   onError({ target: img }); assert.equal(img.src, config.fallback)

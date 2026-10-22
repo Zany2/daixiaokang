@@ -332,8 +332,9 @@ function popupMenu() {
     if (el.tagName == 'A') {
       $('#menu-to').show()
       rmf.open = function () {
-        if (el.href.indexOf("http://") == -1 && el.href.indexOf("https://") == -1 || el.href.indexOf("yisous.xyz") != -1) {
-          pjax.loadUrl(el.href)
+        const destination = new URL(el.href, location.href);
+        if (destination.origin === location.origin && window.pjax && typeof window.pjax.loadUrl === 'function') {
+          window.pjax.loadUrl(destination.href)
         }
         else {
           location.href = el.href
@@ -382,25 +383,15 @@ function popupMenu() {
     } else if (el.tagName == "TEXTAREA" || el.tagName == "INPUT") {
       $('#menu-paste').show();
       rmf.paste = function () {
-        navigator.permissions
-          .query({
-            name: 'clipboard-read'
-          })
-          .then(result => {
-            if (result.state == 'granted' || result.state == 'prompt') {
-              //读取剪贴板
-              navigator.clipboard.readText().then(text => {
-                // console.log(text)
-                insertAtCursor(el, text)
-              })
-            } else {
-              Snackbar.show({
-                text: '请允许读取剪贴板！',
-                pos: 'top-center',
-                showAction: false,
-              })
-            }
-          })
+        if (!navigator.clipboard || typeof navigator.clipboard.readText !== 'function') {
+          window.fomalToast('当前浏览器无法读取剪贴板，请使用系统粘贴。', 'warning');
+          return;
+        }
+        navigator.clipboard.readText().then(text => {
+          insertAtCursor(el, text);
+        }).catch(() => {
+          window.fomalToast('无法读取剪贴板，请允许读取权限，或使用系统粘贴。', 'warning');
+        });
       }
     }
     let pageX = event.clientX + 10;

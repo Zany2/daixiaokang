@@ -16,6 +16,8 @@ async def init_redis(app: FastAPI) -> None:
         encoding="utf-8",
         decode_responses=True,
         health_check_interval=30,
+        socket_connect_timeout=settings.redis_operation_timeout_seconds,
+        socket_timeout=settings.redis_operation_timeout_seconds,
     )
 
 

@@ -7,12 +7,10 @@
       link: https://hexo.io/zh-cn/
       avatar: /assets/fallback/avatar.png
       descr: 快速、简洁且高效的博客框架
-      siteshot: /assets/home/optimized/pc_01-cover.webp
     - name: Butterfly
       link: https://butterfly.js.org/
       avatar: /assets/fallback/avatar.png
       descr: Fomalhaut 主题的上游项目
-      siteshot: /assets/home/optimized/pc_02-cover.webp
 
 - class_name: 小伙伴们🍭
   class_desc: 交换友链请在友人帐页面留言
@@ -21,14 +19,11 @@
       link: https://example.com/
       avatar: /assets/fallback/avatar.png
       descr: 这是一个示例友链，请替换成你自己的朋友
-      siteshot: /assets/home/optimized/pc_03-cover.webp
     - name: 示例站点 B
       link: https://example.org/
       avatar: /assets/fallback/avatar.png
       descr: 这是一个示例友链，请替换成你自己的朋友
-      siteshot: /assets/home/optimized/pc_04-cover.webp
     - name: 示例站点 C
       link: https://example.net/
       avatar: /assets/fallback/avatar.png
       descr: 这是一个示例友链，请替换成你自己的朋友
-      siteshot: /assets/home/optimized/pc_05-cover.webp

@@ -1,0 +1,74 @@
+mixin feedbackPanel(mode, articleKey)
+  - const isMessage = mode === 'messages'
+  - const feedbackConfig = theme.feedback || {}
+  - const prefix = isMessage ? 'guestbook' : 'article-feedback'
+  section.zf(class=isMessage ? 'zf--messages' : 'zf--comments' id=isMessage ? 'guestbook-board' : 'post-comment' aria-labelledby=prefix + '-heading' data-feedback=mode data-article-key=articleKey data-api-base=feedbackConfig.api_base || '/api' data-local-api-base=feedbackConfig.local_api_base data-request-timeout=feedbackConfig.request_timeout_ms || 12000)
+    header.zf-header
+      .zf-heading
+        span.zf-eyebrow= isMessage ? 'ZANY · 留言板' : '读后交流'
+        if isMessage
+          h1.zf-title(id=prefix + '-heading') 给 Zany 留个言
+        else
+          h2.zf-title(id=prefix + '-heading') 文章评论
+        p.zf-description= isMessage ? '一个问候，一条建议，或者你想分享的事。' : '分享你的观点，也欢迎提出问题。'
+      if isMessage
+        .zf-hero-mark(aria-hidden='true')
+          svg(viewBox='0 0 100 100' fill='none')
+            rect(x='14' y='25' width='72' height='52' rx='12' stroke='currentColor' stroke-width='3')
+            path(d='M18 30L45 51C48 54 52 54 55 51L82 30M18 72L37 55M82 72L63 55' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round')
+            path(d='M35 13H53M44 5V21M76 12H88M82 6V18' stroke='currentColor' stroke-width='2' stroke-linecap='round')
+      else
+        button.zf-button.zf-button--soft(type='button' data-feedback-action='focus-form' data-idle-label='写下评论') 写下评论
+
+    .zf-content
+      .zf-compose.zf-panel
+        .zf-compose-heading
+          span.zf-compose-icon(aria-hidden='true')
+            svg(viewBox='0 0 24 24' width='20' height='20' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round')
+              path(d='M12 20H4V12M14 5L19 10M9 15L8 19L12 18L21 9C22 8 22 7 21 6L20 5C19 4 18 4 17 5Z')
+          h3= isMessage ? '写一条留言' : '写下你的想法'
+        .zf-reply-context(data-feedback-reply-context hidden)
+          span(data-feedback-reply-label)
+          button.zf-text-button(type='button' data-feedback-action='cancel-reply' data-idle-label='取消回复') 取消回复
+        form.zf-form(data-feedback-form method='post' novalidate)
+          .zf-fields
+            .zf-field
+              label(for=prefix + '-nickname')
+                span 昵称
+                small 必填
+              input(id=prefix + '-nickname' name='nickname' type='text' placeholder='怎么称呼你？' maxlength='100' autocomplete='nickname' required)
+            .zf-field
+              label(for=prefix + '-email')
+                span 邮箱
+                small 选填
+              input(id=prefix + '-email' name='email' type='email' placeholder='不会公开展示' maxlength='254' autocomplete='email' aria-describedby=prefix + '-privacy')
+          .zf-field.zf-field--content
+            label(for=prefix + '-content')
+              span= isMessage ? '留言内容' : '评论内容'
+              small 必填
+            textarea(id=prefix + '-content' name='content' rows='5' placeholder=isMessage ? '想对 Zany 说些什么？' : '聊聊你的想法，或者哪里还需要进一步说明。' maxlength='4000' required aria-describedby=prefix + '-counter')
+            .zf-input-footer
+              span.zf-privacy(id=prefix + '-privacy') 邮箱不会公开展示
+              span.zf-counter(id=prefix + '-counter' data-feedback-counter) 0 / 2000
+          .zf-form-footer
+            span.zf-form-note 友善交流，让每一次表达都有温度。
+            button.zf-button.zf-button--primary(type='submit' data-feedback-submit disabled)= isMessage ? '发表留言' : '发表评论'
+          div.zf-form-status(data-feedback-form-status role='status' aria-live='polite' hidden)
+
+      .zf-discussion.zf-panel
+        .zf-list-toolbar
+          .zf-list-heading
+            h3(data-feedback-list-heading tabindex='-1')= isMessage ? '所有留言' : '所有评论'
+            span.zf-count(data-feedback-count hidden)
+          button.zf-text-button(type='button' data-feedback-action='refresh' data-idle-label='刷新列表') 刷新列表
+        .zf-list(data-feedback-list role='list')
+        .zf-list-status(data-feedback-list-status role='status' aria-live='polite')
+          .zf-skeleton(aria-hidden='true')
+            span
+            span
+            span
+          p.zf-state-title= isMessage ? '正在加载留言…' : '正在加载评论…'
+        nav.zf-pagination(data-feedback-pagination aria-label=isMessage ? '留言分页' : '评论分页' hidden)
+    noscript
+      p.zf-noscript 请开启 JavaScript，以加载列表和发表内容。
+    p.zf-sr-only(data-feedback-announcement role='status' aria-live='polite')

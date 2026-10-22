@@ -4,10 +4,10 @@ if theme.aside.card_author.enable
       div.card-info-avatar
         .avatar-img
           img(src=site_media_url(theme.avatar.img || theme.error_img.flink) onerror=`this.onerror=null;this.src='` + url_for(theme.error_img.flink) + `'` alt="avatar")
-        div.author-status-box
+        div.author-status-box(tabindex='0' aria-label='专注学习中' title='专注学习中')
           div.author-status
-            span.g-emoji 🎯
-            span 专注学习中
+            g-emoji.g-emoji(aria-hidden='true') 🎯
+            span.author-status-text 专注学习中
       b
         .author-info__name= config.author
       .author-info__description!= theme.aside.card_author.description || config.description

@@ -742,7 +742,7 @@
   }
 
   /* ------------------------------------------------------------------ 消息渲染 */
-  var state = { busy: false, ctrl: null, hist: [] };
+  var state = { busy: false, ctrl: null, hist: [], cancel: null };
 
   function bd() { var p = document.getElementById(PANEL_ID); return p ? qs('.ai-bd', p) : null; }
   /* 滚动与流式渲染的性能约定（实测：改造前同场景强制同步布局 7015ms / 63fps，改造后 17ms / 90fps）
@@ -855,12 +855,13 @@
     state.busy = true;
     setSendState(true);
     state.ctrl = ('AbortController' in window) ? new AbortController() : null;
+    state.cancel = function () { finish('__discard__'); };
     var acc = '', done = false, gotFirst = false, gotThink = false, lastFinish = '';
     // 流式渲染分两块：已经写完的行只追加一次（不再重渲染），每帧只重渲染最后那段「正在写的尾巴」。
     // 合并渲染：一次提交里同时更新气泡与滚动位置（原来这两件事是每个分片各做一遍）
     var tailEl = null, settled = 0;
     function streamCommit() {
-      if (!bub || !bub.parentNode) return;          // 气泡已被清空（换页 / 重开面板）就别再写了
+      if (done || !bub || !bub.parentNode) return;  // 气泡已被清空（换页 / 重开面板）就别再写了
       if (!tailEl || tailEl.parentNode !== bub) {   // 第一个分片：清掉「深度求索中…」，建一个尾块
         bub.innerHTML = '';
         tailEl = mk('div', 'ai-tail');
@@ -879,6 +880,7 @@
     // 超时保护：首字迟迟不来、或中途卡住不再吐字，都算超时（每收到一段就重新计时）
     var to = null;
     function armTo() {
+      if (done) return;
       if (to) clearTimeout(to);
       to = setTimeout(function () {
         if (done) return;
@@ -895,7 +897,9 @@
       if (to) clearTimeout(to);
       state.busy = false;
       state.ctrl = null;
+      state.cancel = null;
       setSendState(false);
+      if (errText === '__discard__') return;
       if (!bub) return;
       if (errText === '__stop__') {
         if (acc) { bub.innerHTML = md(acc); hist.push({ r: 'assistant', c: acc }); histSet(hist); updateCtx(); }
@@ -970,6 +974,7 @@
       }),
       signal: state.ctrl ? state.ctrl.signal : undefined
     }).then(function (resp) {
+      if (done) return;
       if (!resp.ok) {
         return resp.text().then(function (t) {
           var m = '';
@@ -989,6 +994,7 @@
       // 第一个 content 分片会用 md(acc) 把它覆盖掉（见下面的 piece 分支）。
       function pump() {
         return reader.read().then(function (r) {
+          if (done) return reader.cancel();
           if (r.done) { finish(null); return; }
           buf += dec.decode(r.value, { stream: true });
           var parts = buf.split('\n');
@@ -1060,6 +1066,7 @@
     if (now - lastBlank < 700) { lastBlank = 0; closePanel(); return; }
     lastBlank = now;
   }
+  var clearPending = false;
   function onDocClick(e) {
     var t = e.target;
     if (!t || !t.closest) return;
@@ -1075,8 +1082,22 @@
     if (t.closest('.ai-reset')) { resetBox(); return; }
     if (t.closest('.ai-close')) { closePanel(); return; }
     if (t.closest('.ai-clear')) {
-      if (state.busy) { if (state.ctrl) state.ctrl.abort(); }
-      if (window.confirm('清空本页的对话记录？')) renderWelcome();
+      if (clearPending || typeof window.fomalConfirm !== 'function') return;
+      clearPending = true;
+      var panel = p;
+      var pagePath = location.pathname;
+      window.fomalConfirm('清空本页的对话记录？', {
+        title: '清空对话', confirmText: '清空'
+      }).then(function (confirmed) {
+        clearPending = false;
+        if (!confirmed || !panel.isConnected || pagePath !== location.pathname) return;
+        if (state.busy && state.ctrl) state.ctrl.abort();
+        // 同步结束旧请求，避免停止回调把已清空的历史重新写回来。
+        if (state.cancel) state.cancel();
+        state.hist = [];
+        histSet([]);
+        renderWelcome();
+      });
       return;
     }
     var chip = t.closest('.ai-chip');

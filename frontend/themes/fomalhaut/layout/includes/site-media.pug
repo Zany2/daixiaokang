@@ -2,8 +2,13 @@
 - var siteMediaJson = JSON.stringify(siteMedia).replace(/</g, '\\u003c')
 script.
   window.__SITE_MEDIA__ = !{siteMediaJson};
-script(src=url_for('/js/site-media.js?v=20261012-local4'))
+script(src=url_for('/js/site-media.js?v=20261013-game1'))
 style.
+  :root { --site-decoration-cover: url("#{site_media_cover('lantern')}"), url("#{siteMedia.fallback}"); }
   [data-theme="light"] #aside-content > .card-widget.card-info { --author-card-cover: url("#{site_media_cover('author-light')}"), url("#{siteMedia.fallback}"); }
   [data-theme="dark"] #aside-content > .card-widget.card-info { --author-card-cover: url("#{site_media_cover('author-dark')}"), url("#{siteMedia.fallback}"); }
+  #newYear-main { background-image: url("#{site_media_cover('new-year')}"), url("#{siteMedia.fallback}"); }
   .loading-img { background-image: url("#{site_media_url(theme.avatar.img || '/assets/avatar.png')}"), url("#{siteMedia.avatar}"); }
+  #article-container [data-game-gallery] .gallery-group.game-cover-missing { background: linear-gradient(135deg, #174c56, #263445); }
+  #article-container [data-game-gallery] .game-cover-missing .gallery-group-img { display: none; }
+  #article-container [data-game-gallery] .game-cover-unavailable { position: absolute; right: 18px; bottom: 16px; font-size: 12px; color: rgba(255,255,255,.75); pointer-events: none; }

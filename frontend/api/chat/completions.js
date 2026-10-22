@@ -13,7 +13,7 @@
  * 部署清单：
  *   1) Vercel → Settings → Environment Variables 加 DEEPSEEK_API_KEY（Production + Preview）
  *      可选：DEEPSEEK_MODEL（默认 deepseek-chat）
- *            AI_PROXY_ORIGINS（可选。默认已放行 example.com / example.com 全家族，通常不用配；
+ *            AI_PROXY_ORIGINS（可选。默认已放行 daixiaokang.com 全家族，通常不用配；
  *                               要额外域名才填，支持裸域名与 *.example.com，填 * 全放行）
  *            AI_PROXY_MAX_PER_HOUR（每 IP 每小时的请求上限，默认 120）
  *            DEEPSEEK_API_BASE（默认 https://api.deepseek.com，仅供本地测试改指）
@@ -25,7 +25,7 @@
  */
 const UPSTREAM = String(process.env.DEEPSEEK_API_BASE || 'https://api.deepseek.com').replace(/\/+$/, '');
 const MODEL = String(process.env.DEEPSEEK_MODEL || 'deepseek-chat');
-const DEFAULT_ORIGINS = 'https://example.com,https://www.example.com';
+const DEFAULT_ORIGINS = 'https://daixiaokang.com,https://www.daixiaokang.com';
 const MAX_BODY_BYTES = 400 * 1024;
 const MAX_TOKENS_CAP = 8192;
 const MAX_MESSAGES = 24;
@@ -45,13 +45,13 @@ function extraOriginsNode() { return extraOrigins(process.env); }
 function allowSuffixesNode() { return allowSuffixes(process.env); }
 
 /* ------------------------------------------------------------------ 来源白名单
- * 默认就放行 example.com / example.com 及其所有子域，所以正常情况下一个环境变量都不用加。
+ * 默认就放行 daixiaokang.com 及其所有子域，所以正常情况下一个环境变量都不用加。
  *   AI_PROXY_ORIGINS         可选：要额外放行的域名，逗号分隔；裸域名自动补 https://，
  *                            支持 *.example.com 通配；填 * 表示全放行。
- *   AI_PROXY_ALLOW_SUFFIXES  可选：改默认域名后缀，默认 example.com,example.com
+ *   AI_PROXY_ALLOW_SUFFIXES  可选：改默认域名后缀，默认 daixiaokang.com
  * 另外始终放行：localhost / 127.0.0.1 / ::1 / *.local（本地调试）
  * 与 *.vercel.app / *.pages.dev（平台预览域名）。 */
-const DEFAULT_SUFFIXES = 'example.com';
+const DEFAULT_SUFFIXES = 'daixiaokang.com';
 
 function normOrigin(s) {
   s = String(s == null ? '' : s).trim().replace(/\/+$/, '');
@@ -132,7 +132,7 @@ module.exports = async function handler(req, res) {
 
   if (!originAllowed(req)) {
     return sendJson(res, 403, '来源不在白名单：' + (req.headers.origin || req.headers.referer || '(空)') +
-      '。example.com / example.com 全家族本来就放行；别的域名要放行就加进 Vercel 环境变量 AI_PROXY_ORIGINS（逗号分隔）。');
+      '。daixiaokang.com 全家族本来就放行；别的域名要放行就加进 Vercel 环境变量 AI_PROXY_ORIGINS（逗号分隔）。');
   }
 
   const key = String(process.env.DEEPSEEK_API_KEY || '').trim();

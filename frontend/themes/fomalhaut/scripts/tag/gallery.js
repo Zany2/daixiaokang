@@ -6,6 +6,9 @@
 'use strict'
 
 const urlFor = require('hexo-util').url_for.bind(hexo)
+const escapeHtml = require('hexo-util').escapeHTML
+const path = require('path')
+const { fallbackCover } = require(path.join(hexo.base_dir, 'lib/site-media'))
 
 function gallery (args, content) {
   return `<div class="fj-gallery">${hexo.render.renderSync({ text: content, engine: 'markdown' }).split('\n').join('')}
@@ -16,7 +19,8 @@ function galleryGroup (args) {
   const name = args[0]
   const desrc = args[1]
   const url = urlFor(args[2])
-  const img = urlFor(args[3] || hexo.theme.config.error_img.post_page)
+  const img = urlFor(args[3] && args[3] !== 'auto' ? args[3] : fallbackCover(hexo, args[2] || name))
+  const target = args[4] === 'blank' ? ' target="_blank" rel="noopener noreferrer"' : ''
 
   return `
   <figure class="gallery-group">
@@ -24,7 +28,7 @@ function galleryGroup (args) {
   <figcaption>
   <div class="gallery-group-name">${name}</div>
   <p>${desrc}</p>
-  <a href='${url}'></a>
+  <a href='${url}'${target} aria-label="${escapeHtml(name)}"></a>
   </figcaption>
   </figure>
   `
