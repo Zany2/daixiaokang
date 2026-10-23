@@ -123,7 +123,7 @@
 - 一套**主题代码**（`themes/fomalhaut/`，Pug + Stylus 渲染）；
 - 一份**站点配置**（根目录 `_config.yml` + 根目录 `_config.fomalhaut.yml`）；
 - 一批**站点级增强**（根目录 `scripts/` 下的 Hexo 插件、`source/js/` 与 `source/css/` 下的自定义脚本与样式）；
-- 若干**示例页面**（网址导航、画廊、八音盒、友人帐、朋友圈、网站统计、时间线归档、天文星图……）与 2 篇示例文章。
+- 若干**示例页面**（网址导航、画廊、八音盒、朋友圈、网站统计、时间线归档、天文星图……）与示例文章。
 
 它解决的问题是：Hexo 生态里大量的美化方案都靠「直接改主题源码」，一旦主题更新就得重新抄一遍。
 本仓库把**主题代码**与**站点改动**放进不同目录，站点侧的东西全部通过「配置注入 + 独立 css/js 文件」实现，升级主题时只需要替换 `themes/fomalhaut/`。
@@ -149,7 +149,7 @@ Hexo 6.3.0  ──┬─► 根 _config.yml           站点级配置（标题 /
               │     ├─ _posts/             文章（Markdown）
               │     ├─ box|life|site|social|personal/  独立页面
               │     ├─ css/*.css js/*.js    站点级样式与脚本（不进主题）
-              │     └─ _data/{link,widget}.yml          友链与侧栏卡片数据
+              │     └─ _data/widget.yml      侧栏卡片数据
               │
               └─► themes/fomalhaut/         主题本体
                     ├─ _config.yml         主题默认配置（被根 _config.fomalhaut.yml 覆盖）
@@ -371,7 +371,6 @@ npx hexo clean && npx hexo generate && npx gulp
 ├─ repoPic/                    README 用图（不参与构建）
 ├─ source/                     ★ 站点内容
 │   ├─ _posts/                 文章
-│   ├─ _data/link.yml          友链数据
 │   ├─ _data/widget.yml        侧栏自定义卡片
 │   ├─ assets/                 站点图片（头像、加载动画、徽章…）
 │   ├─ css/*.css               站点级样式（见 7.2）
@@ -396,7 +395,6 @@ npx hexo clean && npx hexo generate && npx gulp
 | `census.css` | 网站统计页看板排版 | 只由 `/site/census/` 页面 `<link>` 引入 |
 | `coin.css` | 投币按钮样式 | 文章底部「投喂」区 |
 | `gitcalendar.css` | GitHub 贡献日历底色与格子 | `#git_container`，配 `js/gitcalendar.js` |
-| `kslink.css` | 友人帐「快速申请」按钮 | `/social/link/` |
 | `paperclip.css` | 侧栏作者卡的细长回形针装饰（内联 SVG，白天蓝白高光 / 夜间冰蓝夜光） | 由 `inject.head` 引入，只影响电脑端侧栏作者卡 |
 | `mobile-drawer.css` | 手机端抽屉菜单改版（面板/字标/头像/菜单/遮罩/入场动效 13 小节） | 窄屏自动生效 |
 | `site-inject.css` | 站点注入样式合集（横幅公告、PC 浅色主题、侧栏加宽、列表分页、面包屑、小站资讯卡、aplayer 音量条、页脚隐藏本站项等） | 由 `_config.fomalhaut.yml` 的 `inject.head` 以 `<link>` 引入 |
@@ -440,7 +438,6 @@ npx hexo clean && npx hexo generate && npx gulp
 | `notify.js` | 轻量通知组件（替代 Vue + Element-UI 的 `$notify`） |
 | `pjax-guard.js` | 修 pjax 选择器不匹配导致的「换页退回整页刷新」与「加载遮罩一直转圈」 |
 | `wechat-qr.js` | 社交二维码点击 → 同页灯箱展示（不跳转不下载） |
-| `kslink.js` | 友人帐「快速申请」表单填充 |
 | `coin.js` | 投币音效与动画 |
 | `footer-music.js` | 页脚「猜你想看」补一条「听点音乐」→ `/life/music/` |
 | `51la.js` | 51LA 统计与灵雀监控初始化 |
@@ -517,7 +514,6 @@ menu:
     归档: /archives/ || fas fa-archive
     标签: /tags/ || fas fa-tags
   清单:
-    友人帐: /social/link/ || fas fa-link
     朋友圈: /social/fcircle/ || faa-tada
   关于: /personal/about/ || fas fa-user
 ```
@@ -597,8 +593,6 @@ aside:
     enable: true
     post_count: true
     last_push_date: true
-  card_friend_link:       # 友人帐侧栏卡
-    enable: true
   card_newest_comment:    # 最新评论
     enable: false
 ```
@@ -845,12 +839,11 @@ AI_PROXY_ALLOW_SUFFIXES=daixiaokang.com
 
 `ai_chat.enable: false` 即可（面板、按钮、注入脚本都不会再出现）。
 
-### 8.11 友人帐 / 朋友圈 / 画廊等页面
+### 8.11 朋友圈 / 画廊等页面
 
 | 页面 | 入口文件 | 数据来源 |
 | --- | --- | --- |
-| 友人帐（友链） | `source/social/link/index.md` | `source/_data/link.yml` |
-| 朋友圈 | `source/social/fcircle/index.md` | [hexo-circle-of-friends](https://github.com/Rock-Candy-Tea/hexo-circle-of-friends) 产出的静态 JSON |
+| 朋友圈 | `source/social/fcircle/index.md` | 暂为空页面，后续补充自建前端样式与后端接口 |
 | 画廊 | `source/box/gallery/index.md` + `wallpaper/index.md` | 页面内 Markdown 图片 |
 | 网址导航 | `source/box/nav/index.md` | 页面内 HTML + `source/box/nav/icons/` 图标 |
 | 关于 | `source/personal/about/index.md` | 页面内 HTML，样式在 `source/css/about-page.css` |
@@ -859,20 +852,6 @@ AI_PROXY_ALLOW_SUFFIXES=daixiaokang.com
 | 小游戏 / 动画 | `source/life/games/`、`source/box/animation/` | 外链演示 |
 | 天文星图 | `source/box/astronomy/voyager.html` | 独立 HTML，`skip_render` 不参与渲染 |
 
-**友人帐怎么加人**：编辑 `source/_data/link.yml`：
-
-```yaml
-- class_name: 小伙伴们🍭
-  class_desc: 交换友链请在友人帐页面留言
-  link_list:
-    - name: 示例站点
-      link: https://example.com/
-      avatar: /assets/avatar.png              # 使用本站头像
-      descr: 一句话介绍
-      siteshot: /assets/home/optimized/pc_22-cover.webp # 可选，不填写则自动分配自有封面
-```
-
-友人帐有三种样式，改 `flink_style: volantis`（可选 `butterfly` / `volantis` / `flexcard`）。
 不需要的页面：删掉对应目录，再去 `menu:` 里去掉菜单项。
 
 ### 8.12 页脚与页脚徽标
@@ -1055,7 +1034,7 @@ npx hexo deploy            # 按 _config.yml 的 deploy 段推送
 | `gallery` | `{% gallery %}` … `{% endgallery %}` | 相册（带灯箱） |
 | `galleryGroup` | `{% galleryGroup '名称' '描述' '/链接' 封面图 %}` | 相册分组入口 |
 | `mermaid` | `{% mermaid %}graph LR; A-->B;{% endmermaid %}` | Mermaid 图表 |
-| `flink` | `{% flink %}` | 读取 `source/_data/link.yml` 渲染友人帐 |
+| `flink` | `{% flink %}` | 根据标签内的 YAML 内容渲染站点卡片 |
 | `hideToggle` | `{% hideToggle 标题 %}内容{% endhideToggle %}` | 折叠块，另有 `hideInline` / `hideBlock` |
 | `inlineImg` | `{% inlineImg 图片链接 宽度 %}` | 行内小图 |
 

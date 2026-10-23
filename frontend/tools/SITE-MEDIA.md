@@ -41,10 +41,7 @@
 
 ## 滚动小猫挂件
 
-当前图案：`source/assets/decorations/cat.svg`。
-原图下载地址：https://bu.dusays.com/2022/07/20/62d812db74be9.png 。
-下载后保存为 `source/assets/decorations/cat-original.png`，重启开发服务器或重新构建。
-两张本地图案会在每次刷新时等概率随机选择，滚动和 PJAX 换页保持本次选择。原图文件尚未添加时只使用现有 SVG，不请求外链。
+当前固定使用：`source/assets/decorations/cat-original.png`。滚动和 PJAX 换页始终保持该图案，不再随机切换。
 
 ## 后续接入 OSS/CDN
 

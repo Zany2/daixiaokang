@@ -1327,6 +1327,19 @@ function resetEffectParameters(showNotice) {
   }
 }
 
+function currentBackgroundMediaVariant() {
+  return window.matchMedia && window.matchMedia("(max-width: 900px)").matches ? "mobile" : "desktop";
+}
+
+function refreshBackgroundMediaButtons() {
+  var container = document.getElementById("background-image-options");
+  if (!container || !window.SiteMedia) return;
+  var variant = currentBackgroundMediaVariant();
+  if (container.getAttribute("data-variant") === variant) return;
+  container.setAttribute("data-variant", variant);
+  container.innerHTML = window.SiteMedia.buttons(variant);
+}
+
 function createWinbox() {
   let div = document.createElement("div");
   document.body.appendChild(div);
@@ -1450,8 +1463,8 @@ ${effectSettingsMarkup()}
 <h2>五、背景设置</h2>
 
 
-<h3>1. 横屏背景</h3>
-<div class="bgbox">${window.SiteMedia ? window.SiteMedia.buttons("desktop") : ""}</div>
+<h3>1. 背景图片</h3>
+<div class="bgbox" id="background-image-options" data-variant="${currentBackgroundMediaVariant()}">${window.SiteMedia ? window.SiteMedia.buttons(currentBackgroundMediaVariant()) : ""}</div>
 
 <h3>2. 渐变色</h3>
 {% folding cyan, 查看渐变色背景 %}
@@ -1481,14 +1494,7 @@ ${effectSettingsMarkup()}
 <input type="color" id="define_colors" href="javascript:;" rel="noopener external nofollow" class="box" autocomplete="on" value="${defineColor}" oninput="changeBgColor()"></input>
 </div>
 {% endfolding %}
-
-
-
-<h3>4. 竖屏背景</h3>
-<div class="bgbox">${window.SiteMedia ? window.SiteMedia.buttons("mobile") : ""}</div>
-
-
-<h3>5. 自定义背景</h3>
+<h3>4. 自定义背景</h3>
 {% folding cyan, 设置自定义背景 %}
 <p><center>
 <input type="text" id="pic-link" size="70%" maxlength="1000" placeholder="请输入图片路径，如 /assets/home/pc_01.png">
@@ -1696,6 +1702,7 @@ function winboxNeedSize() {
 // 适应窗口大小
 function winResize() {
   try {
+    refreshBackgroundMediaButtons();
     var offsetWid = document.documentElement.clientWidth;
     if (offsetWid <= 768) {
       winbox.resize(offsetWid * 0.95 + "px", "90%").move("center", "center");

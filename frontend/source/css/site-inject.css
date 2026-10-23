@@ -283,7 +283,7 @@ html[data-rm="off"] #rightside button:has(> i.fa-mouse)::after{content:"";positi
 /* 小站资讯卡（2026-10-03 改版）样式 */
 /* 小站资讯卡 2026-10-03 改版 */
 .card-webinfo .wi{margin-top:2px;container-type:inline-size}
-.card-webinfo .wi-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 12px}
+.card-webinfo .wi-kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0 12px}
 .card-webinfo .wi-kpi-item{display:block;text-align:center;border-radius:10px;padding:10px 2px 8px;color:inherit;text-decoration:none;background:rgba(128,128,128,.09);background:color-mix(in srgb,var(--theme-color) 9%,transparent);transition:background .3s,transform .3s}
 .card-webinfo a.wi-kpi-item:hover{transform:translateY(-2px);background:rgba(128,128,128,.16);background:color-mix(in srgb,var(--theme-color) 16%,transparent)}
 .card-webinfo .wi-kpi-num{font-size:22px;line-height:1.1;font-weight:700;color:var(--theme-color);font-variant-numeric:tabular-nums}
@@ -348,7 +348,7 @@ html[data-rm="off"] #rightside button:has(> i.fa-mouse)::after{content:"";positi
  *   h1~h6 依次是 -1.55 / -1.35 / -1.22 / -1.05 / -0.9 / -0.9rem），
  * 于是图标被顶到标题盒左侧：桌面端卡片左右各有 40px 内边距还能兜住，
  * 窄屏卡片只剩 14px（.layout > div:first-child:not(.recent-posts) { padding: 36px 14px }），
- * 图标就会顶出卡片、在手机视口边缘被裁掉 —— 和友人帐 / 网址导航那两页是同一个毛病。
+ * 图标就会顶出卡片、在手机视口边缘被裁掉 —— 和网址导航页是同一个毛病。
  * 这里只在窄屏补回左内边距（= 该级负 margin + 约 0.25rem 间隙），图标就稳定落在标题盒内；
  * 桌面端阅读模式保持原样，不改观感。
  * 特异性：#content-inner.layout #article-container h2 = (2,0,1) ＞ 主题的 .read-mode #article-container h2 = (1,1,1)，

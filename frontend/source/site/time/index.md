@@ -9,7 +9,13 @@ description: 记录 Zany 小站的成长历程。
 
 <!-- timeline 2026-10-08 -->
 
-**建站**：Zany 小站正式建立。
+**重新建站**：Zany 小站重新建立，并持续更新。
+
+<!-- endtimeline -->
+
+<!-- timeline 2023-06-08 -->
+
+**首次建站**：小站初次建立，一年后黄铺子。
 
 <!-- endtimeline -->
 

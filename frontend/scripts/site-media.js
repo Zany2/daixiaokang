@@ -1,6 +1,4 @@
 'use strict'
-const path = require('path')
-const fs = require('fs')
 const media = require('../lib/site-media')
 const urlFor = require('hexo-util').url_for.bind(hexo)
 hexo.extend.helper.register('site_media_url', value => urlFor(media.assetUrl(hexo, value)))
@@ -19,15 +17,11 @@ hexo.extend.helper.register('site_media_config', () => {
   }
   const fallback = urlFor('/assets/fallback/image.webp')
   const background = (groups, index) => groups.length ? groups[index % groups.length].poster : fallback
-  const cats = ['/assets/decorations/cat.svg', '/assets/decorations/cat-original.png']
-    .filter(value => fs.existsSync(path.join(hexo.source_dir, value.slice(1))))
-    .map(value => urlFor(media.assetUrl(hexo, value)))
   return {
     ...pools,
     fallback,
     avatar: urlFor('/assets/fallback/avatar.png'),
-    cat: urlFor(media.assetUrl(hexo, '/assets/decorations/cat.svg')),
-    cats,
+    cat: urlFor(media.assetUrl(hexo, '/assets/decorations/cat-original.png')),
     defaults: {
       desktop: background(pools.desktop, 0), desktopDark: background(pools.desktop, 5),
       mobile: background(pools.mobile, 0), mobileDark: background(pools.mobile, 1)

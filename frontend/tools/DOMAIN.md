@@ -7,7 +7,6 @@
 - `_config.yml`：站点 URL、百度主动推送域名和 `Asia/Shanghai` 时区。站点 URL 用于生成 canonical、Open Graph、RSS、站点地图等绝对地址。
 - `source/robots.txt`：两个站点地图地址。
 - `_config.fomalhaut.yml`：页脚本站链接；评论和留言正式环境走 `/api`，本地访问走 `local_api_base`。
-- `source/social/link/index.md`：本站友链资料使用完整域名、实际头像和封面地址，供其他站点复制。
 - Vercel / Cloudflare Pages 的 AI 代理：默认允许正式域名及其子域。
 - 后端默认配置和 `.env.example`：保留本地来源，补充正式站和 www 的允许来源与 Host。本地已有 `.env` 也已同步这两项，不改数据库和 Redis 连接。
 
@@ -27,5 +26,5 @@
 
 - 百度主动推送仍需要自己的 `token`，仅填写域名不会开通收录推送。
 - 51LA、灵雀、百度统计等仍需在对应平台创建站点并填写真实标识；本次不填写占位密钥。
-- 朋友圈的数据仓库和示例友链仍待后续完善；它们不应简单替换成本站域名。
+- 朋友圈暂为空页面，保留菜单入口；后续补充自建前端样式与后端接口。
 - Hexo Git 部署仓库仍是模板地址。使用自己的服务器部署时，无需运行 `hexo deploy`；如果要使用 Git 部署，先配置真实仓库。

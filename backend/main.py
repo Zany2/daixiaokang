@@ -5,14 +5,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from app.api.feedback import router as feedback_router
-from app.cache.redis import close_redis, init_redis, redis_is_ready
-from app.core.config import get_settings
-from app.core.logging import configure_logging, get_logger
-from app.db.session import close_database, database_is_ready, init_database
-from app.middleware.request_context import RequestContextMiddleware
-from app.middleware.security_headers import SecurityHeadersMiddleware
-from app.services.feedback_runtime import FeedbackRuntime
+from controller.feedback import router as feedback_router
+from cache.redis import close_redis, init_redis, redis_is_ready
+from core.config import get_settings
+from core.logging import configure_logging, get_logger
+from db.session import close_database, database_is_ready, init_database
+from middleware.request_context import RequestContextMiddleware
+from middleware.security_headers import SecurityHeadersMiddleware
+from services.feedback_runtime import FeedbackRuntime
 
 settings = get_settings()
 configure_logging(settings)

@@ -90,3 +90,8 @@ mixin rightsideItem(array)
         i.fas.fa-forward-step(aria-hidden='true')
       button#home-intro-replay.home-intro-control(type='button' hidden title='重播背景视频' aria-label='从头重播首页背景视频')
         i.fas.fa-rotate-right(aria-hidden='true')
+
+  //- 始终留在工具栏最下方，用于收起或重新展开页面悬浮界面。
+  #rightside-ui-control
+    button#site-ui-toggle(type='button' title='收起页面菜单、文字与悬浮部件' aria-label='收起页面菜单、文字与悬浮部件' aria-pressed='false')
+      i.fas.fa-eye-slash(aria-hidden='true')

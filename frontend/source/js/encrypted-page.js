@@ -84,10 +84,13 @@
     if (!current(token)) return;
     var content = document.createElement('div');
     var body = decoded.slice('<hbe-prefix></hbe-prefix>'.length);
+    var hasContent = Boolean(body.trim());
+    var page = main.closest('#page');
     content.innerHTML = body;
     var scripts = Array.from(content.querySelectorAll('script'));
-    // 恋爱小屋当前没有正文，成功解锁后隐藏整个密码区，不添加按钮或成功提示。
-    main.style.display = body.trim() ? 'block' : 'none';
+    // 空正文解锁后复用普通空页面样式，同时隐藏密码区，不保留白色内容卡片。
+    if (page) page.classList.toggle('page-empty', !hasContent);
+    main.style.display = hasContent ? 'block' : 'none';
     main.replaceChildren(content);
     // 保留插件对解密正文中脚本、图片和目录的支持，校验通过后才挂载。
     scripts.forEach(function (old) {

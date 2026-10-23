@@ -3,9 +3,6 @@
   'use strict';
   var config = window.__SITE_MEDIA__ || { desktop: [], mobile: [], defaults: {}, fallback: '/assets/fallback/image.webp', avatar: '/assets/fallback/avatar.png' };
   var all = config.desktop.concat(config.mobile);
-  // Pick once per document; scrolling and PJAX keep the same decoration.
-  var cats = config.cats || [];
-  if (cats.length) config.cat = cats[Math.floor(Math.random() * cats.length)];
   function cssUrl(value) { return 'url(' + JSON.stringify(value) + ')'; }
   function background(value) { return cssUrl(value || config.fallback) + ', ' + cssUrl(config.fallback); }
   function defaultCss() {

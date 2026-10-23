@@ -1,1 +1,0 @@
-"""Zany backend application package."""

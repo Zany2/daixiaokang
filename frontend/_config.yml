@@ -38,6 +38,8 @@ skip_render:
   - 'js/tag-map/*' # leaflet / proj4 第三方库原文件，原样复制，不做 Nunjucks 渲染
   - 'js/ai-chat.js' # AI 助手前端本体（含大段 CSS/JS 字面量），原样复制，不做 Nunjucks 渲染
   - 'js/encrypted-page.js' # 加密页面交互脚本原样复制，避免被当作页面重复创建
+  - 'css/site-ui-toggle.css' # 页面界面收纳样式原样复制，避免被当作页面重复创建
+  - 'js/inject/site-ui-toggle.js' # 页面界面收纳脚本原样复制，避免被当作页面重复创建
   - 'box/astronomy/voyager.html' # 旅行者号交互星图，是完整独立页面（自带样式与脚本），由 index.md 用 iframe 引入，原样复制
 
 # Writing

@@ -15,7 +15,7 @@ function updateEncryptedScript(data) {
   const root = hexo.config.root || '/';
   const escapedRoot = root.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const script = new RegExp(`<script data-pjax src="${escapedRoot}(?:lib/hbe\\.js|js/encrypted-page\\.js(?:\\?[^\"]*)?)"><\\/script>`, 'g');
-  const replacement = `<script data-pjax src="${root}js/encrypted-page.js?v=20261013-unlock3"></script>`;
+  const replacement = `<script data-pjax src="${root}js/encrypted-page.js?v=20261024-unlock4"></script>`;
   data.content = data.content.replace(script, replacement);
   return data;
 }

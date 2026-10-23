@@ -22,7 +22,6 @@ menu:
   社交 || icon-shejiaoxinxi || faa-tada || hide:
     朋友圈: /social/fcircle/ || icon-pengyouquan || faa-tada
     留言板: /comments/ || icon-liuyan || faa-tada
-    友人帐: /social/link/ || icon-lianjie || faa-tada
   网站 || icon-wangye || faa-tada || hide:
     网站统计: /site/census/ || icon--tongjibiao || faa-tada
     旧时光: /site/time/ || icon-xianxingshalou || faa-tada
@@ -1018,6 +1017,7 @@ inject:
     - <link rel="stylesheet" href="/css/stats.css?v=20261005">
     - <link rel="stylesheet" href="/css/article-taxonomy.css?v=20261009"> # 标签入口与分类卡片，跟随主题色和明暗模式
     - <link rel="stylesheet" href="/css/footer-badges.css?v=20261010"> # 页脚站点信息双段式标识
+    - <link rel="stylesheet" href="/css/site-ui-toggle.css?v=20261024-ui3"> # 顶栏、首页标题文字、看板娘、FPS 与右侧按钮的收纳动画
     # 自建评论与留言 UI：表单、列表与交互统一到主题色与卡片语言。
     # 自建评论与留言板，配色跟随 --theme-color，独立作用域为 .zf。
     - <link rel="stylesheet" href="/css/feedback.css?v=20261013-ui8"> # 自建评论、留言板及手机端布局
@@ -1040,7 +1040,7 @@ inject:
     # 上面那些空的 <style id="themeColor"></style> / #rightSide / #transPercent / #bgFilterParam
     # / #defineBg / #menu_shadow / #nav-display / #aside-show / #aside-pos 是"运行时空槽"：
     # 由右下角美化面板的 JS 在运行时往里写 CSS，不能删、不能挪位置。
-    - <link rel="stylesheet" href="/css/site-inject.css?v=20261004q">
+    - <link rel="stylesheet" href="/css/site-inject.css?v=20261023-links1">
     # ── 手机端抽屉菜单改版（站点独立样式，不改主题源码）────────────────────────
     # source/css/mobile-drawer.css：#sidebar-menus 的层级 / 统计胶囊 / 图标底衬 /
     # 手风琴二级菜单 / 极光底色 / 深色适配，配色全部由 --theme-color 派生。
@@ -1072,6 +1072,7 @@ inject:
     - <script src="/js/inject/ping-route-boot.js"></script> # 延时探测参数（必须在 ping-route.js 之前执行）
     - <script src="/js/inject/ping-route.js"></script> # 公告栏线路延时徽标
     - <script src="/js/inject/beauty-boot.js?v=20261012-local3"></script> # 美化模块首屏预置（原内联 beautyBoot）
+    - <script src="/js/inject/site-ui-toggle.js?v=20261024-ui2"></script> # 页面悬浮界面收纳状态预置与切换
     - <script src="/js/inject/right-menu-state-boot.js"></script> # 侧栏「右键模式」按钮状态同步
     # ── 首页副标题打字机「丝滑版」（站点独立脚本 + 样式，不改主题源码）────────────
     # 主题 subtitle.pug 调 Typed.js 时是 typeSpeed:150 的逐字硬蹦；source/js/inject/typewriter.js
@@ -1125,9 +1126,9 @@ inject:
     - <script defer src="/js/modules/effects.js?v=20261023-controls1"></script> # 评论表情放大
     - <script defer src="/js/modules/reading.js?v=20261005-animation1"></script> # 阅读进度条/FPS
     - <script defer src="/js/modules/nav.js?v=20261013-notify2"></script> # 导航栏标题/首屏欢迎语/分享
-    - <script defer src="/js/modules/cursor.js?v=20261013-notify1"></script> # 小猫咪/右键菜单/听话鼠标
+    - <script defer src="/js/modules/cursor.js?v=20261024-cat1"></script> # 小猫咪/右键菜单/听话鼠标
     - <script defer src="/js/modules/footer-time.js?v=20261010"></script> # 页脚计时器
-    - <script defer src="/js/modules/settings.js?v=20261023-controls1"></script> # 美化面板：特效滑块实时调节、保存及恢复默认
+    - <script defer src="/js/modules/settings.js?v=20261024-responsivebg1"></script> # 美化面板：特效滑块实时调节、保存及恢复默认
     - <script defer src="/js/fomal.js?v=20261023-controls1"></script> # 站点主引导：模块地图 + 控制台策略 + 全局入口清单
     - <script defer src="/js/wechat-qr.js?v=20261008-hover1"></script> # 微信二维码悬浮预览，点击同页弹层展示
     - <script defer src="/js/festival.js"></script> # 节日提醒卡片（左上角通知）

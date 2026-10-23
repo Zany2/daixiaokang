@@ -1,0 +1,83 @@
+/* 页面悬浮界面收纳：方向与各部件所在的屏幕边缘保持一致。 */
+#nav {
+  transition:
+    transform .45s cubic-bezier(.4, 0, .2, 1),
+    translate .45s cubic-bezier(.4, 0, .2, 1),
+    opacity .35s ease-in-out,
+    visibility 0s .45s !important;
+}
+
+#live2d-frame,
+#fps,
+#rightside > #rightside-config-show,
+#rightside > #rightside-home-controls {
+  transition: translate .45s cubic-bezier(.4, 0, .2, 1), opacity .3s ease;
+}
+
+/* 首页中间的主标题与打字文字随收纳按钮原地渐隐、渐显，不产生位移。 */
+#page-header.full_page #site-title,
+#page-header.full_page #site-subtitle {
+  transition: opacity .55s ease-in-out, filter .55s ease-in-out, text-shadow 1s linear !important;
+}
+
+#rightside > #rightside-config-hide {
+  transition: transform .4s, translate .45s cubic-bezier(.4, 0, .2, 1), opacity .3s ease;
+}
+
+#site-ui-toggle {
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+
+#site-ui-toggle:focus-visible {
+  outline: 2px solid var(--btn-color);
+  outline-offset: 2px;
+}
+
+html.site-ui-collapsed #page-header #nav {
+  translate: 0 calc(-100% - 20px);
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+html.site-ui-collapsed #page-header.full_page #site-title,
+html.site-ui-collapsed #page-header.full_page #site-subtitle {
+  opacity: 0 !important;
+  filter: brightness(1.45) blur(2px);
+  pointer-events: none !important;
+}
+
+html.site-ui-collapsed #fps,
+html.site-ui-collapsed #live2d-frame:not([data-live2d-position="right"]) {
+  translate: calc(-100% - 24px) 0;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+html.site-ui-collapsed #live2d-frame[data-live2d-position="right"] {
+  translate: calc(100% + 24px) 0;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+html.site-ui-collapsed #rightside > #rightside-config-hide,
+html.site-ui-collapsed #rightside > #rightside-config-show,
+html.site-ui-collapsed #rightside > #rightside-home-controls {
+  translate: calc(100% + 24px) 0;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #nav,
+  #page-header.full_page #site-title,
+  #page-header.full_page #site-subtitle,
+  #live2d-frame,
+  #fps,
+  #rightside > #rightside-config-hide,
+  #rightside > #rightside-config-show,
+  #rightside > #rightside-home-controls {
+    transition: none !important;
+  }
+}
