@@ -3129,6 +3129,7 @@ span.card-clock-weather {
 
 .ft-item-2 .ft-img-group .img-group-item a img {
   width: 100%;
+  height: auto;
   max-height: 80px;
   border-radius: 10px;
 }

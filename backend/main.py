@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from controller.ai import router as ai_router
 from controller.feedback import router as feedback_router
 from cache.redis import close_redis, init_redis, redis_is_ready
 from core.config import get_settings
@@ -13,6 +14,7 @@ from db.session import close_database, database_is_ready, init_database
 from middleware.request_context import RequestContextMiddleware
 from middleware.security_headers import SecurityHeadersMiddleware
 from services.feedback_runtime import FeedbackRuntime
+from services.ai_runtime import AIRuntime
 
 settings = get_settings()
 configure_logging(settings)
@@ -24,6 +26,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("application.starting", extra={"environment": settings.environment})
     await init_redis(app)
     app.state.feedback_runtime = FeedbackRuntime(app.state.redis, settings)
+    app.state.ai_runtime = AIRuntime(app.state.redis, settings)
     try:
         if settings.database_auto_create:
             await init_database()
@@ -71,6 +74,7 @@ def create_app() -> FastAPI:
     )
     application.add_middleware(SecurityHeadersMiddleware)
     application.add_middleware(RequestContextMiddleware)
+    application.include_router(ai_router)
     application.include_router(feedback_router)
 
     return application

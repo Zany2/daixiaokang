@@ -3,21 +3,12 @@ mixin feedbackPanel(mode, articleKey)
   - const feedbackConfig = theme.feedback || {}
   - const prefix = isMessage ? 'guestbook' : 'article-feedback'
   section.zf(class=isMessage ? 'zf--messages' : 'zf--comments' id=isMessage ? 'guestbook-board' : 'post-comment' aria-labelledby=prefix + '-heading' data-feedback=mode data-article-key=articleKey data-api-base=feedbackConfig.api_base || '/api' data-local-api-base=feedbackConfig.local_api_base data-request-timeout=feedbackConfig.request_timeout_ms || 12000)
-    header.zf-header
-      .zf-heading
-        span.zf-eyebrow= isMessage ? 'ZANY · 留言板' : '读后交流'
-        if isMessage
-          h1.zf-title(id=prefix + '-heading') 给 Zany 留个言
-        else
+    if !isMessage
+      header.zf-header
+        .zf-heading
+          span.zf-eyebrow 读后交流
           h2.zf-title(id=prefix + '-heading') 文章评论
-        p.zf-description= isMessage ? '一个问候，一条建议，或者你想分享的事。' : '分享你的观点，也欢迎提出问题。'
-      if isMessage
-        .zf-hero-mark(aria-hidden='true')
-          svg(viewBox='0 0 100 100' fill='none')
-            rect(x='14' y='25' width='72' height='52' rx='12' stroke='currentColor' stroke-width='3')
-            path(d='M18 30L45 51C48 54 52 54 55 51L82 30M18 72L37 55M82 72L63 55' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round')
-            path(d='M35 13H53M44 5V21M76 12H88M82 6V18' stroke='currentColor' stroke-width='2' stroke-linecap='round')
-      else
+          p.zf-description 分享你的观点，也欢迎提出问题。
         button.zf-button.zf-button--soft(type='button' data-feedback-action='focus-form' data-idle-label='写下评论') 写下评论
 
     .zf-content
@@ -26,7 +17,7 @@ mixin feedbackPanel(mode, articleKey)
           span.zf-compose-icon(aria-hidden='true')
             svg(viewBox='0 0 24 24' width='20' height='20' fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round')
               path(d='M12 20H4V12M14 5L19 10M9 15L8 19L12 18L21 9C22 8 22 7 21 6L20 5C19 4 18 4 17 5Z')
-          h3= isMessage ? '写一条留言' : '写下你的想法'
+          h3(id=isMessage ? prefix + '-heading' : undefined)= isMessage ? '写一条留言' : '写下你的想法'
         .zf-reply-context(data-feedback-reply-context hidden)
           span(data-feedback-reply-label)
           button.zf-text-button(type='button' data-feedback-action='cancel-reply' data-idle-label='取消回复') 取消回复

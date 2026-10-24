@@ -1,4 +1,9 @@
 /* 自建文章评论与留言板；内容作用域为 .zf，顶栏修复仅作用于 .guestbook-header。 */
+/* 留言板顶部与其他页面保持一致，不显示导航底部阴影。 */
+#page-header.guestbook-header:not(.nav-fixed) #nav {
+  box-shadow: none;
+}
+
 /* 留言板没有大图横幅，但顶栏仍覆盖全页背景图片，使用白色文字保持可读。 */
 #page-header.guestbook-header:not(.nav-fixed) #nav #site-name,
 #page-header.guestbook-header:not(.nav-fixed) #nav #page-name,
@@ -143,11 +148,6 @@
 .zf-page-summary { flex-basis: 100%; margin-top: 5px; color: var(--zf-muted); text-align: center; font-size: 11px; }
 .zf .zf-noscript { margin-top: 20px; color: var(--zf-muted); }
 .zf-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.zf--messages .zf-header { position: relative; overflow: hidden; min-height: 170px; padding: 34px 38px; border: 1px solid var(--zf-line); border-radius: 24px; background: var(--zf-panel); background-image: radial-gradient(ellipse at 100% 0, var(--zf-wash), transparent 65%); box-shadow: var(--zf-shadow); }
-.zf--messages .zf-heading { position: relative; z-index: 1; max-width: 75%; }
-.zf--messages .zf-title { font-size: clamp(28px, 3.5vw, 38px); }
-.zf-hero-mark { position: absolute; top: 28px; right: 25px; width: 112px; height: 112px; color: var(--zf-accent); opacity: .6; transform: rotate(-8deg); }
-.zf-hero-mark svg { width: 100%; height: 100%; }
 .zf--messages .zf-content { grid-template-columns: minmax(0, 1fr); align-items: start; }
 .zf--messages .zf-compose { position: static; }
 .zf--messages .zf-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -174,10 +174,6 @@
   .zf-meta { gap: 4px 8px; }
   .zf-nickname { font-size: 13px; }
   .zf .zf-item-content { font-size: 13px; }
-  .zf--messages .zf-header { min-height: 154px; padding: 26px 21px; border-radius: 18px; }
-  .zf--messages .zf-heading { max-width: 85%; }
-  .zf--messages .zf-title { font-size: 28px; }
-  .zf-hero-mark { top: 40px; right: -16px; width: 90px; height: 90px; opacity: .23; }
 }
 @media (prefers-reduced-motion: reduce) {
   .zf *, .zf *::before, .zf *::after { animation: none !important; transition: none !important; }

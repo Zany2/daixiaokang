@@ -20,6 +20,8 @@
 /* 原 fomal.js 1650-1693 行，原样搬运，未改逻辑 */
 var now = new Date();
 function createtime() {
+  var workboard = document.getElementById("workboard");
+  if (!workboard) return;
   // 当前时间
   now.setTime(Date.now());
   // 旅行者1号距离：JPL Horizons 数据离线拟合模型（见文件中的 vgDist 模型块）
@@ -39,14 +41,20 @@ function createtime() {
   1 == String(snum).length && (snum = "0" + snum);
   // 摸鱼牌子按"当天是否法定休息日"切换：休息日=放假摸鱼中，工作日=上班摸鱼中
   var boardBadge = isRestDay(new Date())
-    ? `<img class='boardsign' src='/assets/badge/Fomalhaut-rest.svg' title='放假啦，光明正大地摸鱼~'>`
-    : `<img class='boardsign' src='/assets/badge/Fomalhaut-work.svg' title='上班偷偷摸鱼，别被发现~'>`;
+    ? `<img class='boardsign' src='/assets/badge/Fomalhaut-rest.svg' width='136' height='20' title='放假啦，光明正大地摸鱼~'>`
+    : `<img class='boardsign' src='/assets/badge/Fomalhaut-work.svg' width='136' height='20' title='上班偷偷摸鱼，别被发现~'>`;
   let currentTimeHtml =
     boardBadge +
     `<br> <div style="font-size:13px;font-weight:bold">本站运行了 ${dnum} 天 ${hnum} 小时 ${mnum} 分 ${snum} 秒 <i id="heartbeat" class='fas fa-heartbeat'></i> <br> 旅行者 1 号当前距离地球 ${dis} 千米，约为 ${unit} 个天文单位（信号单程需 ${lt}）🚀</div>`;
-  document.getElementById("workboard") &&
-    (document.getElementById("workboard").innerHTML = currentTimeHtml);
+  workboard.innerHTML = currentTimeHtml;
 }
+// 初次加载和 PJAX 替换页脚后立即填充，避免先显示空容器、一秒后再撑高。
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", createtime, { once: true });
+} else {
+  createtime();
+}
+document.addEventListener("pjax:complete", createtime);
 // 设置重复执行函数，周期1000ms
 setInterval(() => {
   createtime();

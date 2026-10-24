@@ -182,9 +182,9 @@ cover:
   # 生成时自动填充全部横屏自有封面，文章按标识固定分配，无需手写素材清单。
   default_cover: []
 
-# A simple 404 page
+# 关闭主题自定义 404 页；部署后由 Nginx 处理不存在的页面地址。
 error_404:
-  enable: true
+  enable: false
   subtitle: "此页面不存在哦٩͡[๏̯͡๏]"
   # https://i.loli.net/2020/05/19/aKOcLiyPl2JQdFD.png
   background: /assets/404_1.jpg
@@ -1016,11 +1016,12 @@ inject:
     # 所以全站注入也只在该页生效；:has() 不支持时整块失效，页面退回主题原样。
     - <link rel="stylesheet" href="/css/stats.css?v=20261005">
     - <link rel="stylesheet" href="/css/article-taxonomy.css?v=20261009"> # 标签入口与分类卡片，跟随主题色和明暗模式
+    - <link rel="stylesheet" href="/css/open-source-projects.css?v=20261024-projects5"> # 开源项目展示卡片
     - <link rel="stylesheet" href="/css/footer-badges.css?v=20261010"> # 页脚站点信息双段式标识
-    - <link rel="stylesheet" href="/css/site-ui-toggle.css?v=20261024-ui3"> # 顶栏、首页标题文字、看板娘、FPS 与右侧按钮的收纳动画
+    - <link rel="stylesheet" href="/css/site-ui-toggle.css?v=20261025-peek3"> # 顶栏、首页标题文字、看板娘、FPS 与右侧按钮的收纳动画
     # 自建评论与留言 UI：表单、列表与交互统一到主题色与卡片语言。
     # 自建评论与留言板，配色跟随 --theme-color，独立作用域为 .zf。
-    - <link rel="stylesheet" href="/css/feedback.css?v=20261013-ui8"> # 自建评论、留言板及手机端布局
+    - <link rel="stylesheet" href="/css/feedback.css?v=20261025-ui10"> # 自建评论、留言板及手机端布局
     # 已移除 Element-UI CSS（236KB，head 同步阻塞）：全站仅 fomal.js 的 15 处 $notify 用到，已改由 /js/notify.js 承担
     # - <link rel="stylesheet" href="https://registry.npmmirror.com/element-ui/2.15.7/files/lib/theme-chalk/index.css"> # 引入组件库
     # 综合美化模块样式引入
@@ -1072,7 +1073,7 @@ inject:
     - <script src="/js/inject/ping-route-boot.js"></script> # 延时探测参数（必须在 ping-route.js 之前执行）
     - <script src="/js/inject/ping-route.js"></script> # 公告栏线路延时徽标
     - <script src="/js/inject/beauty-boot.js?v=20261012-local3"></script> # 美化模块首屏预置（原内联 beautyBoot）
-    - <script src="/js/inject/site-ui-toggle.js?v=20261024-ui2"></script> # 页面悬浮界面收纳状态预置与切换
+    - <script src="/js/inject/site-ui-toggle.js?v=20261025-peek3"></script> # 页面悬浮界面收纳状态预置与切换
     - <script src="/js/inject/right-menu-state-boot.js"></script> # 侧栏「右键模式」按钮状态同步
     # ── 首页副标题打字机「丝滑版」（站点独立脚本 + 样式，不改主题源码）────────────
     # 主题 subtitle.pug 调 Typed.js 时是 typeSpeed:150 的逐字硬蹦；source/js/inject/typewriter.js
@@ -1125,9 +1126,9 @@ inject:
     - <script defer src="/js/modules/effect-engine.js?v=20261023-controls1"></script> # 雪花/星空/流星参数与动画，先于美化面板加载
     - <script defer src="/js/modules/effects.js?v=20261023-controls1"></script> # 评论表情放大
     - <script defer src="/js/modules/reading.js?v=20261005-animation1"></script> # 阅读进度条/FPS
-    - <script defer src="/js/modules/nav.js?v=20261013-notify2"></script> # 导航栏标题/首屏欢迎语/分享
+    - <script defer src="/js/modules/nav.js?v=20261025-peek2"></script> # 导航栏标题/首屏欢迎语/分享
     - <script defer src="/js/modules/cursor.js?v=20261024-cat1"></script> # 小猫咪/右键菜单/听话鼠标
-    - <script defer src="/js/modules/footer-time.js?v=20261010"></script> # 页脚计时器
+    - <script defer src="/js/modules/footer-time.js?v=20261024-footer1"></script> # 页脚计时器
     - <script defer src="/js/modules/settings.js?v=20261024-responsivebg1"></script> # 美化面板：特效滑块实时调节、保存及恢复默认
     - <script defer src="/js/fomal.js?v=20261023-controls1"></script> # 站点主引导：模块地图 + 控制台策略 + 全局入口清单
     - <script defer src="/js/wechat-qr.js?v=20261008-hover1"></script> # 微信二维码悬浮预览，点击同页弹层展示
@@ -1166,7 +1167,7 @@ CDN:
   custom_format:
 
   option:
-    main_css: /css/index.css?v=20261023-controls1
+    main_css: /css/index.css?v=20261024-footer-motion2
     main: /js/main.js?v=20261009-navmotion2
     utils: /js/utils.js?v=20261013-notify1
     # translate: https://cdn.tianli0.top/npm/js-heo@1.0.6/translate/tw_cn.js
@@ -1336,30 +1337,17 @@ lantern:
   enable: false
 
 # ---------------------------------------------------------------- AI 助手
-# 右侧竖排里的 AI 按钮：点开总结当前页面，可继续追问；对话存在浏览器本地。
+# 右侧竖排里的通用 AI 助手：当前页签内延续同一会话，完整消息保存在后端数据库。
 # 前端本体：source/js/ai-chat.js    注入器：scripts/ai-chat-inject.js
-# 注意：本文件已被 git 跟踪，Key 写在这里会进仓库 —— 建议把 Key 单独放到
-#       站点根目录的 .ai-chat-key（已加进 .gitignore），下面 api_key 留空即可。
+# 模型地址、模型名称、系统提示词和 API Key 均由 FastAPI 后端统一管理。
 ai_chat:
   enable: true                 # 总开关：false 则不注入按钮和面板
-  api_base: https://api.deepseek.com
-  api_key: ''                  # 直接写 Key（不推荐，会进 git）
-  api_key_file: .ai-chat-key   # 或从文件读；相对站点根目录
-  model: deepseek-chat    # 换模型只改这一行。deepseek-flash 是「思考型」模型：它先吐一大段 reasoning，
-                          # 这段也要算进 max_tokens；问它「代码写得怎样」这类需要琢磨的问题时，思考会把额度吃光、
-                          # 正文一个字都吐不出来（流正常结束但 finish_reason=length）。页面助手追求快而稳，用 chat。
-  temperature: 0.7
-  max_tokens: 8192            # 单次回复上限（含思考 token）。8192 是给「万一用回思考型模型」留的余量
-  max_history: 12              # 每次带给模型的历史轮数（不含本页正文）
-  max_page_chars: 32000        # 页面正文上限（字符）。超长文章取「开头 60% + 结尾 35%」，中间部分只把小节标题给模型
-  storage_key: ai_chat_history_v1
+  api_base: /api               # 部署后由 Nginx 将同源 /api 转发到 FastAPI
+  local_api_base: http://localhost:8000/api # 本地前端访问 FastAPI 的地址
+  max_input_chars: 1000        # 与后端 AI_MAX_INPUT_CHARS 一致
+  session_key: ai_chat_session_v1 # 仅用 sessionStorage 保存页签会话凭证
   panel_width: 460              # 面板宽度（需求 440-500px）
   panel_height: 640
   panel_right: 88              # 面板右边缘离屏幕右边的距离（避开按钮列）
-  timeout_ms: 10000            # 超过这么久还没吐出第一个字就提示「请求超时」（毫秒）
-  welcome: 你好，我是这个页面的 AI 助手。可以帮你总结当前页面、解释名词、回答关于本页的问题。
-  first_question: 请用中文总结这个页面的内容：先用一句话概括，再列 3-5 条要点。
-  system_prompt: |
-    你是这个博客的页面助手，语气自然、简洁、像朋友聊天。默认用中文回答；
-    只依据下面给出的页面内容和对话历史作答，页面里没有的信息不要编造，确实不知道就直说。
-    回答用 Markdown 排版，能用列表就用列表，避免长篇大论。
+  timeout_ms: 65000            # 接收无新进展的超时，建议大于后端模型读取超时（毫秒）
+  welcome: 你好，我是你的 AI 助手。学习、写作、编程，或是日常灵感，都可以和我聊聊。

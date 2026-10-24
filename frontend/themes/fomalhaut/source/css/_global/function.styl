@@ -106,8 +106,14 @@ minWidth2000()
 // animation
 if hexo-config('enter_transitions')
   #content-inner,
-  #footer
-    animation: bottom-top 1s
+  #footer-wrap
+    // 仅移动画面，不改变 flex 布局中的高度和间距。
+    animation: bottom-top 1s ease-out backwards
+
+  @media (prefers-reduced-motion: reduce)
+    #content-inner,
+    #footer-wrap
+      animation: none
 
   #page-header
     animation: header-effect 1s
@@ -173,11 +179,11 @@ if hexo-config('avatar.effect') == true
 
 @keyframes bottom-top
   0%
-    margin-top: 50px
+    transform: translateY(50px)
     opacity: 0
 
   100%
-    margin-top: 0
+    transform: none
     opacity: 1
 
 @keyframes titleScale

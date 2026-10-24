@@ -46,6 +46,3 @@ header#page-header(class=[isHomeClass, page.type === 'guestbook' ? 'guestbook-he
             !=fragment_cache('social', function(){return partial('includes/header/social')})
       #scroll-down
         i.fas.fa-angle-down.scroll-down-effects
-    else
-      #page-site-info
-        h1#site-title=site_title

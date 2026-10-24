@@ -87,7 +87,8 @@ script.
   })
 
   document.addEventListener('pjax:error', (e) => {
-    if (e.request.status === 404) {
-      pjax.loadUrl('/404.html')
+    // 站内页面不存在时回首页，不再请求已关闭的主题 404 页面。
+    if (e.request && e.request.status === 404) {
+      pjax.loadUrl(!{JSON.stringify(url_for('/'))})
     }
   })

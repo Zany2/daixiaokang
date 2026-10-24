@@ -17,7 +17,7 @@
 1. 在 DNS 中将主域名和 www 指向实际部署入口。
 2. 为两个域名配置有效证书，开启 HTTPS，并将 HTTP 跳转到 HTTPS、www 跳转到主域名。代码修改不会配置 DNS、证书或服务器跳转。
 3. 将前端构建产物 `public/` 作为静态网站发布，评论与留言的 `/api/` 请求保留路径转发至 FastAPI，例如 `http://127.0.0.1:8000/api/comments`。反向代理保留原 Host 时，后端已允许正式域名。
-4. 如果在服务器上继续使用 AI 助手，需要单独部署 AI 代理并配置服务端密钥。现有 Vercel / Cloudflare 函数不会随静态文件自动在普通服务器上运行。`/api/chat/completions` 应路由到 AI 代理，其余评论、留言 API 路由到 FastAPI。
+4. AI 助手已经由 FastAPI 提供 `/api/chat/completions`；在后端 `.env` 配置 `AI_API_KEY`，并让 Nginx 将同源 `/api` 统一转发到 FastAPI。
 5. 服务器的后端 `.env` 需要同步 CORS 和可信 Host；本机 `.env` 的修改不会自动传到服务器。数据库、Redis 的主机地址按部署方式切换为本机地址或容器服务名。
 
 更改域名配置后重新生成前端；更改后端环境变量后重启后端。本地仍可通过 `npm.cmd run server` 和 `http://localhost:4000` 开发。

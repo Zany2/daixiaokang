@@ -41,7 +41,7 @@ mixin footerBadgeParts(badge)
       .ft-img-group
         .img-group-item
           a(href='https://www.fomal.cc/' title='Fomalhaut🥝' target='_blank' rel='noopener noreferrer')
-            img(src='https://sourcebucket.s3.bitiful.net/img/avatar.webp' alt='Fomalhaut 头像' onerror=`this.onerror=null;this.src='${url_for(theme.error_img.flink)}'`)
+            img(src='https://sourcebucket.s3.bitiful.net/img/avatar.webp' width='80' height='80' alt='Fomalhaut 头像' onerror=`this.onerror=null;this.src='${url_for(theme.error_img.flink)}'`)
 
   if theme.footer.owner.enable
     - var now = new Date()

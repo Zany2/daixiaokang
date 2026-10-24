@@ -15,7 +15,9 @@
     "server": "hexo server",
     "media:prepare": "node tools/prepare-site-media.js",
     "test:media": "node --test tools/tests/site-media.test.js",
-    "test:media:browser": "node tools/tests/site-media.browser.cjs"
+    "test:media:browser": "node tools/tests/site-media.browser.cjs",
+    "test:ai:browser": "node tools/tests/ai-chat.browser.cjs",
+    "test:ui:browser": "node tools/tests/site-ui-toggle.browser.cjs"
   },
   "hexo": {
     "version": "6.3.0"

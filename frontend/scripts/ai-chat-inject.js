@@ -2,11 +2,10 @@
 /**
  * ai-chat-inject —— 博客 AI 助手（站点级注入器，不改主题源码）
  * ---------------------------------------------------------------------------
- * 作用：在每个 HTML 页面的 </body> 之前注入两样东西——
+ * 作用：在页面头部注入对话框样式，在 </body> 前注入两样东西——
  *   1) <script id="ai-chat-boot">window.AI_CHAT_CONFIG = {...}</script>
  *      配置来自 _config.fomalhaut.yml 的 ai_chat: 段（也支持站点 _config.yml）。
- *      API Key 优先取 ai_chat.api_key，为空时读 ai_chat.api_key_file
- *      （默认 .ai-chat-key，已在 .gitignore 里，不会进仓库）。
+ *      模型密钥只保存在 FastAPI 后端，页面仅获得后端接口地址。
  *   2) <script defer src="/js/ai-chat.js"></script>   —— 前端本体。
  *
  * 为什么用注入器而不是主题 pug：右侧部件由主题模板渲染，改它要动 themes/ 下的源码；
@@ -23,50 +22,26 @@ const path = require('path');
 const MARK = 'ai-chat-boot';
 const SCRIPT_SRC = '/js/ai-chat.js';
 
-/** 给前端本体带一个版本号（源文件 mtime + 字节数）。
- *  没有它的话浏览器会一直吃缓存：改完 ai-chat.js，访客（包括自己）刷新页面拿到的还是旧脚本。 */
-function scriptVer() {
+/** 脚本和独立样式使用源文件 mtime + 字节数生成版本号。 */
+function assetVer(file) {
   try {
-    const st = fs.statSync(path.join(hexo.base_dir || process.cwd(), 'source/js/ai-chat.js'));
+    const st = fs.statSync(path.join(hexo.base_dir || process.cwd(), 'source', file));
     return '?v=' + Math.floor(st.mtimeMs).toString(36) + '-' + st.size.toString(36);
   } catch (e) { return ''; }
 }
 
 const DEFAULTS = {
   enable: true,
-  api_base: 'https://api.deepseek.com',
-  api_key: '',
-  api_key_file: '.ai-chat-key',
-  // —— 部署（Vercel）模式：构建环境里有 DEEPSEEK_API_KEY 时前端不内联真 key，改走同源代理 ——
-  proxy_api_base: '/api',
-  proxy_key_stub: 'via-proxy',
-  model: 'deepseek-chat',
-  temperature: 0.7,
-  max_tokens: 8192,
-  system_prompt: '',
-  welcome: '',
-  first_question: '',
-  max_history: 12,
-  max_page_chars: 6000,
-  storage_key: 'ai_chat_history_v1',
+  api_base: '/api',
+  local_api_base: 'http://localhost:8000/api',
+  welcome: '你好，我是你的 AI 助手。学习、写作、编程，或是日常灵感，都可以和我聊聊。',
+  max_input_chars: 1000,
+  session_key: 'ai_chat_session_v1',
   panel_width: 460,
   panel_height: 640,
   panel_right: 88,
-  timeout_ms: 10000
+  timeout_ms: 65000
 };
-
-/** API Key：先看 api_key，再看 api_key_file（相对站点根目录）。 */
-function resolveKey(baseDir, cfg) {
-  if (cfg.api_key) return String(cfg.api_key).trim();
-  const file = cfg.api_key_file;
-  if (!file) return '';
-  try {
-    const p = path.isAbsolute(file) ? file : path.join(baseDir, file);
-    return fs.readFileSync(p, 'utf8').trim();
-  } catch (e) {
-    return '';
-  }
-}
 
 hexo.extend.filter.register('after_render:html', function (html) {
   try {
@@ -80,24 +55,19 @@ hexo.extend.filter.register('after_render:html', function (html) {
     const userCfg = themeCfg.ai_chat || {};
     const cfg = Object.assign({}, DEFAULTS, userCfg, siteCfg);
     if (cfg.enable === false) return html;
-    const envKey = String(process.env.DEEPSEEK_API_KEY || '').trim();
-    const localKey = resolveKey(hexo.base_dir || process.cwd(), cfg);
-    // 代理优先：没有本地真 key（或构建环境显式给了 key）时走同源代理，页面里不出现真 key
-    if (envKey || !localKey) {
-      cfg.api_base = cfg.proxy_api_base || '/api';
-      cfg.api_key = cfg.proxy_key_stub || 'via-proxy';
-      cfg.proxied = true;
-    } else {
-      cfg.api_key = localKey;
-    }
-    cfg.has_key = !!cfg.api_key;
+    cfg.proxied = true;
+    cfg.has_key = true;
+    cfg.stylesheet_url = '/css/ai-chat.css' + assetVer('css/ai-chat.css');
 
     const json = JSON.stringify(cfg)
       .replace(/</g, '\\u003c')          // 防止 </script> 提前闭合
       .replace(/\u2028|\u2029/g, '');   // 行分隔符会让整个脚本语法错误
     const boot = '<script id="' + MARK + '">window.AI_CHAT_CONFIG=' + json + ';</script>'
-      + '<script defer src="' + SCRIPT_SRC + scriptVer() + '"></script>';
-    return html.replace(/<\/body>/i, boot + '</body>');
+      + '<script defer src="' + SCRIPT_SRC + assetVer('js/ai-chat.js') + '"></script>';
+    // 提前加载样式；前端 ensureStyle 仍为无 head 的自定义页面保留兜底。
+    const styledHtml = html.replace(/<\/head>/i,
+      '<link id="ai-chat-style" rel="stylesheet" href="' + cfg.stylesheet_url + '"></head>');
+    return styledHtml.replace(/<\/body>/i, boot + '</body>');
   } catch (err) {
     try { hexo.log.warn('[ai-chat] 注入失败：' + (err && err.message)); } catch (e) {}
     return html;

@@ -52,9 +52,12 @@ function tonav() {
   pageName.innerText = getCurrentPageTitle();
 }
 
-function setNavTitleVisible(visible) {
+function setNavTitleVisible(visible, temporary) {
   var nav = document.getElementById("nav");
   if (!nav) return;
+  // 临时展开只改变画面；滚动仍持续更新收起后应恢复的状态。
+  if (!temporary) nav.__siteNavTitleRequested = visible;
+  if (document.documentElement.classList.contains('site-nav-peek')) visible = false;
   var nameContainer = nav.querySelector("#name-container");
   var menusItems = nav.querySelector("#menus > .menus_items");
   if (!nameContainer || !menusItems) return;

@@ -117,6 +117,11 @@ html.cinematic-site-background #web_bg {
   background: transparent;
 }
 
+/* 正文由视频状态控制淡入，避免与主题的入场动画同时修改透明度。 */
+.home-cinematic > #content-inner {
+  animation: none;
+}
+
 /* 首页滚动导航沿用渐变风格，覆盖旧主题夜间模式的 95% 纯黑背景。 */
 .home-cinematic > #page-header.nav-fixed > #nav {
   background: linear-gradient(60deg, #ffd7e4 0, #c8f1ff 93%) !important;

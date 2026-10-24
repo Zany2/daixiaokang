@@ -82,7 +82,7 @@ include ./custom/sun_moon.pug
 
 //- 全站加载小型控制脚本，支持从其他页面通过 PJAX 回到首页。
 if homeCinematic.enable
-  link(rel='stylesheet' href=url_for('/css/home-cinematic.css?v=20261012-local2'))
+  link(rel='stylesheet' href=url_for('/css/home-cinematic.css?v=20261024-footer-motion2'))
   - var homeMediaJson = JSON.stringify(homeMediaPools).replace(/</g, '\\u003c')
   //- 首页刷新重新抽取；子页面刷新从当前标签页恢复素材，PJAX / 重播复用。
   script.

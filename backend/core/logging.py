@@ -77,7 +77,7 @@ def configure_logging(settings: Settings) -> None:
         # 相对目录固定以 backend 为基准，避免启动目录不同导致日志位置变化。
         log_dir = settings.log_dir
         if not log_dir.is_absolute():
-            log_dir = Path(__file__).resolve().parents[2] / log_dir
+            log_dir = Path(__file__).resolve().parents[1] / log_dir
         log_dir.mkdir(parents=True, exist_ok=True)
         handlers["file"] = {
             "()": DailySizeRotatingFileHandler,

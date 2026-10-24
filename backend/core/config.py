@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -37,6 +37,27 @@ class Settings(BaseSettings):
     feedback_write_interval_seconds: int = Field(default=10, ge=1, le=3600)
     feedback_read_requests_per_minute: int = Field(default=120, ge=1, le=10000)
 
+    ai_enabled: bool = True
+    ai_api_base: str = "https://api.deepseek.com"
+    ai_api_key: SecretStr = SecretStr("")
+    ai_model: str = "deepseek-chat"
+    ai_system_prompt: str = (
+        "你是一位通用 AI 助手，帮助用户解答问题、学习知识、编写代码、整理文字和规划任务。"
+        "默认用中文自然、清晰地回答，根据问题调整详略，必要时使用 Markdown。"
+        "信息不足时先澄清，不确定的内容如实说明，不编造事实或声称执行了未执行的操作。"
+    )
+    ai_system_prompt_version: str = "v1"
+    ai_temperature: float = Field(default=0.7, ge=0, le=2)
+    ai_max_input_chars: int = Field(default=1000, ge=1, le=10000)
+    ai_max_tokens: int = Field(default=1024, ge=1, le=8192)
+    ai_max_history_turns: int = Field(default=6, ge=0, le=50)
+    ai_rate_limit_enabled: bool = True
+    ai_requests_per_hour: int = Field(default=30, ge=1, le=10000)
+    ai_conversations_per_hour: int = Field(default=10, ge=1, le=1000)
+    ai_conversation_ttl_hours: int = Field(default=24, ge=1, le=720)
+    ai_conversation_lock_seconds: int = Field(default=120, ge=10, le=600)
+    ai_request_timeout_seconds: float = Field(default=60, ge=5, le=300)
+
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:4000",
@@ -68,6 +89,22 @@ class Settings(BaseSettings):
         if level not in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}:
             raise ValueError("Invalid log level")
         return level
+
+    @field_validator("ai_api_base")
+    @classmethod
+    def normalize_ai_api_base(cls, value: str) -> str:
+        base = value.strip().rstrip("/")
+        if not base.startswith(("http://", "https://")):
+            raise ValueError("AI API base must use http or https")
+        return base
+
+    @field_validator("ai_model", "ai_system_prompt", "ai_system_prompt_version")
+    @classmethod
+    def reject_blank_ai_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("AI configuration must not be blank")
+        return value
 
 
 @lru_cache

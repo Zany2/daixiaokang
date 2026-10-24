@@ -73,21 +73,9 @@
       color: var(--light-grey)
       font-size: 30px
 
-  // page
+  // 普通页面已移除横幅标题，只保留导航栏自身的高度（电脑与手机一致）。
   &.not-home-page
-    height: 400px
-
-    +maxWidth768()
-      height: 280px
-
-  #page-site-info
-    position: absolute
-    top: 200px
-    padding: 0 10px
-    width: 100%
-
-    +maxWidth768()
-      top: 140px
+    height: 60px
 
   // post
   &.post-bg

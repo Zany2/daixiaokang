@@ -6,6 +6,7 @@
 - SQLAlchemy 2 异步 PostgreSQL 连接
 - 启动时自动创建数据库中缺失的表
 - Redis 异步连接
+- AI 对话流式代理与按 IP 限流
 - 请求 ID 与访问日志
 - 控制台与 UTF-8 文件日志，按日期或大小滚动并自动清理旧备份
 - CORS、可信 Host、安全响应头中间件
@@ -30,7 +31,7 @@ Swagger / ReDoc 仅在 `DOCS_ENABLED=true` 时开放，`/` 根路径当前没有
 
 所有配置均从环境变量读取，开发环境可复制 `.env.example` 为 `.env`。生产环境请替换数据库密码、可信域名和 CORS 来源，并启用 `LOG_JSON=true` 与 `STARTUP_CHECK_DEPENDENCIES=true`。
 
-`DATABASE_AUTO_CREATE=true` 时，启动会连接 PostgreSQL 并检查、创建缺失表，因此需要先创建配置中指定的数据库。表结构由继承 `db.base.Base` 的模型定义，并在 `models/__init__.py` 中导入注册。也可以在 PostgreSQL 中手动执行 `sql/feedback_tables.sql` 创建两张表、约束、索引和中文注释。自动建表和建表脚本都不会迁移已有旧表结构。
+`DATABASE_AUTO_CREATE=true` 时，启动会连接 PostgreSQL 并检查、创建缺失表，因此需要先创建配置中指定的数据库。表结构由继承 `db.base.Base` 的模型定义，并在 `models/__init__.py` 中导入注册。也可以在 PostgreSQL 中手动执行 `sql/create_tables.sql` 创建评论、留言和 AI 会话/消息共四张表，以及约束、索引和中文注释。自动建表和建表脚本都不会迁移已有旧表结构。
 
 ## 评论与留言表
 
@@ -64,6 +65,28 @@ Swagger / ReDoc 仅在 `DOCS_ENABLED=true` 时开放，`/` 根路径当前没有
 Redis 故障时，发表返回 `503`；查询使用进程内临时限流后继续读取数据库。Redis 限流可跨 worker 共享，临时限流只在单个 worker 内生效。查询通过限流后直接交给 SQLAlchemy 连接池和 PostgreSQL 处理。
 
 限流配置位于 `.env.example` 的“评论 / 留言限流”一节，实际配置从本地 `.env` 读取。Redis 单次操作默认最多等待 0.5 秒，告警日志按运行时合并，避免故障期间每条请求重复写日志。
+
+## AI 助手
+
+- `GET /api/ai/status`：查询启用状态、模型及输入/输出/历史轮次限制，不返回密钥。
+- `POST /api/ai/conversations`：接收 `{ "turn_id": "UUID", "content": "问题", "creation_token": "64位随机十六进制凭证" }`，在同一数据库事务中创建会话、用户问题和助手待生成记录，然后返回 SSE 流，状态码 201。不支持不含问题的空会话创建。
+- `POST /api/ai/conversations/{id}/messages`：在原会话内追加问题，返回 SSE 流，状态码 200。
+- `GET /api/ai/conversations/{id}/messages?limit=80&before_sequence=序号`：分页读取消息，按序号正序返回，并提供 `has_more`、`next_before_sequence`、`conversation_status`、`can_continue`、`expires_at`。已结束或过期的会话仍可读取历史，但不能继续提问。
+- `POST /api/ai/conversations/{id}/close`：结束旧会话，保留消息，重复关闭返回 204。
+
+创建后的接口必须携带 `X-Conversation-Token`。浏览器首次发送前通过 `crypto.getRandomValues` 生成 32 字节随机凭证，保存首轮 `turn_id`、凭证和待提交问题；后端将首轮 `turn_id` 作为会话 ID，数据库只保存凭证的 SHA-256 摘要。首个 SSE `type=conversation` 事件确认创建，浏览器随后删除本地待提交问题。`creation_token` 可省略以兼容由后端生成会话 ID 和凭证的客户端，但这类客户端无法保证首个响应到达前刷新的恢复能力。
+
+首次提交期间刷新时，前端使用已经保存的凭证查询原会话；若原请求尚未提交到数据库，则用相同 `turn_id` 和 `creation_token` 重试。后端会话锁和主键保证不会重复创建；对已存在会话验证凭证后返回 409，前端转为恢复历史，不重复生成首轮回答。错误凭证不能读取会话。后续流输出兼容 Chat Completions 的 `choices` 数据；后端完成消息入库并释放生成锁后，才发出 `type=complete` 和 `[DONE]`。上游失败用 `type=error` 通知前端，问题和失败的助手记录仍保留。
+
+前端仅在用户发送首条消息时创建会话，页面加载和打开面板不创建。当前页签的会话 ID 和凭证保存在 `sessionStorage`，刷新、站内导航和切换到其他标签再切回时延续原会话；普通关闭页签后重新打开网站则等待首条消息创建新会话。浏览器“恢复已关闭标签”可能恢复 `sessionStorage`，属于浏览器恢复行为，不保证开启新会话。独立新页签各自对话，不使用 `localStorage` 共享凭证。消息正文统一从数据库恢复，超过 80 条可继续分页加载。
+
+点击“新对话”停止当前流、结束旧会话、清除当前凭证并回到欢迎页；再次发送时才创建新会话。首次创建尚未确认时点击停止或新对话，会先等待创建确认，再停止并按需关闭原会话。手动停止、刷新或关闭导致断流时，后端在取消保护中保存已收到的文本和停止状态，包括响应头尚未发送成功的情况；恢复期间前端自动轮询生成状态，保存结束后才能继续发送。上游压缩响应先解码再解析 SSE。生成任务设有不超过会话锁租期的总超时。进程被强制终止不属于正常断流保护范围。
+
+模型密钥通过 `.env` 的 `AI_API_KEY` 配置，仅后端持有。模型名称、系统提示词、温度、回复上限均由后端决定。上下文从数据库按 `turn_id` 配对，默认取最近 **6 轮完整成功问答 + 当前问题 + 系统提示词**；失败、手动停止、生成中或已软删除的轮次不参与上下文。`AI_MAX_HISTORY_TURNS=6` 替代旧配置 `AI_MAX_HISTORY_MESSAGES`。该限制不影响完整历史存储。目前不包含工具调用、知识库或 Agent 任务编排。
+
+默认每 IP 每小时最多发送 30 次问题、创建 10 个会话，Redis 计数可跨 worker 共享。Redis 不可用时写接口返回 503；`AI_RATE_LIMIT_ENABLED=false` 仅关闭配额，生成锁仍需要 Redis。会话默认闲置 24 小时后不可继续发送，历史仍可查看。调整参数见 `.env.example`。
+
+本地前端请求 `http://localhost:8000/api/ai/...`。正式部署由 Nginx 将同源 `/api` 转发到 FastAPI，并关闭响应缓冲；SSE 返回 `X-Accel-Buffering: no` 和 `Cache-Control: no-store, no-transform`。旧 Vercel/Cloudflare `/api/chat/completions` 代理不参与当前会话流程。前端无数据超时默认为 65 秒，部署时应大于后端模型读取超时。
 
 ## 日志
 
