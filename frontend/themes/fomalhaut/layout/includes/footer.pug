@@ -1,0 +1,73 @@
+mixin footerBadgeParts(badge)
+  span.footer-badge-label
+    if badge.icon
+      svg.footer-badge-icon(aria-hidden='true')
+        use(xlink:href='#' + badge.icon)
+    span= badge.label
+  span.footer-badge-value= badge.value
+
+#footer-wrap
+  #ft
+    .ft-item-1
+      .t-top
+        .t-t-l
+          p.ft-t.t-l-t 格言🧬
+          .bg-ad
+            div
+              | 再看看那个光点，它就在这里，这是家园，这是我们 —— 你所爱的每一个人，你认识的每一个人，你听说过的每一个人，曾经有过的每一个人，都在它上面度过他们的一生✨
+            .btn-xz-box
+              a.btn-xz(href='/box/astronomy/') 点击开启星辰之旅
+        .t-t-r
+          p.ft-t.t-l-t 猜你想看💡
+          ul.ft-links
+            li
+              a(href='/archives/') 开源指南
+              a(href='/box/nav/') 网址导航
+            li
+              a(href='/comments/') 留点什么
+              a(href='/site/census/') 网站统计
+            li
+              a(href='/personal/about/') 关于我
+              a(href='/archives/') 文章归档
+            li
+              a(href='/article/categories/') 文章分类
+              a(href='/article/tags/') 文章标签
+            li
+              a(href='/box/gallery/') 我的画廊
+              a(href='/site/time/') 建设进程
+    .ft-item-2
+      p.ft-t 推荐友链⌛
+      //- 推荐友链只保留 Fomalhaut。
+      .ft-img-group
+        .img-group-item
+          a(href='https://www.fomal.cc/' title='Fomalhaut🥝' target='_blank' rel='noopener noreferrer')
+            img(src='https://sourcebucket.s3.bitiful.net/img/avatar.webp' width='80' height='80' alt='Fomalhaut 头像' onerror=`this.onerror=null;this.src='${url_for(theme.error_img.flink)}'`)
+
+  if theme.footer.owner.enable
+    - var now = new Date()
+    - var nowYear = now.getFullYear()
+    - var sinceYear = theme.footer.owner.since || nowYear
+    .copyright
+      span!= `<b>&copy;${sinceYear}-${nowYear}</b>`
+      span!= `<b>&nbsp;&nbsp;By ${config.author}</b>`
+  if theme.footer.copyright
+    .framework-info
+      span= _p('footer.framework') + ' '
+      a(href='https://hexo.io')= 'Hexo'
+      span.footer-separator |
+      span= _p('footer.theme') + ' '
+      a(href='https://github.com/jerryc127/hexo-theme-butterfly')= 'Butterfly'
+  if theme.footer.custom_text
+    .footer_custom_text!=`${theme.footer.custom_text}`
+  #workboard
+  if theme.footer.badges && theme.footer.badges.enable
+    .footer-badges(role='group' aria-label='站点信息')
+      each badge in theme.footer.badges.items || []
+        if badge && badge.label && badge.value
+          - var badgeColor = '--footer-badge-color:' + (badge.color || '#64748b')
+          if badge.link
+            a.footer-badge(href=badge.link target='_blank' rel='noopener noreferrer' style=badgeColor aria-label=badge.label + '：' + badge.value)
+              +footerBadgeParts(badge)
+          else
+            span.footer-badge.is-pending(style=badgeColor title='信息待补充，暂不可跳转')
+              +footerBadgeParts(badge)

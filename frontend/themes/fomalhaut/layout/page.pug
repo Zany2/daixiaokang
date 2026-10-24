@@ -1,0 +1,33 @@
+extends includes/layout.pug
+
+block content
+  -
+    var generatedPageTypes = ['tags', 'categories', 'link', 'echarts', 'redirect', 'guestbook']
+    var hasGeneratedContent = generatedPageTypes.indexOf(page.type) !== -1
+    var hasBodyContent = String(page.content || '').replace(/<!--[\s\S]*?-->/g, '').trim().length > 0
+    // 独立页面不挂载评论区；文章详情页由 post.pug 处理评论。
+    var isEmptyPage = !hasGeneratedContent && !hasBodyContent
+  #page(class=isEmptyPage ? 'page-empty' : undefined)
+    if top_img === false && page.type !== 'guestbook'
+      h1.page-title= page.title
+
+    case page.type
+      when 'guestbook'
+        if theme.feedback && theme.feedback.enable
+          - var customFeedbackLoaded = true
+          include includes/feedback.pug
+          +feedbackPanel('messages', '')
+        else
+          p 留言板暂时关闭。
+      when 'tags'
+        include includes/page/tags.pug
+      when 'link'
+        include includes/page/flink.pug
+      when 'categories'
+        include includes/page/categories.pug
+      when 'echarts'
+        include includes/page/echarts.pug
+      when 'redirect'
+        include includes/page/redirect.pug
+      default
+        include includes/page/default-page.pug

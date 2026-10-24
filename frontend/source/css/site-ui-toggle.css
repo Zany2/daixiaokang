@@ -1,0 +1,166 @@
+/* 页面悬浮界面收纳：方向与各部件所在的屏幕边缘保持一致。 */
+#nav {
+  --site-nav-transition:
+    transform .45s cubic-bezier(.4, 0, .2, 1),
+    translate .45s cubic-bezier(.4, 0, .2, 1),
+    opacity .35s ease-in-out,
+    visibility 0s .45s;
+  transition: var(--site-nav-transition) !important;
+}
+
+#live2d-frame,
+#fps,
+#rightside > #rightside-config-show,
+#rightside > #rightside-home-controls {
+  transition: translate .45s cubic-bezier(.4, 0, .2, 1), opacity .3s ease;
+}
+
+/* 首页中间的主标题与打字文字随收纳按钮原地渐隐、渐显，不产生位移。 */
+#page-header.full_page #site-title,
+#page-header.full_page #site-subtitle {
+  transition: opacity .55s ease-in-out, filter .55s ease-in-out, text-shadow 1s linear !important;
+}
+
+#rightside > #rightside-config-hide {
+  transition: transform .4s, translate .45s cubic-bezier(.4, 0, .2, 1), opacity .3s ease;
+}
+
+#site-ui-toggle {
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+
+#site-ui-toggle:focus-visible {
+  outline: 2px solid var(--btn-color);
+  outline-offset: 2px;
+}
+
+html.site-ui-collapsed #page-header #nav {
+  /* 展开与收起都保持同一定位，避免退出时瞬间跳回已滚出屏幕的头图。 */
+  position: fixed !important;
+  top: 0 !important;
+  display: flex !important;
+  transform: translate3d(0, 0, 0) !important;
+  translate: 0 calc(-100% - 20px);
+  opacity: 0 !important;
+  visibility: visible !important;
+  pointer-events: none !important;
+  animation: none !important;
+  background: linear-gradient(60deg, #ffd7e4, #c8f1ff) !important;
+}
+/* 滚动导航的准备/回顶状态也使用与收纳按钮相同的 transition。 */
+html.site-ui-collapsed #page-header #nav,
+html.site-ui-collapsed #page-header.nav-fixed.nav-preparing > #nav,
+html.site-ui-collapsed #page-header.nav-fixed.nav-returning > #nav,
+html.site-ui-collapsed #page-header.nav-top-returning > #nav {
+  transition: var(--site-nav-transition) !important;
+}
+
+/* 顶部触发区独立于导航，导航完全收起后依然可用。 */
+html.site-ui-collapsed #page-header {
+  /* 头图的模糊入场滤镜会让 fixed 导航随头图滚走。 */
+  filter: none !important;
+}
+#site-nav-reveal {
+  display: none;
+}
+html.site-ui-collapsed #site-nav-reveal:not([hidden]) {
+  display: block;
+  position: fixed;
+  inset: 0 0 auto;
+  height: var(--site-nav-height, 60px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  z-index: 99;
+  cursor: pointer;
+}
+#site-nav-reveal:focus-visible {
+  outline: 2px solid var(--theme-color, #39c5bb);
+  outline-offset: -2px;
+}
+html.site-ui-collapsed.site-nav-peek #page-header #nav {
+  translate: 0 0;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transition-delay: 0s !important;
+}
+[data-theme='dark'].site-ui-collapsed #page-header #nav {
+  background: linear-gradient(60deg, #1e2834, #1a3a40) !important;
+}
+html.site-ui-collapsed #page-header #nav a,
+html.site-ui-collapsed #page-header #nav #site-name,
+html.site-ui-collapsed #page-header #nav #toggle-menu {
+  color: var(--font-color, #1f1f1f) !important;
+  text-shadow: none !important;
+}
+/* 展开时让出菜单的点击区域。 */
+html.site-nav-peek #site-nav-reveal:not(:focus-visible) {
+  pointer-events: none;
+}
+@media (hover: none), (pointer: coarse) {
+  html.site-ui-collapsed #site-nav-reveal:not([hidden]) {
+    inset: 0 auto auto 50%;
+    translate: -50% 0;
+    width: 76px;
+    height: 32px;
+  }
+  #site-nav-reveal::after {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: 8px auto 0;
+    border-radius: 4px;
+    background: var(--theme-color, #39c5bb);
+    box-shadow: 0 1px 4px #0003;
+  }
+  html.site-nav-peek #site-nav-reveal {
+    visibility: hidden;
+  }
+}
+
+html.site-ui-collapsed #page-header.full_page #site-title,
+html.site-ui-collapsed #page-header.full_page #site-subtitle {
+  opacity: 0 !important;
+  filter: brightness(1.45) blur(2px);
+  pointer-events: none !important;
+}
+
+html.site-ui-collapsed #fps,
+html.site-ui-collapsed #live2d-frame:not([data-live2d-position="right"]) {
+  translate: calc(-100% - 24px) 0;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+html.site-ui-collapsed #live2d-frame[data-live2d-position="right"] {
+  translate: calc(100% + 24px) 0;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+html.site-ui-collapsed #rightside > #rightside-config-hide,
+html.site-ui-collapsed #rightside > #rightside-config-show,
+html.site-ui-collapsed #rightside > #rightside-home-controls {
+  translate: calc(100% + 24px) 0;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #nav {
+    --site-nav-transition: none;
+  }
+  #nav,
+  #page-header.full_page #site-title,
+  #page-header.full_page #site-subtitle,
+  #live2d-frame,
+  #fps,
+  #rightside > #rightside-config-hide,
+  #rightside > #rightside-config-show,
+  #rightside > #rightside-home-controls {
+    transition: none !important;
+  }
+}

@@ -1,0 +1,191 @@
+#myscoll
+- var pageTitle
+- is_archive() ? page.title = findArchivesTitle(page, theme.menu, date) : ''
+- if (is_tag()) pageTitle = _p('page.tag') + ': ' + page.tag
+- else if (is_category()) pageTitle = _p('page.category') + ': ' + page.category
+- else if (is_current('/404.html', [strict])) pageTitle = _p('error404')
+- else pageTitle = page.title || config.title || ''
+
+- var isSubtitle = config.subtitle ? ' - ' + config.subtitle : ''
+- var tabTitle = is_home() || !pageTitle ? config.title + isSubtitle : pageTitle + ' | ' + config.title
+
+- var pageKeywords
+- if (page.keywords) pageKeywords = Array.isArray(page.keywords) ? (page.keywords).join(',') :  ([]).join(',') || page.keywords
+- else if (page.tags && page.tags.length) pageKeywords = page.tags.data.map(function(tag) {return tag.name;}).join(',')
+- else pageKeywords = Array.isArray(config.keywords) ? (config.keywords).join(','):  ([]).join(',') || config.keywords
+- var pageAuthor = config.email ? config.author + ',' + config.email : config.author
+- var pageCopyright = config.copyright || config.author
+- var themeColorLight = theme.theme_color && theme.theme_color.enable && theme.theme_color.meta_theme_color_light || '#ffffff'
+- var themeColorDark = theme.theme_color && theme.theme_color.enable && theme.theme_color.meta_theme_color_dark || '#0d0d0d'
+- var themeColor = theme.display_mode === 'dark' ? themeColorDark : themeColorLight
+
+meta(charset='UTF-8')
+meta(http-equiv="X-UA-Compatible" content="IE=edge")
+meta(name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no")
+title= tabTitle
+if pageKeywords
+  meta(name="keywords" content=pageKeywords)
+meta(name="author" content=pageAuthor)
+meta(name="copyright" content=pageCopyright)
+meta(name ="format-detection" content="telephone=no")
+meta(name="theme-color" content=themeColor)
+
+//- Open_Graph
+include ./head/Open_Graph.pug
+
+!=favicon_tag(theme.favicon || config.favicon)
+link(rel="canonical" href=urlNoIndex())
+
+//- 預解析
+!=partial('includes/head/preconnect', {}, {cache: true})
+
+//- 網站驗證
+!=partial('includes/head/site_verification', {}, {cache: true})
+
+//- PWA
+if (theme.pwa && theme.pwa.enable)
+  !=partial('includes/head/pwa', {}, {cache: true})
+
+//- main css
+link(rel='stylesheet', href=url_for(theme.asset.main_css))
+link(rel='stylesheet', href=url_for(theme.asset.fontawesomeV6) media="print" onload="this.media='all'")
+
+if (theme.snackbar && theme.snackbar.enable)
+  link(rel='stylesheet', href=url_for(theme.asset.snackbar_css) media="print" onload="this.media='all'")
+
+if theme.fancybox
+  link(rel='stylesheet' href=url_for(theme.asset.fancybox_css_v4) media="print" onload="this.media='all'")
+
+//- google_adsense
+!=partial('includes/head/google_adsense', {}, {cache: true})
+
+//- analytics
+!=partial('includes/head/analytics', {}, {cache: true})
+
+//- font
+if theme.blog_title_font &&　theme.blog_title_font.font_link
+  link(rel='stylesheet' href=url_for(theme.blog_title_font.font_link) media="print" onload="this.media='all'")
+
+//- global config
+!=partial('includes/head/config', {}, {cache: true})
+
+include ./head/config_site.pug
+include ./head/noscript.pug
+
+!=fragment_cache('injectHeadJs', function(){return inject_head_js()})
+
+include ./site-media.pug
+
+!=fragment_cache('injectHead', function(){return injectHtml(theme.inject.head)})
+
+include ./custom/sun_moon.pug
+
+//- 全站加载小型控制脚本，支持从其他页面通过 PJAX 回到首页。
+if homeCinematic.enable
+  link(rel='stylesheet' href=url_for('/css/home-cinematic.css?v=20261024-footer-motion2'))
+  - var homeMediaJson = JSON.stringify(homeMediaPools).replace(/</g, '\\u003c')
+  //- 首页刷新重新抽取；子页面刷新从当前标签页恢复素材，PJAX / 重播复用。
+  script.
+    (function (pools, startOnHome) {
+      window.__HOME_CINEMATIC_MEDIA__ = window.__HOME_CINEMATIC_MEDIA__ || {};
+      if (typeof window.__selectHomeCinematicMedia__ === 'function') return;
+      var sessionPrefix = 'home-cinematic:session:';
+      function sameUrl(first, second) {
+        try { return new URL(first, location.href).href === new URL(second, location.href).href; }
+        catch (error) { return false; }
+      }
+      window.__rememberHomeCinematicMedia__ = function (variant, media) {
+        if (!media || !media.id || !media.poster) return;
+        var selected = window.__HOME_CINEMATIC_MEDIA__;
+        if (selected[variant] && selected[variant].id === media.id) {
+          selected[variant] = Object.assign({}, selected[variant], { poster: media.poster });
+        }
+        try {
+          var saved = { variant: variant, id: media.id, poster: media.poster };
+          window.sessionStorage.setItem(sessionPrefix + variant, JSON.stringify(saved));
+          window.sessionStorage.setItem(sessionPrefix + 'background', JSON.stringify(saved));
+        } catch (error) {
+          // 禁用会话存储时仍保留当前文档中的背景。
+        }
+      };
+      window.__restoreHomeCinematicMedia__ = function (variant, restoreBackground) {
+        try {
+          var saved = JSON.parse(window.sessionStorage.getItem(sessionPrefix + variant) || 'null');
+          if (restoreBackground) {
+            // 子页面缩放或旋转屏幕后仍保留原背景，刷新也恢复实际使用的那一组。
+            var last = JSON.parse(window.sessionStorage.getItem(sessionPrefix + 'background') || 'null');
+            var lastGroups = last && (last.variant === 'desktop' || last.variant === 'mobile') && pools[last.variant];
+            if (Array.isArray(lastGroups) && lastGroups.some(function (item) { return item.id === last.id; })) {
+              variant = last.variant;
+              saved = last;
+            }
+          }
+          var groups = pools[variant];
+          if (!Array.isArray(groups) || !groups.length) return null;
+          if (!saved || typeof saved.id !== 'string') return null;
+          var group = groups.find(function (item) { return item.id === saved.id; });
+          if (!group) return null;
+          // 只恢复当前配置仍存在的素材；域名、素材配置更新后不沿用旧图片地址。
+          var posters = [group.poster, group.posterFallback, window.SiteMedia && window.SiteMedia.config.fallback].filter(Boolean);
+          var poster = posters.find(function (url) { return typeof saved.poster === 'string' && sameUrl(url, saved.poster); }) || group.poster;
+          var selected = window.__HOME_CINEMATIC_MEDIA__;
+          var restored = Object.assign({}, group, { poster: poster, variant: variant });
+          if (!selected[variant]) selected[variant] = restored;
+          return restored;
+        } catch (error) {
+          return null;
+        }
+      };
+      window.__selectHomeCinematicMedia__ = function (variant) {
+        var selected = window.__HOME_CINEMATIC_MEDIA__;
+        if (selected[variant]) return selected[variant];
+        if (!startOnHome && window.__restoreHomeCinematicMedia__(variant)) return selected[variant];
+        var groups = pools[variant];
+        if (!Array.isArray(groups) || !groups.length) return null;
+        var key = 'home-cinematic:last-group:' + variant;
+        var lastId = '';
+        try {
+          lastId = window.localStorage.getItem(key) || '';
+        } catch (error) {
+          // 禁用存储时仍允许播放，不让选片失败阻塞首屏。
+        }
+        var candidates = groups.filter(function (group) { return group.id !== lastId; });
+        // 只剩一组或配置为固定素材时，保留原有兜底行为。
+        if (!candidates.length) candidates = groups;
+        var media = candidates[Math.floor(Math.random() * candidates.length)];
+        selected[variant] = media;
+        window.__rememberHomeCinematicMedia__(variant, media);
+        try {
+          // 只记录本次使用的端，另一端的未播放素材不更新历史。
+          window.localStorage.setItem(key, media.id);
+        } catch (error) {
+          // 存储不可用时退回普通随机，不影响视频与静态背景。
+        }
+        return media;
+      };
+    })(!{homeMediaJson}, !{JSON.stringify(Boolean(useHomeCinematic))});
+  script(defer src=url_for('/js/modules/home-cinematic.js?v=20261013-session2'))
+  if useHomeCinematic
+    //- 只预加载当前端抽中的图片，不加载默认组或其他组的图片。
+    script.
+      (function () {
+        var variant = window.matchMedia('(max-width: 900px)').matches ? 'mobile' : 'desktop';
+        var media = window.__selectHomeCinematicMedia__(variant);
+        if (!media) return;
+        var preload = document.createElement('link');
+        preload.rel = 'preload';
+        preload.as = 'image';
+        preload.href = media.poster;
+        document.head.appendChild(preload);
+      })();
+      // 首屏保护：脚本加载失败时，8 秒后恢复内容。
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+          !document.documentElement.classList.contains('custom-site-background') &&
+          !(navigator.connection && navigator.connection.saveData)) {
+        window.__homeIntroBootExpired = false;
+        document.documentElement.classList.add('home-intro-pending');
+        window.__homeIntroBootTimer = setTimeout(function () {
+          window.__homeIntroBootExpired = true;
+          document.documentElement.classList.remove('home-intro-pending');
+        }, 8000);
+      }

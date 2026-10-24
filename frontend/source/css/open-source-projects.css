@@ -1,0 +1,115 @@
+/* 开源作品页：作用域独立，颜色跟随博客主题与明暗模式。 */
+#page #article-container .oss-showcase {
+  --oss-accent: var(--theme-color, #39c5bb);
+  --oss-ink: var(--font-color, #4c4948);
+  --oss-surface: var(--card-bg, #fff);
+  --oss-muted: color-mix(in srgb, var(--oss-ink) 72%, var(--oss-surface));
+  --oss-border: color-mix(in srgb, var(--oss-ink) 15%, transparent);
+  --oss-soft: color-mix(in srgb, var(--oss-accent) 8%, var(--oss-surface));
+  color: var(--oss-ink);
+  line-height: 1.8;
+}
+
+#page .oss-showcase h3 { margin: 0; padding: 0; color: inherit; line-height: 1.4; }
+#page .oss-showcase h3::before { content: none; }
+
+/* 覆盖正文链接的悬停底色与内边距，按钮尺寸在悬停时保持一致。 */
+#page #article-container .oss-showcase a {
+  text-decoration: none;
+  box-shadow: none;
+  border-bottom: 0;
+}
+
+#page .oss-showcase .oss-project-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+#page .oss-showcase .oss-project {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 26px;
+  border: 1px solid var(--oss-border);
+  border-radius: 20px;
+  background: var(--oss-surface);
+  transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+
+#page .oss-showcase .oss-featured {
+  grid-column: 1 / -1;
+  background: linear-gradient(120deg, var(--oss-soft), var(--oss-surface) 78%);
+  border-color: color-mix(in srgb, var(--oss-accent) 35%, var(--oss-border));
+}
+
+#page .oss-showcase .oss-project-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+#page .oss-showcase .oss-project-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 1px solid color-mix(in srgb, var(--oss-accent) 20%, transparent);
+  border-radius: 14px;
+  background: var(--oss-soft);
+  color: var(--oss-accent);
+  font-size: 19px;
+}
+
+#page .oss-showcase .oss-category { color: var(--oss-muted); font-size: 12px; }
+#page .oss-showcase .oss-project-number { margin-left: auto; color: var(--oss-muted); font-family: var(--code-font, monospace); font-size: 13px; }
+#page .oss-showcase h3 { font-size: 25px; overflow-wrap: anywhere; }
+#page .oss-showcase .oss-featured h3 { font-size: 30px; }
+#page .oss-showcase .oss-project-summary { margin: 12px 0; font-size: 16px; font-weight: 600; line-height: 1.7; }
+#page .oss-showcase .oss-project-description { margin: 0; color: var(--oss-muted); font-size: 14px; }
+
+/* 能力项不使用 ul/li，避免主题的列表圆圈与自定义实心圆点叠加。 */
+#page .oss-showcase .oss-features { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 18px 0; padding: 0; }
+#page .oss-showcase .oss-feature { display: block; position: relative; margin: 0; padding: 0 0 0 12px; font-size: 13px; }
+#page .oss-showcase .oss-feature::before { content: ''; position: absolute; top: .8em; left: 0; width: 4px; height: 4px; border: 0; border-radius: 50%; background: var(--oss-accent); }
+#page .oss-showcase .oss-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: auto; padding-top: 6px; }
+#page .oss-showcase .oss-tags span { padding: 3px 10px; border-radius: 7px; background: var(--oss-soft); color: var(--oss-ink); font-size: 11px; line-height: 1.7; }
+#page .oss-showcase .oss-project-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--oss-border); }
+
+#page #article-container .oss-showcase .oss-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--oss-ink);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color .2s ease, border-color .2s ease;
+}
+
+#page #article-container .oss-showcase .oss-action-primary {
+  border-color: var(--oss-border);
+  background: var(--oss-soft);
+}
+
+#page #article-container .oss-showcase .oss-action:hover {
+  border-color: var(--oss-accent);
+  /* 主题正文链接使用了 !important 底色，这里仅覆盖作品页按钮。 */
+  background: var(--oss-soft) !important;
+}
+#page #article-container .oss-showcase a:focus-visible { outline: 2px solid var(--oss-accent); outline-offset: 4px; }
+#page .oss-showcase .oss-closing { display: flex; align-items: baseline; gap: 10px; margin: 26px 0 0; color: var(--oss-muted); font-size: 13px; }
+#page .oss-showcase .oss-closing i { color: var(--oss-accent); }
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  #page .oss-showcase .oss-project:hover { transform: translateY(-3px); border-color: var(--oss-accent); box-shadow: 0 10px 26px -16px color-mix(in srgb, var(--oss-accent) 45%, transparent); }
+}
+
+@media (max-width: 768px) {
+  #page .oss-showcase .oss-project-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  #page .oss-showcase .oss-project { padding: 20px; border-radius: 16px; }
+  #page .oss-showcase .oss-featured h3 { font-size: 26px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #page .oss-showcase .oss-project,
+  #page #article-container .oss-showcase .oss-action { transition: none; }
+}
