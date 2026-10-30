@@ -9,7 +9,7 @@ from typing import Any
 from core.config import Settings
 from core.log_handlers import DailySizeRotatingFileHandler
 
-request_id_context: ContextVar[str] = ContextVar("request_id", default="-")
+request_id_context: ContextVar[str] = ContextVar("request_id", default="")
 LOG_EXTRA_FIELDS = (
     "environment",
     "method",
@@ -32,6 +32,11 @@ def reset_request_id(token: Token[str]) -> None:
 class RequestIdFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         record.request_id = request_id_context.get()
+        record.request_id_field = (
+            f"request_id={record.request_id} | "
+            if record.request_id and record.request_id != "-"
+            else ""
+        )
         record.context = "".join(
             f" | {field}={getattr(record, field)!r}"
             for field in LOG_EXTRA_FIELDS
@@ -51,8 +56,10 @@ class JsonFormatter(logging.Formatter):
             "function": record.funcName,
             "line": record.lineno,
             "message": record.getMessage(),
-            "request_id": getattr(record, "request_id", "-"),
         }
+        request_id = getattr(record, "request_id", "")
+        if request_id and request_id != "-":
+            payload["request_id"] = request_id
         for field in LOG_EXTRA_FIELDS:
             if hasattr(record, field):
                 payload[field] = getattr(record, field)
@@ -98,7 +105,7 @@ def configure_logging(settings: Settings) -> None:
                     "format": (
                         "%(asctime)s | %(levelname)s | "
                         "%(filename)s(%(funcName)s:%(lineno)d) | "
-                        "request_id=%(request_id)s | %(message)s%(context)s"
+                        "%(request_id_field)s%(message)s%(context)s"
                     ),
                     "datefmt": "%Y-%m-%d %H:%M:%S",
                 },

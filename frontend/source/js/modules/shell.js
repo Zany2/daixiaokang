@@ -215,6 +215,8 @@ function searchSize() {
   // 只需要适应手机端
   if (document.body.clientWidth > 768) return
   let div = document.querySelector('#algolia-hits')
+  // 本地搜索使用独立的结果容器，不需要 Algolia 的高度适配。
+  if (!div) return
   // 监听插入，如果有插入则根据可视高度动态设置最大高度
   div.addEventListener('DOMNodeInserted', () => {
     div.children[0].style.maxHeight = (document.documentElement.clientHeight - 210) + 'px'

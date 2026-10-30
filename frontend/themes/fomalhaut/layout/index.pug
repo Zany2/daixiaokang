@@ -3,6 +3,8 @@ extends includes/layout.pug
 block content
   include ./includes/mixins/post-ui.pug
   #recent-posts.recent-posts
+    if is_home() && page.current === 1 && theme.home_discovery && theme.home_discovery.enable
+      include includes/home-discovery.pug
     //- #bber-talk
     //-   link(rel="stylesheet", href="/static/css/bbtalk.css")
     //-   script(src='/static/js/timeago.min.js')

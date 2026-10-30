@@ -56,6 +56,8 @@ function clock() {
     Date: FakeDate,
     setTimeout(fn, delay = 0) { const id = next++; timers.set(id, { fn, at: now + delay }); return id },
     clearTimeout(id) { timers.delete(id) },
+    requestAnimationFrame(fn) { const id = next++; timers.set(id, { fn, at: now + 16 }); return id },
+    cancelAnimationFrame(id) { timers.delete(id) },
     get pending() { return timers.size },
     advance(ms) {
       const target = now + ms
@@ -91,7 +93,7 @@ function node(label) {
   const writes = []
   const classes = new Set()
   const attributes = {}
-  const item = { label, writes, attributes, detached: false }
+  const item = { label, writes, attributes, detached: false, get isConnected() { return !this.detached } }
   function write(kind, value) {
     assert.equal(item.detached, false, 'stale DOM mutation: ' + label + '.' + kind)
     writes.push({ kind, value })
@@ -99,9 +101,16 @@ function node(label) {
   item.classList = {
     contains: name => classes.has(name),
     add(...names) { write('class.add', names); names.forEach(name => classes.add(name)) },
-    remove(...names) { write('class.remove', names); names.forEach(name => classes.delete(name)) }
+    remove(...names) { write('class.remove', names); names.forEach(name => classes.delete(name)) },
+    toggle(name, force) {
+      const enabled = force === undefined ? !classes.has(name) : force
+      if (enabled) this.add(name); else this.remove(name)
+      return enabled
+    }
   }
   item.style = new Proxy({}, { set(obj, key, value) { write('style.' + key, value); obj[key] = value; return true } })
+  item.style.setProperty = (key, value) => { item.style[key] = value }
+  item.style.removeProperty = key => { delete item.style[key] }
   item.setAttribute = (key, value) => { write('attribute.' + key, value); attributes[key] = value }
   item.getAttribute = key => attributes[key]
   for (const key of ['textContent', 'innerText', 'scrollTop']) {
@@ -109,13 +118,18 @@ function node(label) {
     Object.defineProperty(item, key, { get: () => value, set(v) { write(key, v); value = v } })
   }
   item.addEventListener = () => {}
+  item.removeEventListener = () => {}
+  item.getBoundingClientRect = () => ({ top: 0, height: 60 })
   return item
 }
 
 function page(tag) {
   const nodes = Object.fromEntries(['rightside', 'page-header', 'article-container', 'card-toc',
-    'name-container', 'page-name'].map(id => [id, node(tag + ':' + id)]))
+    'name-container', 'page-name', 'nav', 'site-name'].map(id => [id, node(tag + ':' + id)]))
+  nodes['site-name'].textContent = 'Demo'
   const menus = [node(tag + ':menu0'), node(tag + ':menu1')]
+  nodes.nav.querySelector = selector => selector === '#name-container' ? nodes['name-container'] || null :
+    selector === '#menus > .menus_items' ? menus[1] || null : null
   const content = node(tag + ':toc-content')
   const percentage = node(tag + ':toc-percentage')
   const link = node(tag + ':toc-link')
@@ -160,12 +174,15 @@ function harness() {
   const document = {
     ...docEvents, title: 'Test article | Demo',
     body: { scrollHeight: 3000, classList: node('body').classList },
-    documentElement: { scrollTop: 0, clientHeight: 800, scrollHeight: 3000 },
+    documentElement: { scrollTop: 0, clientHeight: 800, scrollHeight: 3000, classList: node('html').classList },
+    querySelector: selector => selector === '#nav #page-name' ? currentPage.nodes['page-name'] || null : null,
     getElementById: id => currentPage.nodes[id] || null,
     getElementsByClassName: name => name === 'menus_items' ? currentPage.menus : []
   }
   const sandbox = {
     ...native, document, Date: time.Date, setTimeout: time.setTimeout, clearTimeout: time.clearTimeout,
+    requestAnimationFrame: time.requestAnimationFrame, cancelAnimationFrame: time.cancelAnimationFrame,
+    matchMedia: () => ({ matches: true }),
     innerHeight: 800, innerWidth: 1000, GLOBAL_CONFIG: { isAnchor: true }, GLOBAL_CONFIG_SITE: { isToc: true },
     chatBtnHide: () => chat.push('hide'), chatBtnShow: () => chat.push('show'),
     getComputedStyle: el => ({ getPropertyValue: () => el.style.cssText?.includes('opacity: 0.8') ? '0.8' : '0' }),
@@ -243,14 +260,18 @@ test('throttle cancel is idempotent, discards pending state, and resets leading/
   h.time.advance(1); assert.deepEqual(calls, ['A', 'fresh', 'latest'])
 })
 
-test('actual header listener throttles repeated events and trailing work reads latest scroll state', () => {
+test('header batches scroll events into one frame and reads the latest scroll state', () => {
   const h = harness()
   h.sandbox.initHeader()
-  h.scroll(200); h.time.advance(20); h.scroll(300); h.time.advance(20); h.scroll(100)
-  assert.equal(h.reads, 1, 'event wrapper must not recreate the throttle')
+  const initialReads = h.reads
+  h.scroll(200); h.scroll(300)
+  assert.equal(h.reads, initialReads, 'scroll events defer layout reads until the frame')
+  assert.equal(h.time.pending, 1)
+  h.time.advance(16)
+  assert.equal(h.reads, initialReads + 1)
   assert.deepEqual(h.chat, ['hide'])
-  h.time.advance(159); assert.equal(h.reads, 1)
-  h.time.advance(1); assert.equal(h.reads, 2)
+  h.scroll(250); h.scroll(100); h.time.advance(16)
+  assert.equal(h.reads, initialReads + 2)
   assert.equal(h.page.nodes['page-header'].classList.contains('nav-visible'), true)
   assert.deepEqual(h.chat, ['hide', 'show'])
 })
@@ -270,18 +291,19 @@ test('header direction, equal position, 56 boundary, top reset, and scrollTop fa
   const h = harness()
   h.sandbox.initHeader()
   const header = h.page.nodes['page-header']
-  h.scroll(100); assert.equal(header.classList.contains('nav-visible'), false)
-  h.time.advance(200); h.scroll(80); assert.equal(header.classList.contains('nav-visible'), true)
-  h.time.advance(200); h.scroll(120); assert.equal(header.classList.contains('nav-visible'), false)
-  h.time.advance(200); h.scroll(120); assert.equal(header.classList.contains('nav-visible'), true)
-  h.time.advance(200); h.scroll(56)
+  h.scroll(100); h.time.advance(16); assert.equal(header.classList.contains('nav-visible'), false)
+  h.scroll(80); h.time.advance(16); assert.equal(header.classList.contains('nav-visible'), true)
+  h.scroll(120); h.time.advance(16); assert.equal(header.classList.contains('nav-visible'), false)
+  h.scroll(120); h.time.advance(16); assert.equal(header.classList.contains('nav-visible'), false)
+  h.scroll(56); h.time.advance(16)
   assert.equal(h.page.nodes.rightside.style.cssText, "opacity: ''; transform: ''")
-  h.time.advance(200); h.scroll(0)
+  h.scroll(0); h.time.advance(16)
   assert.equal(header.classList.contains('nav-fixed'), false)
   assert.equal(header.classList.contains('nav-visible'), false)
   h.time.advance(200)
   h.sandbox.scrollY = 0; h.document.documentElement.scrollTop = 140
   h.sandbox.scrollCollect()
+  h.time.advance(16)
   assert.equal(header.classList.contains('nav-fixed'), true)
 })
 
@@ -296,7 +318,7 @@ test('repeated header initialization removes/cancels old callback but preserves 
   assert.notEqual(h.sandbox.scrollCollect, old)
   assert.deepEqual(h.listeners('scroll'), [foreign, h.sandbox.scrollCollect])
   const before = h.reads
-  h.scroll(250); assert.equal(h.reads - before, 1)
+  h.scroll(250); h.time.advance(16); assert.equal(h.reads - before, 1)
 })
 
 test('header short-page early return first releases old callback and pending trailing work', () => {
@@ -353,6 +375,7 @@ test('actual PJAX send cancels both trailing callbacks before DOM replacement; n
   h.time.advance(400); h.send() // repeat cleanup is safe on the new page
   assert.equal(old.all.reduce((n, el) => n + el.writes.length, 0), oldWrites)
   h.sandbox.initHeader(); h.sandbox.initToc(); h.scroll(300)
+  h.time.advance(16)
   assert.equal(writes(h.page.percentage, 'textContent').length, 1)
   assert.equal(h.page.nodes['page-header'].classList.contains('nav-fixed'), true)
   assert.equal(unrelated, 3)
@@ -384,20 +407,22 @@ test('PJAX send also accepts legacy callbacks without cancel and clears globals'
   assert.equal(h.sandbox.tocScrollFn, null)
 })
 
-test('repeated actual tonav initialization keeps exactly one owned namespaced listener and unrelated identities', () => {
+test('tonav removes legacy title listeners and shares the header scroll listener', () => {
   const h = harness()
   let bareCalls = 0; let foreignCalls = 0
   const bare = () => bareCalls++
   const foreign = () => foreignCalls++
   h.jq.on('scroll', bare).on('scroll.otherModule', foreign)
+  h.jq.on('scroll.fomalNavTitle', () => assert.fail('legacy listener must be removed'))
+  h.sandbox.initHeader()
   h.ready(); h.complete(); h.complete(); h.sandbox.tonav(); h.sandbox.tonav()
-  assert.equal(h.jqHandlers.filter(x => x.namespace === 'fomalNavTitle').length, 1)
-  assert.equal(h.jqHandlers.length, 3)
+  assert.equal(h.jqHandlers.filter(x => x.namespace === 'fomalNavTitle').length, 0)
+  assert.equal(h.jqHandlers.length, 2)
   assert.equal(h.jqHandlers[0].fn, bare); assert.equal(h.jqHandlers[1].fn, foreign)
   assert.equal(h.page.nodes['page-name'].innerText, 'Test article')
-  const before = writes(h.page.nodes['name-container'], 'attribute.style').length
-  h.scroll(100)
-  assert.equal(writes(h.page.nodes['name-container'], 'attribute.style').length - before, 1)
+  h.scroll(100); h.time.advance(16)
+  assert.equal(h.page.nodes.nav.classList.contains('nav-title-visible'), true)
+  assert.equal(h.listeners('scroll').length, 1)
   assert.equal(bareCalls, 1); assert.equal(foreignCalls, 1)
 })
 
@@ -414,17 +439,22 @@ for (const missing of ['name-container', 'menus_items', 'page-name']) {
   })
 }
 
-test('nav down/up/equal direction is retained and PJAX reinit targets only new DOM', () => {
+test('nav title follows direction, ignores equal positions and updates only new DOM after PJAX', () => {
   const h = harness()
+  h.sandbox.initHeader()
   h.sandbox.tonav()
-  h.scroll(100)
-  assert.equal(h.page.nodes['name-container'].attributes.style, '')
-  assert.equal(h.page.menus[1].attributes.style, 'display:none!important')
-  h.scroll(80)
-  assert.equal(h.page.nodes['name-container'].attributes.style, 'display:none')
-  h.scroll(120); h.scroll(120)
-  assert.equal(h.page.nodes['name-container'].attributes.style, 'display:none')
-  h.replacePage(); h.complete(); h.scroll(150)
-  assert.equal(h.page.nodes['name-container'].attributes.style, '')
-  assert.equal(h.jqHandlers.length, 1)
+  h.scroll(100); h.time.advance(16)
+  assert.equal(h.page.nodes.nav.classList.contains('nav-title-visible'), true)
+  assert.equal(h.page.nodes['name-container'].inert, false)
+  assert.equal(h.page.menus[1].inert, true)
+  assert.equal(h.page.menus[1].attributes['aria-hidden'], 'true')
+  h.scroll(80); h.time.advance(16)
+  assert.equal(h.page.nodes.nav.classList.contains('nav-title-visible'), false)
+  assert.equal(h.page.nodes['name-container'].inert, true)
+  assert.equal(h.page.menus[1].inert, false)
+  h.scroll(120); h.time.advance(16); h.scroll(120); h.time.advance(16)
+  assert.equal(h.page.nodes.nav.classList.contains('nav-title-visible'), true)
+  h.send(); h.replacePage(); h.complete(); h.sandbox.initHeader(); h.scroll(150); h.time.advance(16)
+  assert.equal(h.page.nodes.nav.classList.contains('nav-title-visible'), true)
+  assert.equal(h.jqHandlers.length, 0)
 })

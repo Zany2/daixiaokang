@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, '../..', process.env.FPS_TEST_SOURCE_ROOT |
 const reading = fs.readFileSync(path.join(root, 'source/js/modules/reading.js'), 'utf8');
 const settings = fs.readFileSync(path.join(root, 'source/js/modules/settings.js'), 'utf8');
 const fpsSource = reading.slice(reading.indexOf('/* fps检测 start */'), reading.indexOf('/* fps检测 end */'));
-const settingsSource = settings.slice(settings.indexOf('// 帧率监测开关'), settings.indexOf('// 刷新窗口'));
+const settingsSource = settings.slice(settings.indexOf('// 帧率监测开关'), settings.indexOf('// 侧边部件开关'));
 function harness(mode = 'raf', stored = '1', hidden = false) {
   let now = 0, next = 1;
   const queue = new Map(), cancelled = [], listeners = new Map();
@@ -97,6 +97,7 @@ test('reset defaults executes the real reset function and resumes FPS after off'
   };
   Object.assign(h.ctx, { FONT_DEFAULT: 'default', CODE_FONT_DEFAULT: 'default',
     initItem() { h.store.set('fpson', '1'); }, setFont() {}, setCodeFont() {}, setColor() {},
+    resetEffectParameters() {}, markLive2DModelButton() {}, initLive2DWidget() {},
     resetBg_() {}, changeLight() {}, fomalNotify() {} });
   const resetSource = settings.slice(settings.indexOf('function reset() {'), settings.indexOf('// 量一次'));
   vm.runInContext(resetSource, h.ctx); h.ctx.reset();

@@ -1,0 +1,38 @@
+-
+  var discovery = theme.home_discovery
+  var recommended = site.posts.toArray().filter(function (post) {
+    return !post.password
+  }).sort(function (a, b) {
+    return Number(b.date) - Number(a.date) || String(a.path).localeCompare(String(b.path))
+  }).slice(0, Math.max(1, Number(discovery.posts_limit) || 6))
+  var homeCategories = site.categories.toArray().filter(function (term) { return term.length > 0 })
+    .sort(function (a, b) { return b.length - a.length || String(a.name).localeCompare(String(b.name), 'zh-CN') })
+    .slice(0, Math.max(1, Number(discovery.categories_limit) || 6))
+  var categoryIcons = ['📚', '🧭', '🌱', '💡', '🛠️', '✨']
+
+if recommended.length
+  section.home-discovery.home-feature(data-home-feature data-interval=discovery.interval aria-label='最新文章' aria-roledescription='轮播')
+    .home-feature-slides
+      each post, index in recommended
+        article.home-feature-slide(class=index === 0 ? 'is-active' : '' id='home-feature-slide-' + index role='group' aria-roledescription='幻灯片' aria-label=(index + 1) + ' / ' + recommended.length aria-hidden=index !== 0 ? 'true' : 'false' inert=index !== 0)
+          a.home-feature-cover(href=url_for(post.link || post.path) tabindex=index !== 0 ? '-1' : undefined aria-label='阅读：' + post.title)
+            img(data-home-feature-cover src=url_for(post.cover || post.randomcover || site_media_cover(post.path)) width='640' height='400' loading='lazy' alt=post.title)
+          .home-feature-content
+            time(datetime=date_xml(post.date))= date(post.date, 'YYYY-MM-DD')
+            a.home-feature-title(href=url_for(post.link || post.path) tabindex=index !== 0 ? '-1' : undefined)= post.title || _p('no_title')
+            p.home-feature-description= strip_html(post.description || post.excerpt || '打开文章，继续阅读。')
+    if recommended.length > 1
+      .home-feature-controls(aria-label='切换最新文章' hidden)
+        each post, index in recommended
+          button.home-feature-dot(type='button' data-slide=index aria-label='查看文章：' + post.title aria-controls='home-feature-slide-' + index aria-current=index === 0 ? 'true' : undefined)
+
+if homeCategories.length
+  section.home-discovery.home-categories(aria-label='文章分类')
+    nav.home-category-grid(aria-label='按分类浏览文章')
+      each term, index in homeCategories
+        a.home-category(href=url_for(term.path) aria-label=term.name + '，' + term.length + ' 篇文章')
+          span.home-category-icon(aria-hidden='true')= categoryIcons[index % categoryIcons.length]
+          span.home-category-name= term.name
+          span.home-category-count= '(' + term.length + ')'
+          span.home-category-arrow(aria-hidden='true') →
+    a.home-category-more(href=url_for('/article/categories/')) 查看全部分类 →
