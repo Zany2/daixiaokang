@@ -1,6 +1,6 @@
 # 自有图片与视频
 
-当前阶段使用项目内的静态图片和视频，不需要域名、OSS 或图床账号。保持 `site_media.base_url: ""`，执行 `npm run server` 后从本地开发服务器加载素材。
+本站图片和视频使用项目内静态素材，不需要额外的 OSS 或图床账号。`site_media.base_url` 当前保持为空，本地由 Hexo 开发服务提供，正式部署由本站域名提供。以下路径与命令均以 `frontend/` 为基准。
 
 配置入口：`_config.fomalhaut.yml` 的 `site_media.base_url`。
 

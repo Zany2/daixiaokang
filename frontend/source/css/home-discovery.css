@@ -1,0 +1,111 @@
+/* 首页推荐与分类使用站点卡片、主题色及明暗模式。 */
+#recent-posts > .home-discovery {
+  box-sizing: border-box;
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 20px;
+  border: var(--border-style, 1px solid #8883);
+  border-radius: 25px;
+  background: var(--trans-light, var(--card-bg, #fff));
+  color: var(--font-color);
+  overflow: hidden;
+}
+[data-theme='dark'] #recent-posts > .home-discovery { background: var(--trans-dark, #1d1d1d); }
+.home-feature { position: relative; padding: 22px 58px 22px 22px; }
+.home-feature-slides { display: grid; }
+.home-feature-slide {
+  grid-area: 1 / 1;
+  display: grid;
+  grid-template-columns: minmax(0, 40%) minmax(0, 1fr);
+  align-items: center;
+  gap: 32px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .45s ease, visibility .45s;
+}
+.home-feature-slide.is-active { opacity: 1; visibility: visible; pointer-events: auto; }
+.home-feature-cover { display: block; overflow: hidden; border-radius: 18px; }
+.home-feature-cover img { display: block; width: 100%; height: 245px; object-fit: cover; transition: transform .45s ease; }
+.home-feature-cover:hover img { transform: scale(1.04); }
+.home-feature-content { min-width: 0; }
+.home-feature-content time { font-size: 14px; opacity: .7; }
+.home-feature-title {
+  display: -webkit-box;
+  margin: 10px 0 18px;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  color: var(--font-color);
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.home-feature-title:hover { color: var(--theme-color, #39c5bb); }
+.home-feature-description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  margin: 0;
+  opacity: .85;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+}
+.home-feature-controls:not([hidden]) {
+  position: absolute;
+  inset: 0 12px 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+.home-feature-controls button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--font-color);
+  cursor: pointer;
+}
+.home-feature-dot::after { content: ''; width: 9px; height: 9px; border-radius: 8px; background: currentColor; opacity: .25; transition: height .3s, background .3s; }
+.home-feature-dot[aria-current='true']::after { height: 23px; background: var(--theme-color, #39c5bb); opacity: 1; }
+.home-feature-controls button:hover { background: color-mix(in srgb, var(--font-color) 8%, transparent); }
+.home-discovery a:focus-visible,
+.home-feature-controls button:focus-visible { outline: 2px solid var(--theme-color, #39c5bb); outline-offset: -2px; }
+.home-categories { padding: 18px 18px 10px; }
+.home-category-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.home-category { display: flex; align-items: center; gap: 8px; padding: 17px 12px; border-radius: 9px; color: var(--font-color); background: color-mix(in srgb, var(--font-color) 6%, transparent); transition: background .2s, color .2s; }
+.home-category:hover { color: var(--font-color); background: color-mix(in srgb, var(--theme-color, #39c5bb) 18%, transparent); }
+.home-category-name { min-width: 0; overflow-wrap: anywhere; font-weight: 500; }
+.home-category-count { font-size: 13px; opacity: .7; }
+.home-category-arrow { margin-left: auto; flex: none; }
+.home-category-more { display: block; width: fit-content; margin: 12px auto 0; padding: 4px 16px; color: var(--font-color); opacity: .65; font-size: 14px; }
+.home-category-more:hover { color: var(--theme-color, #39c5bb); opacity: 1; }
+@media (max-width: 600px) {
+  .home-feature { padding: 16px 16px 56px; }
+  .home-feature-slide { grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; }
+  .home-feature-cover img { height: 190px; }
+  .home-feature-title { font-size: 18px; margin: 6px 0 10px; }
+  .home-feature-description { font-size: 14px; }
+  .home-feature-controls:not([hidden]) { inset: auto 16px 10px; flex-direction: row; gap: 6px; }
+  .home-feature-controls button { width: 32px; height: 32px; }
+  .home-feature-dot[aria-current='true']::after { width: 23px; height: 9px; }
+  .home-categories { padding: 14px 14px 10px; }
+  .home-category-grid { grid-template-columns: minmax(0, 1fr); gap: 9px; }
+  .home-category { padding: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-feature-slide, .home-feature-cover img, .home-feature-dot::after, .home-category { transition: none; }
+}
+/* WOW 在移动端停用后，PJAX 新节点仍可能被其观察器写入 hidden。 */
+@media (hover: none) and (pointer: coarse) {
+  .home-discovery.wow { visibility: visible !important; animation: none !important; }
+}

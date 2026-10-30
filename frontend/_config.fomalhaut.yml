@@ -76,7 +76,7 @@ social:
 
 # Algolia search
 algolia_search:
-  enable: true
+  enable: false # 保留配置，需要时可重新启用；当前使用本地 search.xml
   hits:
     per_page: 5
   labels:
@@ -86,8 +86,8 @@ algolia_search:
 
 # Local search
 local_search:
-  enable: false
-  preload: true
+  enable: true
+  preload: false # 点击搜索时再读取索引，避免每个页面预加载全文数据
   CDN:
 
 # Math (數學)
@@ -473,7 +473,7 @@ crisp:
 footer:
   owner:
     enable: true
-    since: 2026
+    since: 2023
   custom_text:
   copyright: false # Copyright of theme and framework
   # 页脚双段式标识：修改 value / link 即可更新；link 留空时仅展示，不可点击。
@@ -516,10 +516,10 @@ footer:
         color: '#a16b23'
         link: https://npmmirror.com/ # 当前部分第三方静态资源的来源，可替换为自己的 CDN。
       - label: Source
-        value: GitHub待补充
+        value: GitHub主页
         icon: icon-github
         color: '#a523b8'
-        link: # 后续填写本网站的源码仓库地址，不使用账号主页代替仓库。
+        link: https://github.com/Zany2
 
 # Analysis
 # --------------------------------------
@@ -1016,6 +1016,7 @@ inject:
     # 所以全站注入也只在该页生效；:has() 不支持时整块失效，页面退回主题原样。
     - <link rel="stylesheet" href="/css/stats.css?v=20261005">
     - <link rel="stylesheet" href="/css/article-taxonomy.css?v=20261009"> # 标签入口与分类卡片，跟随主题色和明暗模式
+    - <link rel="stylesheet" href="/css/home-discovery.css?v=20261025-home2"> # 首页文章轮播与分类入口
     - <link rel="stylesheet" href="/css/open-source-projects.css?v=20261024-projects5"> # 开源项目展示卡片
     - <link rel="stylesheet" href="/css/footer-badges.css?v=20261010"> # 页脚站点信息双段式标识
     - <link rel="stylesheet" href="/css/site-ui-toggle.css?v=20261025-peek3"> # 顶栏、首页标题文字、看板娘、FPS 与右侧按钮的收纳动画
@@ -1122,11 +1123,12 @@ inject:
     - <script defer src="/js/data/voyager1.js"></script> # 旅行者1号距离模型（页脚计时器依赖）
     - <script defer src="/js/data/holidays.js"></script> # 法定休息日判断（页脚计时器依赖）
     - <script defer src="/js/modules/console-art.js?v=20261012-zany1"></script> # 控制台字符画
-    - <script defer src="/js/modules/shell.js?v=20261005-animation1"></script> # 快捷键拦截/夜间动画/恶搞标题/搜索框修复/手机滚动条
+    - <script defer src="/js/modules/shell.js?v=20261025-local-search1"></script> # 快捷键拦截/夜间动画/恶搞标题/搜索框修复/手机滚动条
     - <script defer src="/js/modules/effect-engine.js?v=20261023-controls1"></script> # 雪花/星空/流星参数与动画，先于美化面板加载
     - <script defer src="/js/modules/effects.js?v=20261023-controls1"></script> # 评论表情放大
     - <script defer src="/js/modules/reading.js?v=20261005-animation1"></script> # 阅读进度条/FPS
     - <script defer src="/js/modules/nav.js?v=20261025-peek2"></script> # 导航栏标题/首屏欢迎语/分享
+    - <script defer src="/js/home-discovery.js?v=20261025-home2"></script> # 首页最新文章轮播，兼容 PJAX
     - <script defer src="/js/modules/cursor.js?v=20261024-cat1"></script> # 小猫咪/右键菜单/听话鼠标
     - <script defer src="/js/modules/footer-time.js?v=20261024-footer1"></script> # 页脚计时器
     - <script defer src="/js/modules/settings.js?v=20261024-responsivebg1"></script> # 美化面板：特效滑块实时调节、保存及恢复默认
@@ -1232,20 +1234,13 @@ wowjs:
       delay: 200ms #选填项，动画开始的延迟时间，单位可以是ms也可以是s。例如3s，700ms。
       offset: 30 #选填项，开始动画的距离（相对浏览器底部）
       iteration: 1 #选填项，动画重复的次数
-    # 置顶滚动栏
-    # - class: blog-slider swiper-container-fade swiper-container-horizontal
-    #   style: animate__zoomIn
-    #   duration: 1.5s
-    #   delay: 200ms
-    #   offset: 30
-    #   iteration: 1
-    # 分类磁贴
-    # - class: catalog_magnet
-    #   style: animate__zoomIn
-    #   duration: 1.5s·
-    #   delay: 200ms
-    #   offset: 30
-    #   iteration: 1
+    # 首页轮播与分类入口沿用文章卡片的入场效果及时间参数
+    - class: home-discovery
+      style: animate__zoomIn
+      duration: 2s
+      delay: 200ms
+      offset: 30
+      iteration: 1
     # 侧边卡片栏
     - class: card-widget
       style: animate__zoomIn
@@ -1335,6 +1330,13 @@ index_card_style: multicard # slidecard | multicard
 # 灯笼开关 建议只在过年期间开启
 lantern:
   enable: false
+
+# ---------------------------------------------------------------- 首页推荐与分类
+home_discovery:
+  enable: true
+  interval: 5000 # 自动轮播间隔，单位毫秒；悬停、键盘聚焦或页面不可见时暂停
+  posts_limit: 6 # 按发布日期倒序展示最近 6 篇文章
+  categories_limit: 6 # 按文章数量展示分类，数量相同时按名称排序
 
 # ---------------------------------------------------------------- AI 助手
 # 右侧竖排里的通用 AI 助手：当前页签内延续同一会话，完整消息保存在后端数据库。

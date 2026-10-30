@@ -11,8 +11,8 @@ const urlFor = require('hexo-util').url_for.bind(hexo)
 function lazyload (htmlContent) {
   const bg = hexo.theme.config.lazyload.placeholder ? urlFor(hexo.theme.config.lazyload.placeholder) : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
   return htmlContent.replace(/(<img.*? src=)/ig, prefix => {
-    // 首页末帧自行预加载、解码，不能用懒加载占位图代替。
-    if (/\sdata-home-still(?:=|\s)/i.test(prefix)) return prefix
+    // 首页末帧自行解码；推荐封面使用原生 loading，避免切换后停在占位图。
+    if (/\sdata-home-(?:still|feature-cover)(?:=|\s)/i.test(prefix)) return prefix
     return `${prefix} "${bg}" data-lazy-src=`
   })
 }

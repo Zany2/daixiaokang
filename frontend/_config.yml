@@ -41,6 +41,8 @@ skip_render:
   - 'js/encrypted-page.js' # 加密页面交互脚本原样复制，避免被当作页面重复创建
   - 'css/site-ui-toggle.css' # 页面界面收纳样式原样复制，避免被当作页面重复创建
   - 'css/open-source-projects.css' # 开源项目页样式原样复制
+  - 'css/home-discovery.css' # 首页推荐与分类样式原样复制
+  - 'js/home-discovery.js' # 首页轮播交互原样复制
   - 'js/inject/site-ui-toggle.js' # 页面界面收纳脚本原样复制，避免被当作页面重复创建
   - 'box/astronomy/voyager.html' # 旅行者号交互星图，是完整独立页面（自带样式与脚本），由 index.md 用 iframe 引入，原样复制
 
@@ -164,7 +166,7 @@ algolia:
 # hexo-butterfly-swiper
 # see https://akilar.top/posts/8e1264d1/
 swiper:
-  enable: false # 开关（需要自建 gitcalendar 数据仓库，见 README「GitHub 贡献日历」）
+  enable: false # 旧版注入器停用，首页推荐改由主题 home_discovery 渲染
   priority: 1 #过滤器优先权
   enable_page: / # 应用页面
   timemode: date #date/updated
@@ -267,7 +269,7 @@ plugins:
 
 # 小冰分类磁贴
 magnet:
-  enable: true
+  enable: false # 旧版示例磁贴停用，首页分类改由主题 home_discovery 读取实际分类
   priority: 2
   enable_page: /
   type: categories
