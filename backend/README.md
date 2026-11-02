@@ -14,6 +14,8 @@ Zany 个人网站的 FastAPI 异步后端，为 AI 助手、文章评论和留�
 
 ## 本地启动（Windows PowerShell）
 
+仓库仅保存 `.env.example` 和 `.env.docker.example`，真实 `.env`、`.env.docker` 均由 Git 忽略。Docker 部署时从 `.env.docker.example` 创建 `.env.docker`，替换 `CHANGE_ME` 并填写 AI 密钥；完整配置迁移关系见 [配置示例与迁移](../deploy/CONFIGURATION.md)。
+
 需要 Python 3.11 或以上（AI 服务使用 `asyncio.timeout`）、PostgreSQL 和 Redis。以下命令在 `backend/` 目录执行；先创建 `.env` 指定的数据库并启动 Redis。
 
 ```powershell

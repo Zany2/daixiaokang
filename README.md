@@ -41,8 +41,8 @@ daixiaokang/
 ├─ LICENSE
 ├─ frontend/
 │  ├─ README.md                  前端开发、配置与验证
-│  ├─ _config.yml                站点信息、文章链接、搜索索引、部署配置
-│  ├─ _config.fomalhaut.yml      本站主题配置及功能开关
+│  ├─ _config.example.yml        站点配置示例，复制为 _config.yml 使用
+│  ├─ _config.fomalhaut.example.yml  本站主题配置示例
 │  ├─ source/                    文章、页面、站点样式、脚本和素材
 │  ├─ scripts/                   Hexo 构建插件与注入器
 │  ├─ lib/site-media.js          素材扫描、地址与封面分配工具
@@ -67,10 +67,15 @@ daixiaokang/
 
 以下命令从仓库根目录开始，在两个 PowerShell 终端分别执行。
 
+公开仓库只保留配置示例。实际前端配置、Compose、Nginx、环境变量文件及加密页面密码不纳入 Git；复制和迁移关系见 [配置示例与迁移](deploy/CONFIGURATION.md)。已有本地配置无需重新复制。
+
 ### 前端
 
 ```powershell
 cd frontend
+if (!(Test-Path -LiteralPath _config.yml)) { Copy-Item _config.example.yml _config.yml }
+if (!(Test-Path -LiteralPath _config.fomalhaut.yml)) { Copy-Item _config.fomalhaut.example.yml _config.fomalhaut.yml }
+if (!(Test-Path -LiteralPath themes/fomalhaut/_config.yml)) { Copy-Item themes/fomalhaut/_config.example.yml themes/fomalhaut/_config.yml }
 npm.cmd ci
 npm.cmd run server
 ```
