@@ -1,0 +1,59 @@
+# Public example. Copy to the live configuration path before editing.
+services:
+  daixiaokang_frontend:
+    container_name: daixiaokang_frontend
+    image: nginx:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./frontend/logs:/var/log/nginx
+      - ./frontend/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/ssl:/etc/nginx/ssl:ro
+      - ./frontend/html:/usr/share/nginx/html:ro
+    environment:
+      - TZ=Asia/Shanghai
+    networks:
+      - mynetwork
+
+  daixiaokang_backend:
+    container_name: daixiaokang_backend
+    image: daixiaokang-backend-deps:latest
+    restart: unless-stopped
+    working_dir: /backend
+    command: python -u -B main.py
+    env_file:
+      - ./backend/.env.docker
+    environment:
+      - TZ=Asia/Shanghai
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./backend:/backend:ro
+      - ./backend/logs:/backend/logs
+    networks:
+      - mynetwork
+
+  daixiaokang_acme:
+    container_name: daixiaokang_acme
+    image: daixiaokang-acme:latest
+    build:
+      context: ./deploy
+      dockerfile: acme.Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./deploy/https.env
+    environment:
+      - TZ=Asia/Shanghai
+      - AUTO_UPGRADE=0
+    volumes:
+      - ./deploy/acme:/acme.sh
+      - ./frontend/ssl:/certs
+      # Allows the renewal hook to check and reload the Nginx container.
+      - /var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  mynetwork:
+    external: true
+    name: mynetwork

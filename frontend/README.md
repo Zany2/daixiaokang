@@ -7,6 +7,9 @@
 需要 Node.js 18 或以上。
 
 ```powershell
+if (!(Test-Path -LiteralPath _config.yml)) { Copy-Item _config.example.yml _config.yml }
+if (!(Test-Path -LiteralPath _config.fomalhaut.yml)) { Copy-Item _config.fomalhaut.example.yml _config.fomalhaut.yml }
+if (!(Test-Path -LiteralPath themes/fomalhaut/_config.yml)) { Copy-Item themes/fomalhaut/_config.example.yml themes/fomalhaut/_config.yml }
 npm.cmd ci
 npm.cmd run server
 ```
@@ -17,6 +20,8 @@ npm.cmd run server
 
 ## 配置与源码
 
+实际 `_config.yml`、`_config.fomalhaut.yml` 和主题 `_config.yml` 均留在本地并由 Git 忽略，仓库保存对应的 `*.example.yml`。首次克隆需按上方命令复制后再运行。修改功能配置时，应同步维护不含真实凭据的示例。完整部署配置和加密页面的迁移关系见 [配置示例与迁移](../deploy/CONFIGURATION.md)。
+
 - `_config.yml`：站点域名、标题、作者、文章链接、搜索索引和部署插件。
 - `_config.fomalhaut.yml`：实际生效的站点主题配置；同名项覆盖 `themes/fomalhaut/_config.yml`。
 - `source/_posts/`：文章；`source/` 其他目录为独立页面、图片、视频、CSS 和 JavaScript。
@@ -24,6 +29,12 @@ npm.cmd run server
 - `lib/site-media.js`：本地素材扫描、地址生成与封面分配工具，由构建插件和素材测试共同使用。
 
 两处源码都包含站点定制，不能通过整体覆盖主题完成升级。
+
+### 备案信息
+
+`_config.fomalhaut.yml` 的 `footer.icp` 配置正式 ICP 备案号，当前为 `鲁ICP备2026066398号-1`。共用页脚在所有使用主题布局的页面底部将版权信息与备案号并排展示，窄屏空间不足时自动换行；备案号链接至 `https://beian.miit.gov.cn/`。修改后需重新构建并发布。
+
+页脚的“萌ICP备”是独立的兴趣站点徽章，不替代正式 ICP 备案。公安联网备案需另行办理，取得号码和官方查询链接后再添加；相关要求见[腾讯云备案号悬挂说明](https://cloud.tencent.com/document/product/243/61412)。
 
 ### 本地搜索
 

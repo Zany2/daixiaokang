@@ -1,3 +1,4 @@
+# Public example. Copy to the live configuration path before editing.
 # Main menu navigation (導航目錄)
 # see https://butterfly.js.org/posts/4aa8abbe/#導航菜單
 # --------------------------------------
@@ -476,6 +477,8 @@ footer:
     since: 2023
   custom_text:
   copyright: false # Copyright of theme and framework
+  # 正式 ICP 备案号：独立显示在页脚，链接至工信部备案管理系统。
+  icp: '鲁ICP备2026066398号-1'
   # 页脚双段式标识：修改 value / link 即可更新；link 留空时仅展示，不可点击。
   badges:
     enable: true

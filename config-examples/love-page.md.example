@@ -1,0 +1,11 @@
+---
+title: 恋爱小屋
+comments: false
+password: REPLACE_WITH_YOUR_OWN_PAGE_PASSWORD
+theme: xray
+message: 请输入访问密码。
+abstract: 此页面需要密码。
+wrong_pass_message: 密码不正确，请重新输入。
+---
+
+在本地填写页面内容，并更换上面的示例密码。此文件只用于展示页面结构。

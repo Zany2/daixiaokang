@@ -1,8 +1,12 @@
 # 正式域名配置
 
-主站地址为 `https://daixiaokang.com`。`www.daixiaokang.com` 作为兼容入口，应由服务器永久跳转到主站，并保留原路径和查询参数。
+主站地址为 `https://daixiaokang.com`。当前 Nginx 模板和证书覆盖主站及 `api.daixiaokang.com`。如果需要 `www.daixiaokang.com` 兼容入口，需先扩展证书和 Nginx 配置，再将其永久跳转到主站并保留原路径和查询参数。
 
 本文描述代码配置与部署要求，不代表 DNS、证书或线上服务已经按此配置。前端路径以 `frontend/` 为基准，后端路径以仓库的 `backend/` 为基准。
+
+## Docker HTTPS 与自动续期
+
+服务器使用根目录 Compose、`frontend/html/` 和挂载后端源码的部署方式时，参见 [HTTPS 部署步骤](../../deploy/HTTPS.md)。独立证书容器通过腾讯云 DNSPod API 申请 Let's Encrypt 证书，首次启动时申请，并在每天北京时间 03:15 检查续期；宿主机不需要 cron。首次签发成功后再启用 Nginx HTTPS 模板。脚本覆盖主站和 API 域名，EdgeOne 与媒体域名后续单独接入。
 
 ## 已配置的代码
 
@@ -15,8 +19,8 @@
 
 ## 服务器上线前需要配置
 
-1. 在 DNS 中将主域名和 www 指向实际部署入口。
-2. 为两个域名配置有效证书，开启 HTTPS，并将 HTTP 跳转到 HTTPS、www 跳转到主域名。代码修改不会配置 DNS、证书或服务器跳转。
+1. 在 DNS 中将主域名和 `api` 指向实际部署入口。
+2. 为主域名和 `api` 配置有效证书，开启 HTTPS，并将 HTTP 跳转到 HTTPS。当前不包含 www 兼容入口；如需启用，先扩展证书和跳转配置。代码修改不会配置 DNS、证书或服务器跳转。
 3. 在 `frontend/` 运行 `npm.cmd run build`，将生成的 `public/` 作为静态网站发布。评论与留言的 `/api/` 请求保留路径转发至 FastAPI，例如 `http://127.0.0.1:8000/api/comments`。反向代理保留原 Host 时，后端已允许正式域名。
 4. AI 助手使用 FastAPI 的 `/api/ai/status`、`/api/ai/conversations` 及会话消息和关闭接口。在后端 `.env` 配置 `AI_API_KEY`，让 Nginx 将同源 `/api` 统一转发到 FastAPI；SSE 必须关闭代理缓冲，读取超时需覆盖模型生成等待时间。
 5. 服务器的后端 `.env` 需要同步 CORS 和可信 Host；本机 `.env` 的修改不会自动传到服务器。数据库、Redis 的主机地址按部署方式切换为本机地址或容器服务名。
@@ -25,10 +29,12 @@
 
 ## Nginx API 转发示例
 
-下面的片段放在主站 HTTPS 的 `server` 块内，静态目录、证书和域名跳转按实际服务器设置：
+当前 Docker 部署统一维护仓库根目录 `nginx.conf`，上传到服务器 `frontend/nginx.conf`。配置包含静态资源缓存、页面 404 跳转、静态资源真实 404、API 禁止缓存及 AI 流式转发，CDN 接入要求参见 [HTTPS 部署步骤](../../deploy/HTTPS.md)。
+
+下面只展示直接在宿主机部署后端时的 API 转发片段，Docker 部署使用完整模板中的容器服务名和 Docker DNS 配置：
 
 ```nginx
-location /api/ {
+location ^~ /api/ {
     # 此处不带末尾斜杠，保留原始 /api/... 路径
     proxy_pass http://127.0.0.1:8000;
     proxy_http_version 1.1;

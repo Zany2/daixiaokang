@@ -43,13 +43,20 @@ mixin footerBadgeParts(badge)
           a(href='https://www.fomal.cc/' title='Fomalhaut🥝' target='_blank' rel='noopener noreferrer')
             img(src='https://sourcebucket.s3.bitiful.net/img/avatar.webp' width='80' height='80' alt='Fomalhaut 头像' onerror=`this.onerror=null;this.src='${url_for(theme.error_img.flink)}'`)
 
-  if theme.footer.owner.enable
-    - var now = new Date()
-    - var nowYear = now.getFullYear()
-    - var sinceYear = theme.footer.owner.since || nowYear
-    .copyright
-      span!= `<b>&copy;${sinceYear}-${nowYear}</b>`
-      span!= `<b>&nbsp;&nbsp;By ${config.author}</b>`
+  if theme.footer.owner.enable || theme.footer.icp
+    .footer-legal
+      if theme.footer.owner.enable
+        - var now = new Date()
+        - var nowYear = now.getFullYear()
+        - var sinceYear = theme.footer.owner.since || nowYear
+        .copyright
+          span!= `<b>&copy;${sinceYear}-${nowYear}</b>`
+          span!= `<b>&nbsp;&nbsp;By ${config.author}</b>`
+      if theme.footer.icp
+        .footer-icp
+          if theme.footer.owner.enable
+            span.footer-legal-separator(aria-hidden='true') |
+          a(href='https://beian.miit.gov.cn/' target='_blank' rel='noopener noreferrer')= theme.footer.icp
   if theme.footer.copyright
     .framework-info
       span= _p('footer.framework') + ' '

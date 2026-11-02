@@ -10,12 +10,37 @@ public/
 frontend/themes/fomalhaut/.git
 .ai-chat-key
 
+# Local deployment configuration
+/docker-compose.yaml
+/docker-compose.yml
+/nginx.conf
+/frontend/nginx.conf
+/frontend/logs/
+/frontend/ssl/
+/deploy/https.env
+/deploy/acme/
+
+# Live Hexo settings; version the corresponding example files instead.
+/frontend/_config*.yml
+!/frontend/_config*.example.yml
+/frontend/themes/fomalhaut/_config.yml
+# This page stores its access password in Markdown front matter.
+/frontend/source/personal/love/index.md
+
+# Environment credentials; keep sanitized examples available in Git.
+.env
+.env.*
+*.env
+!.env.example
+!.env.*.example
+!*.env.example
+
 # Python / FastAPI backend
 backend/logs/
 .venv/
 __pycache__/
 *.py[cod]
-.env
+/backend/.env.docker
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
