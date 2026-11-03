@@ -59,9 +59,11 @@ local_search:
 | 前端访问地址 | 请求目标 |
 | --- | --- |
 | `localhost` / `127.0.0.1` 本地开发 | `http://localhost:8000/api` |
-| 正式域名 | 同源 `/api`，由服务器反向代理 |
+| 正式域名 | `https://api.daixiaokang.com/api`，API 子域名直连服务器 |
 
 AI 使用 `/api/ai/conversations` 创建会话，后续使用会话消息与关闭接口。模型密钥和模型参数仅配置在后端 `.env`。评论与留言接口、交互规则见 [FEEDBACK.md](tools/FEEDBACK.md)。
+
+主站网页可通过 EdgeOne 加速；API 子域名保持直接解析到服务器。后端 `CORS_ORIGINS` 需允许前端来源 `https://daixiaokang.com`，`TRUSTED_HOSTS` 需包含 `api.daixiaokang.com`。修改 API 地址后重新构建并上传 `public/` 的内容。
 
 局域网手机调试需将相应 `api_base` 配为电脑可访问的后端地址，同时更新后端 CORS 来源与可信 Host。前端可访问不代表 API 已连通。
 
@@ -69,7 +71,7 @@ AI 使用 `/api/ai/conversations` 创建会话，后续使用会话消息与关�
 
 `home_discovery` 控制最近文章轮播与分类入口。默认展示最近 6 篇非加密文章，每 5 秒切换；鼠标悬停、键盘聚焦或页面不可见时暂停，减少动态效果偏好下不自动播放。不提供开始/停止按钮。
 
-首页视频与各类封面使用 `source/assets/` 下的自有素材；`site_media.base_url` 为空时从本站加载。新增素材、优化图生成及 CDN 规则见 [SITE-MEDIA.md](tools/SITE-MEDIA.md)。
+首页视频与各类封面使用 `source/assets/` 下的自有素材，当前通过 `https://static.daixiaokang.com/assets` 加载；`site_media.base_url` 留空可恢复本站加载。新增素材、优化图生成及 CDN 规则见 [SITE-MEDIA.md](tools/SITE-MEDIA.md)。
 
 ## 验证
 

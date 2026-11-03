@@ -11,12 +11,12 @@
 ```yaml
 feedback:
   enable: true
-  api_base: /api
+  api_base: https://api.daixiaokang.com/api
   local_api_base: http://localhost:8000/api
   request_timeout_ms: 12000
 ```
 
-通过 `localhost` / `127.0.0.1` / `::1` 访问前端时，使用 `local_api_base`；其他主机名和 IP 使用 `api_base`。正式站 `https://daixiaokang.com` 走同源 `/api`，由服务器保留 `/api` 路径并转发到 FastAPI 的 8000 端口。改域名不影响评论的 `article_key` 和已保存数据。
+通过 `localhost` / `127.0.0.1` / `::1` 访问前端时，使用 `local_api_base`；其他主机名和 IP 使用 `api_base`。正式站请求 `https://api.daixiaokang.com/api`，由 API 子域名的 Nginx 保留 `/api` 路径并转发到 FastAPI 的 8000 端口，不经过网页 CDN。后端需允许主站的 CORS 来源和 API 子域名 Host。改域名不影响评论的 `article_key` 和已保存数据。
 
 前端默认开发来源 `http://localhost:4000` / `http://127.0.0.1:4000` 已在后端默认 CORS 配置中；使用其他端口或 IPv6 时需同步后端 `CORS_ORIGINS` 和 `TRUSTED_HOSTS`。手机真机访问开发电脑的局域网地址时，`api_base` 需临时填写开发电脑的后端完整地址，并在后端允许对应的前端来源；手机自身的 localhost 无法访问电脑后端。
 

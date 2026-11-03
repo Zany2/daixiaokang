@@ -92,7 +92,7 @@ Redis 故障时，发表返回 `503`；查询使用进程内临时限流后继�
 
 默认每 IP 每小时最多发送 30 次问题、创建 10 个会话，Redis 计数可跨 worker 共享。Redis 不可用时写接口返回 503；`AI_RATE_LIMIT_ENABLED=false` 仅关闭配额，生成锁仍需要 Redis。会话默认闲置 24 小时后不可继续发送，历史仍可查看。调整参数见 `.env.example`。
 
-本地前端请求 `http://localhost:8000/api/ai/...`。正式部署由 Nginx 将同源 `/api` 转发到 FastAPI，并关闭响应缓冲；SSE 返回 `X-Accel-Buffering: no` 和 `Cache-Control: no-store, no-transform`。前端无数据超时默认为 65 秒，部署时应大于后端模型读取超时。
+本地前端请求 `http://localhost:8000/api/ai/...`。正式前端请求 `https://api.daixiaokang.com/api/ai/...`，API 子域名直连 Nginx 并转发到 FastAPI，关闭响应缓冲；主站网页可独立接入 CDN。`CORS_ORIGINS` 需允许主站来源，`TRUSTED_HOSTS` 需包含 API 子域名。SSE 返回 `X-Accel-Buffering: no` 和 `Cache-Control: no-store, no-transform`。前端无数据超时默认为 65 秒，部署时应大于后端模型读取超时。
 
 ## 日志
 
