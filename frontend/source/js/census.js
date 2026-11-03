@@ -1,22 +1,16 @@
 // 网站统计请求、默认值与图表共用一个页面生命周期。
 ;(function () {
 if (typeof window.__disposeCensus === 'function') window.__disposeCensus()
-var start_date = '20200101' // 开始日期
-var date = new Date();
-var end_date = '' + date.getFullYear() + (date.getMonth() > 8 ? (date.getMonth() + 1) : ("0" + (date.getMonth() + 1))) + (date.getDate() > 9 ? date.getDate() : ("0" + date.getDate())); // 结束日期
-// 更新链接 https://openapi.baidu.com/oauth/2.0/token?grant_type=refresh_token&refresh_token=<你的refresh_token>&client_id=<你的client_id>&client_secret=<你的client_secret>
-// API Key：{ CLIENT_ID }
-// Secret Key：{ CLIENT_SECRET }
-// 要看API Key与Secret Key见 http://developer.baidu.com/console#app/27508680
-// 如果前面的refresh token不行就用这个
-// refresh_token: <你的 refresh_token>
-var access_token = 'YOUR_BAIDU_ACCESS_TOKEN' // 未配置时直接显示默认值；后续接入再填写。
-var site_id = 'YOUR_BAIDU_SITE_ID' // 网址 id
-var dataUrl = 'https://baidu-tongji.example.com/api?access_token=' + access_token + '&site_id=' + site_id
-// var dataUrl = 'https://baidu-tongji.example.com/api?site_id=' + site_id
-var metrics = 'pv_count' // 统计访问次数 PV 填写 'pv_count'，统计访客数 UV 填写 'visitor_count'，二选一
-var metricsName = (metrics === 'pv_count' ? '访问次数' : (metrics === 'visitor_count' ? '访客数' : ''))
-
+var metricsName = '访问次数'
+var summaryTask = new Promise(function (resolve, reject) {
+  var attempts = 0
+  function ready() {
+    if (window.SiteAnalytics) { window.SiteAnalytics.summary().then(resolve, reject); return }
+    if (++attempts > 100) { reject(new Error('统计未启用')); return }
+    setTimeout(ready, 50)
+  }
+  ready()
+})
 // —— 主题色读取与派生 ——
 // 主题色由主题运行时写进 <style id="themeColor">，内容是 :root{--theme-color:rgb(57, 197, 187)}
 // 取值来自 source/js/fomal.js 的 setColor()（默认 green），所以只能在运行时读取、不能写死。
@@ -202,22 +196,10 @@ function ensureChinaMap() {
   }
   return window.__censusChinaMap
 }
-function requestCensus(url, type) {
-  var controller = new AbortController()
-  controllers.push(controller)
-  var timer = setTimeout(function () { controller.abort() }, 10000)
-  return fetch(url, { signal: controller.signal }).then(function (response) {
-    if (!response.ok) throw new Error('统计接口 HTTP ' + response.status)
-    return type === 'text' ? response.text() : response.json()
-  }).finally(function () {
-    clearTimeout(timer)
-    controllers = controllers.filter(function (item) { return item !== controller })
-  })
-}
-// 默认值固定为 0，明确标识，避免把未接入或失败的统计当作真实数据。
+// 请求失败显示缺省状态，真实的零访问仍由后端返回。
 function setStatus(id, fallback) {
   var el = page.querySelector('[data-census-status="' + id + '"]')
-  if (el) el.textContent = fallback ? '默认数据 · 暂无可用统计' : '统计数据已更新'
+  if (el) el.textContent = fallback ? '暂未获取统计' : '统计数据已更新'
 }
 function numericValue(value) {
   if (value === '--') return 0
@@ -228,42 +210,22 @@ function numericValue(value) {
   if (!Number.isSafeInteger(number) || number < 0) throw new Error('统计数值异常')
   return number
 }
-function resultRows(data) {
-  if (!data || data.error_code || !data.result || !Array.isArray(data.result.items)) throw new Error('百度统计返回数据异常')
-  var items = data.result.items
-  if (!Array.isArray(items[0]) || !Array.isArray(items[1]) || items[0].length !== items[1].length) throw new Error('百度统计列表异常')
-  return items[0].map(function (item, index) {
-    var name = Array.isArray(item) ? item[0] : null
-    name = name && typeof name === 'object' ? name.name : name
-    if (typeof name !== 'string' || !name.trim() || !Array.isArray(items[1][index])) throw new Error('百度统计记录异常')
-    return { name: name, value: numericValue(items[1][index][0]) }
-  })
-}
 var statistic = page.querySelector('#statistic'), updated = page.querySelector('#census-updated')
 function renderKpis(values, fallback) {
   if (!isCurrent() || !statistic) return
   statistic.querySelectorAll('[data-census-field]').forEach(function (el) {
-    el.textContent = values[Number(el.getAttribute('data-census-field'))].toLocaleString('en-US')
+    el.textContent = fallback ? '—' : values[Number(el.getAttribute('data-census-field'))].toLocaleString('en-US')
   })
   statistic.setAttribute('data-state', fallback ? 'fallback' : 'ready')
-  if (updated) updated.textContent = fallback ? '默认数据 · 暂无可用统计' : '统计数据已更新'
+  if (updated) updated.textContent = fallback ? '暂未获取统计' : '统计数据已更新'
 }
 function loadKpis() {
   var defaults = [0, 0, 0, 0, 0, 0, 0]
   renderKpis(defaults, true)
-  var widgetId = 'YOUR_51LA_ID'
-  if (widgetId.indexOf('YOUR_') === 0) return
-  requestCensus('https://v6-widget.51.la/v6/' + encodeURIComponent(widgetId) + '/quote.js', 'text')
-    .then(function (text) {
-      var values = [], matches = text.matchAll(/<\/span><span>(.*?)<\/span><\/p>/g)
-      for (var match of matches) values.push(numericValue(match[1]))
-      if (values.length < 7) throw new Error('51LA 返回数据异常')
-      renderKpis(values, false)
-    }).catch(function (error) {
-      if (!isCurrent()) return
-      console.warn('51LA:', error)
-      renderKpis(defaults, true)
-    })
+  summaryTask.then(function (data) {
+    var o = data.overview
+    renderKpis([0, o.today_uv, o.today_pv, o.yesterday_uv, o.yesterday_pv, o.month_pv, o.total_pv].map(numericValue), false)
+  }).catch(function () { renderKpis(defaults, true) })
 }
 function defaultMonths() {
   var current = new Date(), rows = []
@@ -282,7 +244,7 @@ function chartDefaults(id) {
     }) : []
   }
   if (id === 'trends-chart') return defaultMonths()
-  return ['直接访问', '搜索引擎', '外部链接', '其他来源'].map(function (name) { return { name: name, value: 0 } })
+  return ['直接访问 / 未知', '搜索引擎', '外部链接', '推广渠道'].map(function (name) { return { name: name, value: 0 } })
 }
 function chartOption(id, rows) {
   var textColor = censusIsDark() ? 'rgba(255,255,255,0.7)' : '#4c4948'
@@ -345,10 +307,10 @@ function chartOption(id, rows) {
 function chartTextFallback(el) {
   var tip = document.createElement('div')
   tip.className = 'census-fallback'
-  tip.textContent = '0 · 默认数据，暂无可用统计'
+  tip.textContent = '图表暂不可用'
   el.replaceChildren(tip)
 }
-function loadChart(id, method) {
+function loadChart(id) {
   var el = page.querySelector('#' + id)
   if (!el) return
   var chart = null, rows = chartDefaults(id), fallbackState = true
@@ -378,17 +340,12 @@ function loadChart(id, method) {
   }
   render(true)
   themeRenderers.push(function () { render(fallbackState) })
-  if (access_token.indexOf('YOUR_') === 0 || site_id.indexOf('YOUR_') === 0 || dataUrl.indexOf('.example.com') !== -1) return
-  var params = '&start_date=' + start_date + '&end_date=' + end_date + '&metrics=' + metrics + '&method=' + method
-  requestCensus(dataUrl + params).then(function (data) {
-    var values = resultRows(data)
-    if (!values.length) throw new Error('暂无统计记录')
-    if (id === 'trends-chart') {
-      values.forEach(function (row) {
-        row.name = row.name.slice(0, 7).replace('/', '-')
-        if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(row.name)) throw new Error('趋势日期异常')
-      })
-      values.sort(function (a, b) { return a.name.localeCompare(b.name) })
+  summaryTask.then(function (data) {
+    var key = { 'map-chart': 'regions', 'trends-chart': 'trends', 'sources-chart': 'sources' }[id]
+    var values = data[key].map(function (row) { return { name: String(row.name), value: numericValue(row.value) } })
+    if (id === 'map-chart') {
+      var note = page.querySelector('[data-region-note]')
+      if (note) note.textContent = data.geo_available ? '海外及未识别访问：' + numericValue(data.region_unknown).toLocaleString('en-US') : '暂无法识别地域'
     }
     rows = values
     render(false)
@@ -410,9 +367,9 @@ if (window.MutationObserver) {
   observers.push(observer)
 }
 loadKpis()
-loadChart('map-chart', 'overview/getDistrictRpt')
-loadChart('trends-chart', 'trend/time/a&gran=month')
-loadChart('sources-chart', 'source/all/a')
+loadChart('map-chart')
+loadChart('trends-chart')
+loadChart('sources-chart')
 ensureChartLibrary().then(function () {
   // 地图资源失败时折线与来源图仍可正常显示。
   refreshTheme()

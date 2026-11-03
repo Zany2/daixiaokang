@@ -71,7 +71,7 @@ docker compose run --rm --no-deps daixiaokang_frontend nginx -t
 docker compose up -d
 ```
 
-Compose 将整个证书目录只读挂载给 Nginx，并开放 80、443 端口。Nginx 模板提供主站页面、主站 `/api/` 兼容入口和 API 子域名转发，API 流式响应关闭代理缓冲。容器通过同一个 `mynetwork` 通信。
+Compose 将整个证书目录只读挂载给 Nginx，并开放 80、443 端口。Nginx 模板提供主站页面、主站 `/api/` 兼容入口和 API 子域名转发，API 流式响应关闭代理缓冲。Nginx 与后端通过专用 `proxy` 网络通信；后端同时连接原有 `mynetwork`，以访问数据库和 Redis。证书容器使用默认网络。
 
 主站 `location /` 中配置 `error_page 404 = @homepage;`，由命名 location 明确执行 `return 302 /;`，保证响应包含 `Location`，浏览器地址回到 `/`。常见静态资源（图片、脚本、样式、视频、字体、JSON、XML 等）单独处理，缺失时仍返回 404，避免把首页 HTML 当作资源加载。以点开头的文件和目录禁止访问。`/api/` 使用 `^~` 前缀优先匹配，即使接口路径以 `.js` 等扩展名结尾，也仍转发给后端。
 
@@ -108,7 +108,11 @@ curl https://api.daixiaokang.com/api/ai/status
 - HTML、搜索索引及 Service Worker 遵循源站的校验策略；普通静态资源可遵循源站一天的缓存。修改同名文件后刷新 EdgeOne 缓存。
 - 当前未配置 CDN 真实 IP 信任，主站访问日志在接入 CDN 后记录边缘节点 IP；不要无条件信任外部转发头。后端跨域来源允许主站，可信 Host 包含 API 子域名。
 
-Nginx 使用 `$remote_addr` 覆盖客户端传入的 `X-Forwarded-For`，避免直连时伪造转发链。后端按 ASGI 客户端地址进行限流，Docker 网络中的 Uvicorn 还需要通过 `FORWARDED_ALLOW_IPS` 信任实际 Nginx 代理地址，才能使用转发后的访客 IP；需结合实际 Docker 网络单独配置，不要无条件信任所有地址。
+Nginx 使用 `$remote_addr` 覆盖客户端传入的 `X-Forwarded-For`，避免直连时伪造转发链。服务器已用 Docker 网段为 `10.66.0.0/24` 和 `10.67.0.0/24` 至 `10.67.3.0/24`，因此 Compose 为专用 `proxy` 网络配置 `10.67.4.0/24`。该网络仅连接 Nginx 和后端，两者的容器 IP 自动分配；后端通过 `FORWARDED_ALLOW_IPS=10.67.4.0/24` 只信任这个专用网段，识别转发后的 HTTPS 和访客 IP。该变量直接注入容器，由 Uvicorn 读取，无需修改后端代码或依赖镜像。API 子域名直连时能识别访客 IP；主域名旧 `/api` 入口经过 CDN 时仍只能识别边缘节点 IP。
+
+更新 Compose 后，运行 `docker compose config --quiet` 检查配置，再执行 `docker compose up -d --no-build --force-recreate daixiaokang_frontend daixiaokang_backend` 应用网络及环境变量变化；会短暂重启前后端，证书容器无需重建。使用 `curl -I https://api.daixiaokang.com/api/ai/status/` 复查自动重定向，`Location` 应为 HTTPS；随后检查后端日志中的 `client`。`restart` 不会应用新的环境变量，需重新创建容器。
+
+迁移服务器时先检查 Docker 网络及宿主机路由，确认 `10.67.4.0/24` 不与已有网络或路由重叠；若冲突，同步调整 `networks.proxy.ipam.config` 的 `subnet` 与后端 `FORWARDED_ALLOW_IPS`。固定的是专用网段，无需固定容器 IP。不要向 `proxy` 网络接入其他服务，也不要将整个共享网络或所有地址设为可信。
 
 ## 4. 日常检查与维护
 

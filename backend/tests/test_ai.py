@@ -128,6 +128,8 @@ class AIConversationTests(unittest.IsolatedAsyncioTestCase):
                 AIMessage.content == "A8",
             ))).scalar_one()
             deleted.deleted_at = ai.now_local()
+            # Keep this fixture independent of application/database clock skew.
+            deleted.updated_at = deleted.deleted_at
             await db.commit()
         _, context = await ai.prepare_turn(credentials.conversation_id, credentials.conversation_token,
                                             self.payload("current"), self.settings)

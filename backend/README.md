@@ -119,3 +119,7 @@ Redis 故障时，发表返回 `503`；查询使用进程内临时限流后继�
 ```
 
 当前测试覆盖 AI 会话服务。需要配置可访问的 PostgreSQL，并允许测试用户创建和删除 schema；每个测试使用随机命名的临时 schema，清理自己的测试数据，不使用业务表。模型调用与生成锁等通过模拟验证，不调用真实模型服务，不代表生产环境的数据库、Redis 和模型链路已通过联调。
+
+## 网站统计
+
+新增 `POST /api/analytics/visits` 采集匿名访问、`GET /api/analytics/summary` 提供公开汇总。`site_visits` 表由自动建表或 SQL 脚本创建；新增 `py-ip2region==3.0.6` 依赖。离线地域库、本地测试及发布步骤见 [统计说明](../frontend/tools/ANALYTICS.md)。

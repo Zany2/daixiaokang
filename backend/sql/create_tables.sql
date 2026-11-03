@@ -356,4 +356,16 @@ COMMENT ON INDEX ix_ai_messages_visible_history IS '按顺序读取指定会话�
 COMMENT ON INDEX ix_ai_messages_generating IS '扫描长时间停留在生成中状态的助手消息，便于异常恢复任务将其标记为失败';
 COMMENT ON INDEX ix_ai_messages_created_at IS '按创建时间倒序查询全部 AI 消息，用于后台审计和用量统计';
 
+-- 自建网站统计：匿名浏览器摘要，不保存原始 IP、完整来源 URL 或查询参数。
+CREATE TABLE IF NOT EXISTS site_visits (
+    event_id UUID NOT NULL,
+    visitor VARCHAR(64) NOT NULL,
+    path VARCHAR(1024) NOT NULL,
+    source VARCHAR(32) NOT NULL,
+    province VARCHAR(32) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT pk_site_visits PRIMARY KEY (event_id)
+);
+CREATE INDEX IF NOT EXISTS ix_site_visits_time_visitor ON site_visits (created_at, visitor);
+
 COMMIT;

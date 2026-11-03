@@ -15,7 +15,7 @@ services:
     environment:
       - TZ=Asia/Shanghai
     networks:
-      - mynetwork
+      - proxy
 
   daixiaokang_backend:
     container_name: daixiaokang_backend
@@ -27,6 +27,8 @@ services:
       - ./backend/.env.docker
     environment:
       - TZ=Asia/Shanghai
+      # Trust only the dedicated proxy network below.
+      - FORWARDED_ALLOW_IPS=10.67.4.0/24
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
@@ -34,6 +36,7 @@ services:
       - ./backend/logs:/backend/logs
     networks:
       - mynetwork
+      - proxy
 
   daixiaokang_acme:
     container_name: daixiaokang_acme
@@ -54,6 +57,13 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
 networks:
+  # Dedicated to Nginx and the backend; container addresses are assigned dynamically.
+  proxy:
+    driver: bridge
+    ipam:
+      config:
+        # Choose a free subnet and keep FORWARDED_ALLOW_IPS in sync when migrating.
+        - subnet: 10.67.4.0/24
   mynetwork:
     external: true
     name: mynetwork

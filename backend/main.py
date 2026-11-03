@@ -7,6 +7,8 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from controller.ai import router as ai_router
 from controller.feedback import router as feedback_router
+from controller.analytics import router as analytics_router
+from services.analytics import GeoLookup
 from cache.redis import close_redis, init_redis, redis_is_ready
 from core.config import get_settings
 from core.logging import configure_logging, get_logger
@@ -27,6 +29,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await init_redis(app)
     app.state.feedback_runtime = FeedbackRuntime(app.state.redis, settings)
     app.state.ai_runtime = AIRuntime(app.state.redis, settings)
+    geo_dir = settings.analytics_geo_dir
+    if not geo_dir.is_absolute():
+        from pathlib import Path
+        geo_dir = Path(__file__).resolve().parent / geo_dir
+    app.state.analytics_geo = GeoLookup(geo_dir)
     try:
         if settings.database_auto_create:
             await init_database()
@@ -76,6 +83,7 @@ def create_app() -> FastAPI:
     application.add_middleware(RequestContextMiddleware)
     application.include_router(ai_router)
     application.include_router(feedback_router)
+    application.include_router(analytics_router)
 
     return application
 

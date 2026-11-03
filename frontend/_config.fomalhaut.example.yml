@@ -494,10 +494,10 @@ footer:
         color: '#7028cf'
         link: https://daixiaokang.com/
       - label: Hosted
-        value: 待部署
+        value: 腾讯云
         icon: icon-wangye
         color: '#64748b'
-        link: # 确定正式托管平台后填写。
+        link: https://cloud.tencent.com/
       - label: Analytics
         value: Vercount
         icon: icon-shujutongji1
@@ -509,15 +509,15 @@ footer:
         color: '#b82c71'
         link: https://icp.gov.moe/?keyword=20268555 # 萌备查询；正式 ICP 备案另设位置。
       - label: Bucket
-        value: 待接入
+        value: 腾讯云 COS
         icon: icon-xiangzi
         color: '#7762ae'
-        link: # 自建图床或对象存储确认后填写。
+        link: https://cloud.tencent.com/product/cos
       - label: CDN
-        value: npmmirror
+        value: EdgeOne
         icon: icon-weixing1
         color: '#a16b23'
-        link: https://npmmirror.com/ # 当前部分第三方静态资源的来源，可替换为自己的 CDN。
+        link: https://cloud.tencent.com/product/teo
       - label: Source
         value: GitHub主页
         icon: icon-github
@@ -1356,3 +1356,9 @@ ai_chat:
   panel_right: 88              # 面板右边缘离屏幕右边的距离（避开按钮列）
   timeout_ms: 65000            # 接收无新进展的超时，建议大于后端模型读取超时（毫秒）
   welcome: 你好，我是你的 AI 助手。学习、写作、编程，或是日常灵感，都可以和我聊聊。
+
+# 自建网站统计；独立于原有 Vercount 文章阅读量。
+site_analytics:
+  enable: true
+  api_base: https://api.daixiaokang.com/api
+  local_api_base: http://localhost:8000/api
