@@ -137,7 +137,7 @@ npm.cmd run clean
 npm.cmd run build
 ```
 
-将 `frontend/public/` 发布到静态站点目录，单独部署 FastAPI、PostgreSQL 和 Redis。服务器需要将同源 `/api/` 保留路径代理到 FastAPI，并为 AI SSE 关闭响应缓冲，配置足够的读取超时。正式域名使用 HTTPS，`www.daixiaokang.com` 应由服务器跳转到主域名。
+将 `frontend/public/` 发布到静态站点目录，单独部署 FastAPI、PostgreSQL 和 Redis。当前主站经过 EdgeOne 回源 Nginx，`www.daixiaokang.com` 由 EdgeOne 跳转至主域名；API 子域名直连 Nginx，由其保留 `/api/` 路径代理到 FastAPI，为 AI SSE 关闭响应缓冲并配置足够的读取超时。域名、证书、COS、网络及迁移顺序见[当前线上配置与迁移手册](deploy/MIGRATION.md)。
 
 `frontend/_config.yml` 的 Git 部署仓库仍为占位地址，使用 Git 部署前需要替换为实际仓库。当前 AI、评论和留言均依赖 FastAPI，发布静态页面后需同时接通 `/api`。详细配置见[域名与部署说明](frontend/tools/DOMAIN.md)。
 
@@ -150,6 +150,7 @@ npm.cmd run build
 - [评论与留言前端](frontend/tools/FEEDBACK.md)
 - [本地素材与 CDN 配置](frontend/tools/SITE-MEDIA.md)
 - [域名与反向代理](frontend/tools/DOMAIN.md)
+- [当前线上配置与迁移手册](deploy/MIGRATION.md)
 - [主题目录与维护说明](frontend/themes/fomalhaut/README.md)
 
 ## 来源与授权
