@@ -63,10 +63,10 @@
     return { emoji: '🎮', text: '下班玩耍中' };
   }
 
-  function apply(root) {
+  function apply(root, status) {
     var box = (root || document).querySelector('.card-info .author-status');
     if (!box) return null;
-    var s = compute();
+    var s = status || compute();
     var em = box.querySelector('.g-emoji');
     var sp = box.querySelector('.author-status-text');
     if (em && em.textContent.trim() !== s.emoji) em.textContent = s.emoji;

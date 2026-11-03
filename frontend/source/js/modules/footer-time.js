@@ -6,9 +6,9 @@
  *        以及别的脚本会直接调全局函数，所以本文件里的声明必须留在全局作用域。
  * ----------------------------------------------------------------------------
  * 包含的模块（括号内为拆分前在 fomal.js 里的行号）：
- *   · 页脚计时器（计时主体）（1650-1693）—— createtime()：每秒刷新页脚那行文字，含中国标准时间、休息日倒计时、旅行者1号距离
+ *   · 页脚计时器（计时主体）（1650-1693）—— createtime()：每秒刷新页脚那行文字，含四种作息状态、建站时长和旅行者1号距离
  * ----------------------------------------------------------------------------
- * 页脚那行"现在是 …，距离下次休息还有 …，旅行者1号离我们 … 公里"。依赖 data/voyager1.js 和 data/holidays.js。
+ * 页脚运行时间和旅行者1号距离。依赖 data/voyager1.js 和 author-status.js。
  * 加载方式：_config.fomalhaut.yml 的 inject.bottom 列表里以 <script defer> 引用。
  * ----------------------------------------------------------------------------
  * 【本文件目录】共 2 个顶层声明（行号可能随后续编辑漂移，找不到就 Ctrl+F 搜函数名）
@@ -17,7 +17,7 @@
  * ========================================================================== */
 
 /* ------------------------------ 页脚计时器（计时主体） ------------------------------ */
-/* 原 fomal.js 1650-1693 行，原样搬运，未改逻辑 */
+/* 原 fomal.js 的页脚计时模块，状态规则与头像共用。 */
 var now = new Date();
 function createtime() {
   var workboard = document.getElementById("workboard");
@@ -39,10 +39,22 @@ function createtime() {
   1 == String(mnum).length && (mnum = "0" + mnum);
   var snum = Math.floor(rest / 1000) % 60;
   1 == String(snum).length && (snum = "0" + snum);
-  // 摸鱼牌子按"当天是否法定休息日"切换：休息日=放假摸鱼中，工作日=上班摸鱼中
-  var boardBadge = isRestDay(new Date())
-    ? `<img class='boardsign' src='/assets/badge/Fomalhaut-rest.svg' width='136' height='20' title='放假啦，光明正大地摸鱼~'>`
-    : `<img class='boardsign' src='/assets/badge/Fomalhaut-work.svg' width='136' height='20' title='上班偷偷摸鱼，别被发现~'>`;
+  // 与头像共用状态计算；每秒同步，整点和换日不会短暂显示不同状态。
+  var boardBadge = '';
+  if (window.authorStatus) {
+    var status = window.authorStatus.compute(now);
+    window.authorStatus.apply(document, status);
+    var badgeFiles = {
+      '睡觉中zzz': 'sleep',
+      '放假摸鱼中': 'rest',
+      '上班摸鱼中': 'work',
+      '下班玩耍中': 'play'
+    };
+    var badgeName = badgeFiles[status.text];
+    if (badgeName) {
+      boardBadge = `<img class='boardsign' src='/assets/badge/Fomalhaut-${badgeName}.svg?v=20261103-status1' width='136' height='20' alt='${status.text}${status.emoji}' title='${status.text}${status.emoji}'>`;
+    }
+  }
   let currentTimeHtml =
     boardBadge +
     `<br> <div style="font-size:13px;font-weight:bold">本站运行了 ${dnum} 天 ${hnum} 小时 ${mnum} 分 ${snum} 秒 <i id="heartbeat" class='fas fa-heartbeat'></i> <br> 旅行者 1 号当前距离地球 ${dis} 千米，约为 ${unit} 个天文单位（信号单程需 ${lt}）🚀</div>`;

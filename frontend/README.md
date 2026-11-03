@@ -36,6 +36,12 @@ npm.cmd run server
 
 页脚的“萌ICP备”是独立的兴趣站点徽章，不替代正式 ICP 备案。公安联网备案需另行办理，取得号码和官方查询链接后再添加；相关要求见[腾讯云备案号悬挂说明](https://cloud.tencent.com/document/product/243/61412)。
 
+### 头像与页脚状态
+
+头像旁和页脚徽章共用 `source/js/author-status.js` 的判断：每天 23:00～次日 07:00 为睡觉；休息日白天为放假；工作日 07:00～18:00 为上班，18:00～23:00 为下班。仍按访客设备的本地时间判断，沿用头像内置的节假日和调休数据。页脚每秒同步两处状态，PJAX 换页后立即更新。
+
+`author-status.js` 必须先于 `modules/footer-time.js` 加载，实际配置和公开示例已同步。页脚四张 SVG 使用相同尺寸和样式。
+
 ### 页脚站点标识
 
 `_config.fomalhaut.yml` 的 `footer.badges.items` 控制页脚底部的双段式徽章。当前托管平台为腾讯云，对象存储为腾讯云 COS，站点加速为 EdgeOne；对应徽章链接至平台或产品官网。GitHub 徽章链接至个人主页 `https://github.com/Zany2`。
