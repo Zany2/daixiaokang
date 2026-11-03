@@ -6,3 +6,4 @@ httpx>=0.28,<1.0
 anyio>=4.4,<5.0
 redis[hiredis]>=5.2,<7.0
 pydantic-settings>=2.7,<3.0
+py-ip2region==3.0.6

@@ -37,6 +37,7 @@ frontend/themes/fomalhaut/.git
 
 # Python / FastAPI backend
 backend/logs/
+backend/data/geo/*.xdb
 .venv/
 __pycache__/
 *.py[cod]
@@ -63,4 +64,7 @@ bak/
 *.bak-*
 # 本地素材、检查产物
 images/
+# Leaflet runtime icons are required source assets.
+!/frontend/source/js/tag-map/images/
+!/frontend/source/js/tag-map/images/*.png
 cdn-check/

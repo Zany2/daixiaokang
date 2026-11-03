@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     redis_operation_timeout_seconds: float = Field(default=0.5, ge=0.05, le=5)
 
+    analytics_enabled: bool = True
+    analytics_geo_dir: Path = Path("data/geo")
+
     feedback_rate_limit_enabled: bool = True
     feedback_write_interval_seconds: int = Field(default=10, ge=1, le=3600)
     feedback_read_requests_per_minute: int = Field(default=120, ge=1, le=10000)
