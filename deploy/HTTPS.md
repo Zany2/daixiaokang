@@ -100,12 +100,13 @@ curl https://api.daixiaokang.com/api/ai/status
 
 当前规划为 `static.daixiaokang.com → EdgeOne → COS`，静态域名不经过这台 Nginx，无需在此添加对应 `server`。在 EdgeOne 配置 COS 源站、域名 HTTPS 和缓存规则，在前端设置媒体域名即可；Nginx 的缓存响应头不会影响 COS 源站。
 
-如果以后主站或 API 也接入 EdgeOne：
+主站网页接入 EdgeOne、API 子域名直连的部署方案：
 
-- 回源使用 HTTPS、443 端口，并正确设置回源 Host 和 TLS SNI：主站使用 `daixiaokang.com`，API 使用 `api.daixiaokang.com`，启用回源证书校验。边缘证书与服务器证书分别管理。
-- 在 EdgeOne 明确设置 `/api`、`/api/*` 不缓存；API 子域名整站不缓存。AI 流式接口关闭边缘缓冲或合并响应，并核对平台的流式传输能力及超时。不要使用覆盖全站的强制缓存规则。
+- 前端 `ai_chat.api_base` 和 `feedback.api_base` 均设置为 `https://api.daixiaokang.com/api`，重新构建上传。`api` DNS 保持直接解析到服务器，主站使用 EdgeOne 分配的 CNAME。API 子域名继续使用服务器 HTTPS 证书。
+- 主站回源使用 HTTPS、443 端口，并正确设置回源 Host 和 TLS SNI 为 `daixiaokang.com`，启用回源证书校验。边缘证书与服务器证书分别管理。
+- 主站 `/api`、`/api/*` 保留不缓存规则，兼容旧页面的请求；新页面直接访问 API 子域名。API 流式传输由 Nginx 处理，不依赖 EdgeOne 的流式传输设置。不要使用覆盖全站的强制缓存规则。
 - HTML、搜索索引及 Service Worker 遵循源站的校验策略；普通静态资源可遵循源站一天的缓存。修改同名文件后刷新 EdgeOne 缓存。
-- 获得 EdgeOne 官方回源 IP 段及对应真实 IP 请求头的配置要求后，再配置 Nginx 的 `set_real_ip_from` 和 `real_ip_header`，仅信任这些回源网段。当前没有启用对外部转发头的信任，日志中的 IP 在接入 CDN 后会暂时是边缘节点 IP。
+- 当前未配置 CDN 真实 IP 信任，主站访问日志在接入 CDN 后记录边缘节点 IP；不要无条件信任外部转发头。后端跨域来源允许主站，可信 Host 包含 API 子域名。
 
 Nginx 使用 `$remote_addr` 覆盖客户端传入的 `X-Forwarded-For`，避免直连时伪造转发链。后端按 ASGI 客户端地址进行限流，Docker 网络中的 Uvicorn 还需要通过 `FORWARDED_ALLOW_IPS` 信任实际 Nginx 代理地址，才能使用转发后的访客 IP；需结合实际 Docker 网络单独配置，不要无条件信任所有地址。
 

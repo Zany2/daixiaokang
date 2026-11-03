@@ -1,6 +1,6 @@
 # 自有图片与视频
 
-本站图片和视频使用项目内静态素材，不需要额外的 OSS 或图床账号。`site_media.base_url` 当前保持为空，本地由 Hexo 开发服务提供，正式部署由本站域名提供。以下路径与命令均以 `frontend/` 为基准。
+本站图片和视频的源文件保存在项目内，当前通过 `site_media.base_url: "https://static.daixiaokang.com/assets"` 使用 EdgeOne 回源腾讯云 COS。该配置对本地预览和正式构建均生效；需要全部从本站加载时可将其留空。以下路径与命令均以 `frontend/` 为基准。
 
 配置入口：`_config.fomalhaut.yml` 的 `site_media.base_url`。
 
@@ -43,11 +43,11 @@
 
 当前固定使用：`source/assets/decorations/cat-original.png`。滚动和 PJAX 换页始终保持该图案，不再随机切换。
 
-## 后续接入 OSS/CDN
+## COS / EdgeOne 发布
 
-域名和存储就绪后，将 `source/assets/` 上传并保留目录结构，设置 `site_media.base_url`，再重新构建、发布页面。站点域名单独配置在 `_config.yml` 的 `url` 中。网站本地仍保留原图和 `assets/fallback/`，供故障回退使用。
+COS 中的对象路径保留 `assets/` 前缀和目录结构，例如 `assets/home/pc_01.mp4`。EdgeOne 加速域名为 `static.daixiaokang.com`，源站选择对应 COS 桶；私有桶开启 EdgeOne 私有访问授权。新增素材先上传到 COS，再重新构建、发布页面。站点域名单独配置在 `_config.yml` 的 `url` 中。网站本地仍保留原图和 `assets/fallback/`，供故障回退使用。
 
-OSS/CDN 需允许公开 GET/HEAD、正确 MIME 类型及视频 Range 请求；本实现不依赖某家 OSS 特有的图片处理参数。该入口只控制自有媒体；现有字体、脚本等第三方依赖继续使用各自配置。
+CDN 域名需允许公开 GET/HEAD、正确 MIME 类型及视频 Range 请求；COS 可以保持私有读，由 EdgeOne 授权回源。本实现不依赖某家 OSS 特有的图片处理参数。该入口只控制自有媒体；现有字体、脚本等第三方依赖继续使用各自配置。
 
 验证：`npm run test:media`。
 

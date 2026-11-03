@@ -26,7 +26,7 @@
   for (k in DEFAULTS) { if (Object.prototype.hasOwnProperty.call(DEFAULTS, k)) CFG[k] = DEFAULTS[k]; }
   var _src = window.AI_CHAT_CONFIG || {};
   for (k in _src) { if (Object.prototype.hasOwnProperty.call(_src, k)) CFG[k] = _src[k]; }
-  // 本地开发直连 8000 端口；正式部署使用同源 /api，由 Nginx 转发到 FastAPI。
+  // 本地开发直连 8000 端口；正式部署使用配置中的 api_base，可独立于网页 CDN。
   if (/^(localhost|127\.0\.0\.1|::1)$/.test(window.location.hostname) && String(CFG.local_api_base || '').trim()) {
     CFG.api_base = String(CFG.local_api_base).replace(/\/+$/, '');
   }

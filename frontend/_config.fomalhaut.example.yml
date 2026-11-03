@@ -126,12 +126,12 @@ disable_top_img: false
 # The banner image of home page
 index_img:
 
-# 当前开发使用 source/assets 下的本地图片和视频，暂不连接 OSS 或媒体 CDN。
-# 后续自有图片与视频加速：填写 CDN 上 assets 目录对应的完整 URL。
-# 例如 https://cdn.example.com/assets；上传时保留 home/optimized 等目录结构。
+# 自有图片与视频通过 EdgeOne 回源 COS 加载，本地仍保留 source/assets 素材。
+# base_url 对应 COS 的 assets 目录；上传时保留 home/optimized 等目录结构。
+# 留空可恢复从本站 /assets/ 加载；其他站点请改为自己的媒体域名。
 # assets/fallback 始终保留在网站本地，不走 CDN。
 site_media:
-  base_url: ""
+  base_url: "https://static.daixiaokang.com/assets"
 
 # 首页动态背景：宽度大于 900px 使用 PC 素材，其余使用移动端素材
 home_cinematic:
@@ -307,11 +307,11 @@ addtoany:
 # Comments System
 # --------------------------------------
 
-# 自建评论与留言 UI：正式域名走同源 /api，由服务器反向代理到 FastAPI。
+# 自建评论与留言 UI：正式环境直连 API 子域名，网页 CDN 不代理这些请求。
 # 仅通过 localhost / 127.0.0.1 / ::1 访问前端时使用 local_api_base。
 feedback:
   enable: true
-  api_base: /api
+  api_base: https://api.daixiaokang.com/api
   local_api_base: http://localhost:8000/api
   request_timeout_ms: 12000
 
@@ -1347,7 +1347,7 @@ home_discovery:
 # 模型地址、模型名称、系统提示词和 API Key 均由 FastAPI 后端统一管理。
 ai_chat:
   enable: true                 # 总开关：false 则不注入按钮和面板
-  api_base: /api               # 部署后由 Nginx 将同源 /api 转发到 FastAPI
+  api_base: https://api.daixiaokang.com/api # API 子域名直连 Nginx，不经过网页 CDN
   local_api_base: http://localhost:8000/api # 本地前端访问 FastAPI 的地址
   max_input_chars: 1000        # 与后端 AI_MAX_INPUT_CHARS 一致
   session_key: ai_chat_session_v1 # 仅用 sessionStorage 保存页签会话凭证

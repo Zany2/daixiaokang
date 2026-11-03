@@ -12,18 +12,18 @@
 
 - `_config.yml`：站点 URL、百度主动推送域名和 `Asia/Shanghai` 时区。站点 URL 用于生成 canonical、Open Graph、RSS、站点地图等绝对地址。
 - `source/robots.txt`：两个站点地图地址。
-- `_config.fomalhaut.yml`：页脚本站链接；AI、评论和留言正式环境走 `/api`，本地访问走各自的 `local_api_base`。
+- `_config.fomalhaut.yml`：页脚本站链接；AI、评论和留言正式环境走 `https://api.daixiaokang.com/api`，本地访问走各自的 `local_api_base`。
 - 后端 `core/config.py` 和 `.env.example`：包含本地前端、正式站和 www 的允许来源与 Host。实际 `.env` 需要在部署环境单独核对。
 
-图片和视频继续从本站 `/assets/` 读取，`site_media.base_url` 保持为空。网站 URL 不会自动变成媒体 CDN 地址。
+自有图片和视频通过 `site_media.base_url: "https://static.daixiaokang.com/assets"` 使用 EdgeOne 回源 COS；本站保留 `/assets/fallback/` 和本地素材用于故障回退。网站 URL 与媒体 CDN 地址分别配置。
 
 ## 服务器上线前需要配置
 
-1. 在 DNS 中将主域名和 `api` 指向实际部署入口。
+1. 主域名接入 EdgeOne 时使用平台分配的 CNAME；`api.daixiaokang.com` 保持直接解析到服务器。媒体域名通过 EdgeOne 回源 COS。
 2. 为主域名和 `api` 配置有效证书，开启 HTTPS，并将 HTTP 跳转到 HTTPS。当前不包含 www 兼容入口；如需启用，先扩展证书和跳转配置。代码修改不会配置 DNS、证书或服务器跳转。
-3. 在 `frontend/` 运行 `npm.cmd run build`，将生成的 `public/` 作为静态网站发布。评论与留言的 `/api/` 请求保留路径转发至 FastAPI，例如 `http://127.0.0.1:8000/api/comments`。反向代理保留原 Host 时，后端已允许正式域名。
-4. AI 助手使用 FastAPI 的 `/api/ai/status`、`/api/ai/conversations` 及会话消息和关闭接口。在后端 `.env` 配置 `AI_API_KEY`，让 Nginx 将同源 `/api` 统一转发到 FastAPI；SSE 必须关闭代理缓冲，读取超时需覆盖模型生成等待时间。
-5. 服务器的后端 `.env` 需要同步 CORS 和可信 Host；本机 `.env` 的修改不会自动传到服务器。数据库、Redis 的主机地址按部署方式切换为本机地址或容器服务名。
+3. 在 `frontend/` 运行 `npm.cmd run build`，将生成的 `public/` 作为静态网站发布。AI、评论与留言直连 `https://api.daixiaokang.com/api`，API 子域名的 Nginx 保留路径转发至 FastAPI。
+4. AI 助手使用 FastAPI 的 `/api/ai/status`、`/api/ai/conversations` 及会话消息和关闭接口。在后端 `.env` 配置 `AI_API_KEY`；SSE 必须关闭代理缓冲，读取超时需覆盖模型生成等待时间。
+5. 服务器的后端环境配置需要在 `CORS_ORIGINS` 允许 `https://daixiaokang.com`，在 `TRUSTED_HOSTS` 允许 `api.daixiaokang.com`；Docker 部署读取 `.env.docker`。本机环境配置的修改不会自动传到服务器。数据库、Redis 的主机地址按部署方式切换为本机地址或容器服务名。
 
 更改域名配置后重新生成前端；更改后端环境变量后重启后端。本地仍可通过 `npm.cmd run server` 和 `http://localhost:4000` 开发。
 
@@ -52,7 +52,7 @@ location ^~ /api/ {
 
 ## AI 服务部署
 
-AI 助手依赖 FastAPI 的会话存储、历史恢复与凭证校验。静态托管平台上的前端需要将 `/api/` 路由到实际后端，模型密钥配置在后端 `AI_API_KEY`，前端构建无需模型密钥。后端还需要可访问的 PostgreSQL 和 Redis。
+AI 助手依赖 FastAPI 的会话存储、历史恢复与凭证校验。静态托管平台上的前端需将 `ai_chat.api_base` 和 `feedback.api_base` 指向实际后端，并允许相应跨域来源。模型密钥配置在后端 `AI_API_KEY`，前端构建无需模型密钥。后端还需要可访问的 PostgreSQL 和 Redis。
 
 ## 暂未启用的服务
 
