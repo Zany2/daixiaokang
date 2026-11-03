@@ -16,7 +16,7 @@
  *   /js/modules/reading.js      阅读进度条 / FPS 计数
  *   /js/modules/nav.js          导航栏标题 / 首屏欢迎语 / 分享按钮
  *   /js/modules/cursor.js       小猫咪 / 右键菜单 / 听话鼠标
- *   /js/modules/footer-time.js  页脚计时器（依赖上面两个 data/ 文件）
+ *   /js/modules/footer-time.js  页脚计时器（依赖 voyager1.js 和提前加载的 author-status.js）
  *   /js/modules/settings.js     美化模块：右下角齿轮设置面板（最大的一块，约 1200 行）
  *   另有 /js/lunar.js、/js/festival.js、/js/notify.js、/js/stats.js 等更早就拆出去的同级文件。
  *

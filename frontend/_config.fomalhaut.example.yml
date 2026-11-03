@@ -1124,7 +1124,7 @@ inject:
     # 加载顺序 = 依赖顺序：data/ 是两个纯数据模型（页脚计时器要用），modules/ 各自独立，
     # 最后才是 fomal.js 主引导（里面有一份模块地图 + 全局入口清单，改站点 JS 前先看它）。
     - <script defer src="/js/data/voyager1.js"></script> # 旅行者1号距离模型（页脚计时器依赖）
-    - <script defer src="/js/data/holidays.js"></script> # 法定休息日判断（页脚计时器依赖）
+    - <script defer src="/js/data/holidays.js"></script> # 法定休息日数据（兼容工具函数）
     - <script defer src="/js/modules/console-art.js?v=20261012-zany1"></script> # 控制台字符画
     - <script defer src="/js/modules/shell.js?v=20261025-local-search1"></script> # 快捷键拦截/夜间动画/恶搞标题/搜索框修复/手机滚动条
     - <script defer src="/js/modules/effect-engine.js?v=20261023-controls1"></script> # 雪花/星空/流星参数与动画，先于美化面板加载
@@ -1133,12 +1133,12 @@ inject:
     - <script defer src="/js/modules/nav.js?v=20261025-peek2"></script> # 导航栏标题/首屏欢迎语/分享
     - <script defer src="/js/home-discovery.js?v=20261025-home2"></script> # 首页最新文章轮播，兼容 PJAX
     - <script defer src="/js/modules/cursor.js?v=20261024-cat1"></script> # 小猫咪/右键菜单/听话鼠标
-    - <script defer src="/js/modules/footer-time.js?v=20261024-footer1"></script> # 页脚计时器
+    - <script defer src="/js/author-status.js?v=20261103-shared-status1"></script> # 头像和页脚共用状态：按时间/节假日自动切换（放假/上班/下班/睡觉）
+    - <script defer src="/js/modules/footer-time.js?v=20261103-shared-status1"></script> # 页脚计时器
     - <script defer src="/js/modules/settings.js?v=20261024-responsivebg1"></script> # 美化面板：特效滑块实时调节、保存及恢复默认
     - <script defer src="/js/fomal.js?v=20261023-controls1"></script> # 站点主引导：模块地图 + 控制台策略 + 全局入口清单
     - <script defer src="/js/wechat-qr.js?v=20261008-hover1"></script> # 微信二维码悬浮预览，点击同页弹层展示
     - <script defer src="/js/festival.js"></script> # 节日提醒卡片（左上角通知）
-    - <script defer src="/js/author-status.js?v=20261013-badge1"></script> # 侧栏头像状态胶囊：按时间/节假日自动切换（放假/上班/下班/睡觉）
     - <script defer src="/js/stats.js?v=20261009-statlabels1"></script> # 文章统计页（/tags/）：分节标题、图表恢复与主题色适配
     - <script defer src="/js/pjax-guard.js?v=20261013-navigation3"></script> # PJAX 选择器兼容及加载遮罩兜底
     - <script defer src="/js/inject/search-lazy.js?v=20261004"></script> # Algolia 搜索按需加载：空闲预取 + 点开才执行（省 88KB 压缩流量 / 277KB 解析，见 source/js/inject/search-lazy.js）
