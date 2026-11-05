@@ -48,6 +48,12 @@ npm.cmd run server
 
 徽章由本地 CSS 和现有图标绘制，无需请求外部徽章图片。更换部署平台时同步修改 `value`、`link` 及公开配置示例，重新构建发布后生效。
 
+### 关于作者
+
+`source/personal/about/index.md` 维护作者介绍、内容方向、实际技术栈及交流入口；首页底部的链接名称为“关于作者”，地址仍为 `/personal/about/`。个人联系方式应以自己的实际情况填写。
+
+页面样式位于 `source/css/about-page.css`，只作用于 `.ab2`，随页面正文加载以支持 PJAX 切换，包含浅色、深色和手机布局。更新样式后同步页面中的 `?v=` 版本号，重新构建并刷新 EdgeOne 页面缓存。
+
 ### 网站统计
 
 `/site/census/` 的访问概览、地域地图、近 12 个月趋势和来源图已接入自建后端。部署、离线地域库和统计口径见 [ANALYTICS.md](tools/ANALYTICS.md)。
