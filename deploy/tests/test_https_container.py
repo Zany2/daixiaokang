@@ -132,7 +132,10 @@ exec "$@"
         self.assert_success(self.run_action("renew"))
         commands = self.commands()
         self.assertIn("--dns dns_tencent", commands)
-        self.assertIn("-d daixiaokang.com -d api.daixiaokang.com", commands)
+        self.assertIn(
+            "-d daixiaokang.com -d api.daixiaokang.com -d vantage.daixiaokang.com",
+            commands,
+        )
         self.assertLess(commands.index("--issue"), commands.index("--install-cert"))
         self.assertLess(commands.index("nginx -t"), commands.index("nginx -s reload"))
         self.assertTrue((self.state / "https-installed").exists())

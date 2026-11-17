@@ -1,20 +1,20 @@
 # 容器内 HTTPS 申请与自动续期
 
-适用服务器目录：`/daixk/project/daixiaokang`。证书服务 `daixiaokang_acme` 使用 acme.sh、Let's Encrypt 和腾讯云 DNSPod DNS 验证，为 `daixiaokang.com`、`api.daixiaokang.com` 申请同一张证书。首次启动立即检查/申请，以后每天北京时间 **03:15** 检查续期，进入续期窗口才重新签发。
+适用服务器目录：`/daixk/project/daixiaokang`。证书服务 `daixiaokang_acme` 使用 acme.sh、Let's Encrypt 和腾讯云 DNSPod DNS 验证，为 `daixiaokang.com`、`api.daixiaokang.com`、`vantage.daixiaokang.com` 申请同一张证书。首次启动立即检查/申请，以后每天北京时间 **03:15** 检查续期，进入续期窗口才重新签发。
 
 宿主机只需要 Docker 和 Compose，不需要安装 Git、OpenSSL、cron 或配置 systemd 定时任务。容器通过 Supercronic 调度，日志可用 `docker compose logs` 查看。后端内部继续使用 HTTP。
 
 ## 1. 上传并准备配置
 
-首次从公开仓库部署时，先将根目录 `docker-compose.example.yaml` 复制为本地 `docker-compose.yaml`，将 `nginx.conf.example` 复制为本地 `nginx.conf`；后端使用 `backend/.env.docker.example` 创建 `.env.docker` 并填写自己的连接信息。实际配置均被 Git 忽略，完整对应关系见 [CONFIGURATION.md](CONFIGURATION.md)。已有配置时不要覆盖。
+首次从公开仓库部署时，先将根目录 `docker-compose.example.yaml` 复制为本地 `docker-compose.yaml`，将 `nginx/nginx.conf.example` 复制为 `nginx/nginx.conf`，将 `nginx/conf.d/daixiaokang.conf.example` 复制为 `nginx/conf.d/daixiaokang.conf`；后端使用 `backend/.env.docker.example` 创建 `.env.docker` 并填写自己的连接信息。实际配置均被 Git 忽略，完整对应关系见 [CONFIGURATION.md](CONFIGURATION.md)。已有配置时不要覆盖。
 
-上传整个 `deploy/`（包含隐藏文件 `.dockerignore`）和最新根目录 `docker-compose.yaml`。后端源码及 `backend/.env.docker` 放在 `backend/`，前端构建产物放在 `frontend/html/`。
+上传 `deploy/` 中的脚本和 Dockerfile（包含隐藏文件 `.dockerignore`）及最新根目录 `docker-compose.yaml`。更新时保留服务器正式 `deploy/https.env` 和 `deploy/acme/`。后端源码及 `backend/.env.docker` 放在 `backend/`，前端构建产物放在 `frontend/html/`。
 
-本地根目录的 `nginx.conf` 上传到服务器的 `frontend/nginx.conf`；Compose 从 `./frontend/nginx.conf` 挂载到容器的 `/etc/nginx/nginx.conf`。本地 `frontend/public/` 内的构建文件上传到服务器 `frontend/html/`，不需要上传整个本地 `frontend/` 源码目录。
+本地 `nginx/nginx.conf` 和 `nginx/conf.d/` 上传到服务器相同的相对目录；Compose 分别挂载到 `/etc/nginx/nginx.conf` 和 `/etc/nginx/conf.d`，Nginx 日志写入宿主机 `nginx/logs/`。本地 `frontend/public/` 内的构建文件上传到服务器 `frontend/html/`。
 
 ```bash
 cd /daixk/project/daixiaokang
-mkdir -p deploy/acme frontend/ssl frontend/logs backend/logs
+mkdir -p deploy/acme frontend/html frontend/ssl nginx/conf.d nginx/logs backend/logs
 chmod 700 deploy/acme frontend/ssl
 cp -n deploy/https.env.example deploy/https.env
 chmod 600 deploy/https.env
@@ -61,9 +61,27 @@ frontend/ssl/
 docker compose run --rm --no-deps daixiaokang_acme status
 ```
 
+### 2.1 已有证书增加 Vantage 域名
+
+将新版 `deploy/acme-container.sh` 上传到服务器相同位置，保留正式 `deploy/https.env`、`deploy/acme/` 和 `frontend/ssl/`。逐条执行以下命令，每一步成功后再继续。
+
+```bash
+cd /daixk/project/daixiaokang
+docker compose build daixiaokang_acme
+docker compose run --rm --no-deps daixiaokang_acme issue
+docker compose up -d --no-deps daixiaokang_acme
+docker compose run --rm --no-deps daixiaokang_acme status
+```
+
+这次手动执行 `issue` 会提交三个域名的申请列表。acme.sh 检测到域名列表变化后重新签发，安装到 `frontend/ssl/`，并调用配置检查和重载钩子。`status` 输出的 `Subject Alternative Name` 应包含 `DNS:vantage.daixiaokang.com`。后续每日任务沿用更新后的域名列表续期。
+
+已有证书安装状态时，容器启动及 `renew` 使用 ACME 保存的域名配置进行检查。修改脚本中的域名列表后，需要按上面的流程执行一次 `issue`，将新列表登记到 ACME。
+
+Vantage 站点在 `nginx/conf.d/vantage.conf` 中配置 `server_name vantage.daixiaokang.com`，HTTPS 引用 `/etc/nginx/ssl/fullchain.pem` 和 `/etc/nginx/ssl/privkey.pem`。前端及 API 的转发地址根据实际项目的容器服务名、端口和接口路径填写。
+
 ## 3. 签发成功后启用 HTTPS
 
-本地根目录 `nginx.conf` 是统一维护的配置文件，上传到服务器 `frontend/nginx.conf`；覆盖前可先备份服务器原配置。确认已上传最新配置，并且 `frontend/ssl/fullchain.pem` 和 `privkey.pem` 已生成，再检查配置和启动服务：
+Nginx 主配置为 `nginx/nginx.conf`，个人网站和 API 配置为 `nginx/conf.d/daixiaokang.conf`；上传时使用相同的相对目录，覆盖前备份服务器原配置。确认两份配置均已上传，并且 `frontend/ssl/fullchain.pem` 和 `privkey.pem` 已生成，再检查配置和启动服务：
 
 ```bash
 # 临时容器检查实际配置和证书；检查失败时先修复，不停止原前端。

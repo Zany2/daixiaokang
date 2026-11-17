@@ -13,9 +13,10 @@ frontend/themes/fomalhaut/.git
 # Local deployment configuration
 /docker-compose.yaml
 /docker-compose.yml
-/nginx.conf
-/frontend/nginx.conf
-/frontend/logs/
+/nginx/nginx.conf
+/nginx/conf.d/*.conf
+/nginx/logs/
+/frontend/html/
 /frontend/ssl/
 /deploy/https.env
 /deploy/acme/
