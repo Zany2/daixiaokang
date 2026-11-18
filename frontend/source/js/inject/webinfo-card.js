@@ -8,8 +8,8 @@
  * 2026-10-04 追加时间条第三项「更新」= 站点最后更新时间（最近一次部署时间）：
  *   · 第一版取 GitHub API（产物仓库最近一次提交），要吃不认证的 60 次/小时限流；
  *     当天改成下面的同源方案，API 那套已删。
- *   · 真实值：部署工作流在 gulp 之后写 public/deploy.json（见 .github/workflows/autodeploy.yml
- *     的「写入部署时间戳」步骤），里面的 at 就是本次部署成功时的构建时刻；
+ *   · 版本时间：scripts/deploy-metadata.js 在 Hexo 构建时生成 public/deploy.json，
+ *     里面的 at 是该发布版本的 UTC 构建时刻，随 public/ 一起部署；
  *     元素的 data-deploy-api（模板里 url_for 出来的）指向它，同源小文件随便读。
  *   · 兜底值：模板构建时把本次 generate 时刻写进 data-deploy-build，先显示成 MM-DD；
  *     deploy.json 读不到（老产物、本地预览）时就用它，读到真值再换掉。

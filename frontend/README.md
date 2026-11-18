@@ -16,6 +16,8 @@ npm.cmd run server
 
 访问 `http://localhost:4000`。构建使用 `npm.cmd run build`；清理生成目录和 Hexo 缓存使用 `npm.cmd run clean`。构建结果位于 `public/`。
 
+构建会通过 `scripts/deploy-metadata.js` 自动生成 `public/deploy.json`，其中 `at` 为本次构建的 UTC 时间。资讯卡片使用它展示当前发布版本的更新时间，打包时随 `public/` 一起上传。
+
 开发服务读取配置和插件后会驻留，修改 `_config*.yml`、`scripts/` 或主题构建逻辑后应重启服务。正式发布需重新生成页面。站点级资源中手工配置了 `?v=` 的文件，修改后同步版本号；AI 注入器会根据脚本和样式文件的修改时间及大小生成版本号。
 
 ## 配置与源码
