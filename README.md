@@ -39,6 +39,7 @@
 daixiaokang/
 ├─ README.md
 ├─ LICENSE
+├─ homecraft/                   Homecraft 3D site source, managed as a Git subtree
 ├─ frontend/
 │  ├─ README.md                  前端开发、配置与验证
 │  ├─ _config.example.yml        站点配置示例，复制为 _config.yml 使用
@@ -127,6 +128,10 @@ API 默认监听 `http://localhost:8000`。从 `backend` 目录启动以读取�
 在 `frontend` 目录运行 `npx.cmd hexo new post "文章标题"`，编辑生成的 Markdown。现有文章使用 `posts/:abbrlink.html`，修改固定标识会影响已有链接及评论关联。
 
 素材沿用同名 MP4 与 PNG 组合，新增后运行 `npm.cmd run media:prepare`，再构建。完整规则见[素材说明](frontend/tools/SITE-MEDIA.md)。文章标签写法可参考[语法与外挂标签写法汇总](frontend/source/_posts/语法与外挂标签写法汇总.md)。
+
+## Homecraft 3D 网站源码
+
+`homecraft/` 已作为 Git subtree 纳入本仓库，普通克隆即可取得完整源码。可以直接修改其中的文件，并随本仓库提交；后续仍可合并 `terryHu7/homecraft` 的上游更新。初始化远程、更新与冲突处理见 [Homecraft 维护说明](deploy/HOMECRAFT.md)。当前仅接入源码，尚未配置线上访问入口。
 
 ## 构建与部署
 
