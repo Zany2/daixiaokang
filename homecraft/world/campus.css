@@ -1,0 +1,93 @@
+:root { --campus-ink:#224d50; --campus-muted:#6e817d; --campus-paper:#f6f5ed; }
+#campus-ui { position:fixed;inset:0;pointer-events:none;z-index:11;font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:var(--campus-ink);opacity:0;transition:opacity .5s; }
+#campus-ui.ready { opacity:1; }
+#campus-ui button,#campus-ui a,#campus-directory { pointer-events:auto; }
+#campus-ui button { font:inherit;cursor:pointer; }
+.campus-header { position:absolute;top:26px;left:82px;display:flex;align-items:center;gap:15px;text-shadow:0 1px 8px #f8f7ed; }
+.campus-wordmark { display:grid;place-content:center;background:#285f61;color:#faf5df;width:48px;height:62px;font:600 22px/1.15 serif;text-align:center;box-shadow:3px 3px 0 #bac7b7;text-shadow:none; }
+.campus-header p { font-size:10px;letter-spacing:2.5px;margin:0 0 5px;font-weight:600; }
+.campus-header h1 { font-size:26px;letter-spacing:3px;font-weight:600;margin:0;line-height:1.25; }
+.campus-header h1 span { margin-left:12px;padding-left:12px;border-left:1px solid #9daea3;font-size:16px;letter-spacing:2px;font-weight:400; }
+.campus-header small { display:block;margin-top:7px;font-size:11px;letter-spacing:1px;color:#56716a; }
+body:has(.campus-welcome[hidden]) .campus-header { background:#f7f5ebee;padding:10px 13px;border-radius:4px; }
+.campus-toolbar { position:absolute;top:118px;left:28px;display:flex;gap:1px;background:#f7f5ebed;border:1px solid #d6dbcf;box-shadow:0 6px 20px #263f3510;border-radius:5px;overflow:hidden; }
+.campus-toolbar button,.campus-toolbar a { border:0;background:transparent;padding:11px 13px;color:#375e59;font-size:12px;text-decoration:none;white-space:nowrap; }
+.campus-toolbar button:hover,.campus-toolbar a:hover { background:#e2e9dc; }
+.campus-toolbar button[aria-pressed=false] { color:#99a299; }
+.campus-toolbar span { font-size:10px;background:#dfe8db;padding:1px 4px;margin-left:3px; }
+#campus-directory { position:absolute;left:28px;top:166px;width:330px;max-height:calc(100dvh - 195px);display:flex;flex-direction:column;background:#f9f8f1f5;border:1px solid #d9dfd2;border-radius:6px;box-shadow:0 18px 50px #1b38352b;overflow:hidden; }
+#campus-directory[hidden],#campus-ui [hidden] { display:none!important; }
+.campus-directory-head { padding:20px 20px 14px;display:flex;justify-content:space-between;align-items:center; }
+.campus-directory-head p { font-size:9px;letter-spacing:2px;color:#86978b;margin:0 0 6px; }
+.campus-directory-head h2 { font-size:21px;font-weight:500;margin:0; }
+.campus-directory-head button { border:0;background:none;font-size:25px!important;color:#768d80; }
+.campus-search { margin:0 16px;display:flex;align-items:center;gap:10px;padding:0 11px;background:#ecefe5;border:1px solid #d8dfd1;border-radius:3px; }
+.campus-search input { width:100%;padding:10px 0;border:0;background:none;outline:none;font:12px/1.4 inherit;color:#315f59; }
+.campus-search input::placeholder { color:#829283; }
+.campus-search:focus-within { outline:2px solid #54877b; }
+.campus-filters { display:flex;flex-wrap:wrap;gap:6px;padding:14px 16px; }
+.campus-filters button { border:1px solid #dbe1d4;background:transparent;color:#748575;font-size:10px!important;padding:5px 7px;border-radius:3px; }
+.campus-filters button[aria-pressed=true] { background:#315f58;border-color:#315f58;color:#fffced; }
+.campus-results { overflow-y:auto;overscroll-behavior:contain;padding:0 16px 12px;min-height:0; }
+.campus-place-row { display:flex;align-items:center;gap:12px;border:0;border-top:1px solid #e0e5d8;background:none;width:100%;padding:12px 3px;text-align:left;color:#365d55; }
+.campus-place-row>span { font:10px/1 monospace;color:#92a18c; }
+.campus-place-row>div { flex:1; }
+.campus-place-row strong { display:block;font-size:13px;font-weight:500; }
+.campus-place-row small { display:block;font-size:9px;color:#8a9987;margin-top:4px; }
+.campus-place-row>b { font-size:16px;font-weight:400;color:#779079; }
+.campus-place-row:hover { background:#e8edde; }
+.campus-no-results { text-align:center;color:#8a9987;font-size:12px;padding:20px; }
+.campus-mode { position:absolute;left:250px;bottom:88px;display:flex;align-items:center;gap:8px;background:#f6f5e9dd;padding:9px 12px;border:1px solid #d3dccd;border-radius:4px; }
+.campus-status-dot { width:6px;height:6px;background:#7a9a60;border-radius:50%; }
+.campus-mode strong { font-size:11px;font-weight:500; }
+.campus-mode-copy { font-size:10px;color:#83927f;border-left:1px solid #c5d0bd;padding-left:8px; }
+.campus-welcome { position:absolute;bottom:105px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:24px;padding:11px 12px 11px 20px;background:#faf8edee;border:1px solid #d5dccd;border-radius:5px;box-shadow:0 8px 30px #263f3512;white-space:nowrap; }
+.campus-welcome>span { font-size:12px;letter-spacing:1px; }
+.campus-welcome button { border:0;border-radius:3px;padding:11px 16px;background:#315f58;color:#faf7e7;font-size:12px!important; }
+.campus-welcome button b { margin-left:15px;font-weight:400; }
+body.reading #campus-ui,body:has(#bigmap:not([hidden])) #campus-ui,body.photo-mode #campus-ui { visibility:hidden; }
+.campus-card { padding:28px 32px 36px;max-height:70dvh;overflow-y:auto;overscroll-behavior:contain;color:#35504a;line-height:1.9;background:#f6f4e9;font-family:"Microsoft YaHei","PingFang SC",sans-serif; }
+.campus-card.about { display:block;border:0;border-image:none; }
+.campus-card.about p { word-break:normal;overflow-wrap:anywhere; }
+.campus-card h3 { font-size:30px;font-weight:500;letter-spacing:2px;margin:12px 0 18px;line-height:1.4; }
+.campus-card h4 { font-size:16px;margin:22px 0 8px; }
+.campus-card p { font-size:14px;line-height:1.95; }
+.campus-card .campus-eyebrow { font-size:10px;letter-spacing:2px;color:#79907f;margin:0 0 12px; }
+.campus-region { display:inline-block;padding:3px 9px;font-size:10px;background:#e1e8d6;color:#647e62; }
+.campus-card-stats { display:flex;gap:25px;border-block:1px solid #dbe0cf;padding:14px 0;margin:24px 0;font-size:11px; }
+.campus-card-stats b { font-size:24px;font-weight:500;display:block;line-height:1.4;color:#37685b; }
+.campus-card .campus-note { font-size:11px;color:#8b9584; }
+.campus-story-heading { display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #dce1d0;margin-top:25px; }
+.campus-story-heading h4 { margin:0 0 12px; }
+.campus-story-heading span { font-size:10px;color:#9aa28d; }
+.campus-empty-story { padding:24px 15px;display:flex;align-items:center;gap:18px;background:#ecefe1;margin:18px 0; }
+.campus-empty-story>span { color:#91a17e;font-size:28px; }
+.campus-empty-story p { font-size:12px;color:#809074;margin:0; }
+.campus-card figure { margin:20px 0; }.campus-card img { max-width:100%;height:auto;border-radius:3px; }.campus-card figcaption { font-size:11px;color:#87937f;margin-top:6px; }
+.campus-memory { padding:10px 0 20px;border-bottom:1px solid #dde2d0; }.campus-card .campus-memory-date { font-size:11px;color:#8b9584; }
+.campus-card details { margin-top:20px;font-size:12px; }.campus-card summary { cursor:pointer; }.campus-reference { margin-top:12px; }
+.campus-site-link { color:#336c60;text-underline-offset:4px; }
+#campus-ui :focus-visible { outline:2px solid #568b7c;outline-offset:3px; }
+@media(max-width:900px) {
+  .campus-header { top:18px;left:76px; }.campus-header h1 { font-size:23px; }.campus-header small { display:none; }
+  .campus-toolbar { left:18px;top:100px; }.campus-mode-copy { display:none; }.campus-mode { left:240px; }
+  #campus-directory { top:146px;left:18px;max-height:calc(100dvh - 170px); }
+}
+@media(max-width:600px) {
+  .campus-header { top:max(15px,env(safe-area-inset-top));left:72px;gap:10px; }.campus-wordmark { width:34px;height:46px;font-size:17px; }
+  .campus-header p { font-size:8px;letter-spacing:1.7px; }.campus-header h1 { font-size:20px;letter-spacing:2px; }.campus-header h1 span { font-size:12px;margin-left:8px;padding-left:8px;letter-spacing:1px; }
+  .campus-toolbar { top:82px;left:15px;right:15px;justify-content:space-around; }.campus-toolbar button,.campus-toolbar a { font-size:10px;padding:10px 8px; }
+  #campus-directory { left:15px;right:15px;top:172px;width:auto;max-height:calc(100dvh - 195px); }
+  #corner { top:130px;right:15px;gap:8px; }
+  #corner button { width:32px;height:32px; } #corner button span { width:24px;height:24px; }
+  #weatherMenu { top:174px;max-height:calc(100dvh - 195px); }
+  #panel header { padding-left:56px;box-sizing:border-box; }
+  #panel header .icon { display:none; }
+  #panel header h2 { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  #minimap { width:104px;height:104px;bottom:86px;right:15px; }
+  .campus-mode { left:15px;right:auto;bottom:86px;font-size:10px;padding:7px 9px; }.campus-mode-copy { display:none; }
+  body:has(#prompt:not([hidden])) .campus-mode { bottom:140px; }
+  .campus-welcome { bottom:212px;padding:10px;gap:10px; }.campus-welcome>span { font-size:10px;letter-spacing:0; }.campus-welcome button { padding:10px;font-size:10px!important; }.campus-welcome button b { margin-left:6px; }
+  .campus-card { padding:22px;max-height:66dvh; }.campus-card h3 { font-size:26px; }.campus-card p { font-size:13px; }
+}
+@media(prefers-reduced-motion:reduce) { #campus-ui { transition:none; } }

@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "name": "My Home",
+  "name": "北工大 · 校园漫游",
   "url": "",
-  "logo": "engine/assets/homecraft-logo.png",
-  "intro": "",
-  "lang": ["zh", "en"],
+  "logo": "assets/campus-mark.svg",
+  "intro": "依据校园示意图搭建的平乐园校园，走近建筑，重访校园里的故事。",
+  "lang": ["zh"],
   "homecraft": true
 }

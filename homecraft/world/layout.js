@@ -1,10 +1,18 @@
-// 1 block = 1 m. x east, z south, y up.
-export const ISLAND = { x0: -36, x1: 38, z0: -26, z1: 31 };
-export const SPAWN = { x: 0.5, z: 18, heading: Math.PI };
+import { PLACES, BUILDINGS, FIELDS, ROADS, LAWNS } from './places.js';
+import { BOUNDS } from './reference-layout.js';
+
+export { PLACES, BUILDINGS, FIELDS, ROADS, LAWNS };
+export const ISLAND = BOUNDS;
+const gate=PLACES.find(p=>p.id==='south-gate');
+export const SPAWN = { x: gate.at[0], z: gate.at[1], heading: Math.PI };
+export const INTRO = { pos: [370,390,470], portrait: [760,875,970], look: [48,0,30] };
+export const LIGHT_VOLUME = { min: [BOUNDS.x0,-1,BOUNDS.z0], extent: [576,48,460], size: [96,8,77] };
 export const STATIONS = [
-  { id: 'mailbox', name: '留言', en: 'Mailbox', icon: 'mail', at: [0.5, 23.9], look: [0.5, 25.5] },
-  { id: 'portal', name: '传送门', en: 'Portal', icon: 'portal', at: [8, 23.1], look: [8, 25.5] },
+  { id:'overview', name:'校园全景', en:'Campus overview', icon:'map', at:[SPAWN.x,SPAWN.z-8], look:[0,0], show:[INTRO.pos,INTRO.look], showPortrait:[INTRO.portrait,INTRO.look] },
+  ...PLACES.map(p=>{
+    const distance=Math.max(30,Math.max(p.w,p.d)*1.25),height=Math.max(16,p.h||0);
+    return {id:p.id,name:p.name,en:p.en,icon:p.icon||'map',at:p.at,look:p.look||[p.x,p.z],
+      show:[[p.x+distance*.65,height+distance*.7,p.z+distance],[p.x,height*.3,p.z]],
+      showPortrait:[[p.x+distance*1.1,height+distance*1.3,p.z+distance*1.7],[p.x,height*.3,p.z]]};
+  }),
 ];
-export const MAILBOX = { x: 0.5, z: 25.5, yaw: Math.PI };
-export const PORTAL = { x: 8, z: 25.5, yaw: Math.PI };
-export const TREES = [[30, -12]];
