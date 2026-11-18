@@ -36,7 +36,7 @@ const rewriteAssets = text => {
     const localPrefix = root.replace(/\/$/, '') + '/assets/'
     if (!value.startsWith(localPrefix) && !value.startsWith('/assets/')) return all
     const local = '/assets/' + value.split('/assets/')[1]
-    if (local.startsWith('/assets/fallback/')) return all
+    if (/^\/assets\/(?:fallback|badge)\//.test(local)) return all
     return prefix + media.assetUrl(hexo, local)
   })
 }

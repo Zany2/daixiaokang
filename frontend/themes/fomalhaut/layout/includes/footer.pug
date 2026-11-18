@@ -43,7 +43,9 @@ mixin footerBadgeParts(badge)
           a(href='https://www.fomal.cc/' title='Fomalhaut🥝' target='_blank' rel='noopener noreferrer')
             img(src='https://sourcebucket.s3.bitiful.net/img/avatar.webp' width='80' height='80' alt='Fomalhaut 头像' onerror=`this.onerror=null;this.src='${url_for(theme.error_img.flink)}'`)
 
-  if theme.footer.owner.enable || theme.footer.icp
+  - var publicSecurity = theme.footer.public_security
+  - var showPublicSecurity = publicSecurity && publicSecurity.number && publicSecurity.link
+  if theme.footer.owner.enable || theme.footer.icp || showPublicSecurity
     .footer-legal
       if theme.footer.owner.enable
         - var now = new Date()
@@ -57,6 +59,14 @@ mixin footerBadgeParts(badge)
           if theme.footer.owner.enable
             span.footer-legal-separator(aria-hidden='true') |
           a(href='https://beian.miit.gov.cn/' target='_blank' rel='noopener noreferrer')= theme.footer.icp
+      if showPublicSecurity
+        .footer-public-security
+          if theme.footer.owner.enable || theme.footer.icp
+            span.footer-legal-separator(aria-hidden='true') |
+          a(href=publicSecurity.link target='_blank' rel='noopener noreferrer')
+            if publicSecurity.icon
+              img.public-security-icon(src=url_for(publicSecurity.icon) width='20' height='20' alt='' aria-hidden='true')
+            | #{publicSecurity.number}
   if theme.footer.copyright
     .framework-info
       span= _p('footer.framework') + ' '

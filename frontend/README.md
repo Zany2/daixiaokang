@@ -34,7 +34,9 @@ npm.cmd run server
 
 `_config.fomalhaut.yml` 的 `footer.icp` 配置正式 ICP 备案号，当前为 `鲁ICP备2026066398号-1`。共用页脚在所有使用主题布局的页面底部将版权信息与备案号并排展示，窄屏空间不足时自动换行；备案号链接至 `https://beian.miit.gov.cn/`。修改后需重新构建并发布。
 
-页脚的“萌ICP备”是独立的兴趣站点徽章，不替代正式 ICP 备案。公安联网备案需另行办理，取得号码和官方查询链接后再添加；相关要求见[腾讯云备案号悬挂说明](https://cloud.tencent.com/document/product/243/61412)。
+`footer.public_security` 配置公安联网备案号、官方查询链接和图标。当前显示 `鲁公网安备37021102001864号`，链接至 `https://beian.mps.gov.cn/#/query/webSearch?code=37021102001864`。图标源码位于 `source/assets/badge/gonganlianwangbeian.png`，使用本站相对地址加载，`assets/badge/` 徽章随静态文件发布；备案项在页脚并排展示，窄屏自动换行。备案号与链接均填写后才显示该项。修改后需重新构建并发布。
+
+页脚的“萌ICP备”是独立的兴趣站点徽章；正式备案展示要求见[腾讯云备案号悬挂说明](https://cloud.tencent.com/document/product/243/61412)。
 
 ### 头像与页脚状态
 
