@@ -1,6 +1,6 @@
 # 当前线上配置与迁移手册
 
-配置基线：2026-11-03。适用于现有的 **Hexo 静态站点 + Nginx + FastAPI + PostgreSQL + Redis + EdgeOne + COS** 部署。
+配置基线为 2026-11-03，目录方案于 2026-11-17 更新。适用于 **Hexo 静态站点 + Nginx + FastAPI + PostgreSQL + Redis + EdgeOne + COS** 部署。现有服务器按第 3.1 节迁移后使用本文的新目录。
 
 本文可作为迁移操作入口；实际配置从同目录说明及仓库示例恢复。密码、模型密钥、腾讯云密钥、证书私钥不记录在公开文档中，需另行私密备份。控制台开关不能全部由公网响应反推，迁移前应导出或截图留存 EdgeOne 的实际规则及证书配置。
 
@@ -79,7 +79,8 @@ flowchart TD
 | 本地文件 / 目录 | 服务器相对项目根目录的位置 | 说明 |
 | --- | --- | --- |
 | `docker-compose.yaml` | `docker-compose.yaml` | 实际容器配置 |
-| 根目录 `nginx.conf` | `frontend/nginx.conf` | 位置不同，内容按统一配置维护 |
+| `nginx/nginx.conf` | `nginx/nginx.conf` | Nginx 公共配置及站点 include |
+| `nginx/conf.d/` | `nginx/conf.d/` | 每个项目的站点配置，加载 `.conf` 文件 |
 | `frontend/public/` 内的内容 | `frontend/html/` 内 | 构建产物，不要多套 public 目录 |
 | `backend/` 源码 | `backend/` | 不上传 .venv、缓存；保留服务器私密配置 |
 | `backend/.env.docker` | `backend/.env.docker` | Docker 正式配置 |
@@ -104,9 +105,12 @@ flowchart TD
 │   └── logs/
 ├── frontend/
 │   ├── html/
-│   ├── nginx.conf
 │   ├── ssl/fullchain.pem
-│   ├── ssl/privkey.pem
+│   └── ssl/privkey.pem
+├── nginx/
+│   ├── nginx.conf
+│   ├── conf.d/
+│   │   └── daixiaokang.conf
 │   └── logs/
 └── deploy/
     ├── https.env
@@ -117,6 +121,54 @@ flowchart TD
 ```
 
 依赖镜像构建目录独立于上面的应用目录，当前为 `/daixk/project/python_image_build/`。
+
+### 3.1 现有服务器调整目录
+
+以下步骤适用于目前仍使用 `frontend/nginx.conf` 和 `frontend/logs/` 的服务器。每一步成功后再执行下一步。
+
+先备份现有配置、证书和 ACME 账户，并为 Nginx 准备独立目录。备份目录位于项目旁边，权限为 700。
+
+```bash
+cd /daixk/project/daixiaokang
+backup_dir="/daixk/project/daixiaokang-backup-$(date +%Y%m%d-%H%M%S)"
+mkdir -m 700 "$backup_dir"
+tar -czf "$backup_dir/config-and-certs.tar.gz" \
+  docker-compose.yaml frontend/nginx.conf backend/.env.docker \
+  deploy/https.env deploy/acme frontend/ssl
+mkdir -p nginx/conf.d nginx/logs
+cp -a frontend/logs/. nginx/logs/
+```
+
+然后从本地上传以下三个文件到服务器相同的相对路径。
+
+- `docker-compose.yaml`
+- `nginx/nginx.conf`
+- `nginx/conf.d/daixiaokang.conf`
+
+前端页面继续放在 `frontend/html/`，证书继续放在 `frontend/ssl/`，正式配置使用服务器的 `backend/.env.docker` 和 `deploy/https.env`，续期账户位于 `deploy/acme/`。本次目录调整只涉及 Nginx 的配置和日志挂载。
+
+检查上传后的挂载及配置，再重新创建 Nginx 容器以应用新挂载。
+
+```bash
+docker compose config --quiet
+docker compose run --rm --no-deps daixiaokang_frontend nginx -t
+# 上面两项检查通过后执行。
+docker compose up -d --no-deps --no-build --force-recreate daixiaokang_frontend
+docker compose exec daixiaokang_frontend nginx -t
+docker compose ps
+curl --resolve daixiaokang.com:443:127.0.0.1 -I https://daixiaokang.com/
+curl --resolve api.daixiaokang.com:443:127.0.0.1 https://api.daixiaokang.com/api/ai/status
+```
+
+重建 Nginx 会短暂中断连接。原 `frontend/logs/` 中的数据复制到了 `nginx/logs/`，后续日志写入新目录。需要回滚时，使用前面记录的备份目录恢复旧 Compose 和 Nginx 配置，再重新创建 Nginx 容器。
+
+```bash
+cd /daixk/project/daixiaokang
+tar -xzf "$backup_dir/config-and-certs.tar.gz" docker-compose.yaml frontend/nginx.conf
+docker compose run --rm --no-deps daixiaokang_frontend nginx -t
+# 检查通过后执行。
+docker compose up -d --no-deps --no-build --force-recreate daixiaokang_frontend
+```
 
 ## 4. 容器、网络与挂载
 
@@ -159,9 +211,10 @@ docker network create --driver bridge --subnet 10.67.3.0/24 mynetwork
 | 宿主机 | 容器内 | 权限 |
 | --- | --- | --- |
 | `frontend/html` | Nginx `/usr/share/nginx/html` | 只读 |
-| `frontend/nginx.conf` | Nginx `/etc/nginx/nginx.conf` | 只读 |
+| `nginx/nginx.conf` | Nginx `/etc/nginx/nginx.conf` | 只读 |
+| `nginx/conf.d` | Nginx `/etc/nginx/conf.d` | 只读 |
 | `frontend/ssl` | Nginx `/etc/nginx/ssl` | 只读 |
-| `frontend/logs` | Nginx `/var/log/nginx` | 读写 |
+| `nginx/logs` | Nginx `/var/log/nginx` | 读写 |
 | `backend` | 后端 `/backend` | 只读 |
 | `backend/logs` | 后端 `/backend/logs` | 读写 |
 | `deploy/acme` | ACME `/acme.sh` | 读写 |
@@ -179,7 +232,7 @@ docker network create --driver bridge --subnet 10.67.3.0/24 mynetwork
 | 浏览器 → API Nginx | 同一套源站证书 |
 | Nginx → FastAPI | 专用 Docker 网络内 HTTP |
 
-服务器 ACME 脚本目前只申请 `daixiaokang.com`、`api.daixiaokang.com`，不含 www、static。源站证书与边缘证书是不同管理范围；迁移源站脚本不会自动迁移 EdgeOne 边缘证书。
+仓库 ACME 脚本的域名列表包含 `daixiaokang.com`、`api.daixiaokang.com` 和 `vantage.daixiaokang.com`。已有两域名证书的服务器需要执行一次 `issue` 扩展证书，具体步骤见 [增加 Vantage 域名](HTTPS.md#21-已有证书增加-vantage-域名)。EdgeOne 边缘证书在腾讯云独立管理。
 
 `deploy/https.env` 填写 `ACME_EMAIL`、`Tencent_SecretId`、`Tencent_SecretKey`。使用具有对应域名 TXT 记录查询、创建、删除权限的 DNSPod API 凭据；不是旧版 DNSPod Token。
 
@@ -290,7 +343,7 @@ docker build --no-cache -t daixiaokang-backend-deps:latest .
 
 ```bash
 cd /daixk/project/daixiaokang
-mkdir -p frontend/html frontend/logs frontend/ssl backend/logs deploy/acme
+mkdir -p frontend/html frontend/ssl nginx/conf.d nginx/logs backend/logs deploy/acme
 chmod 700 frontend/ssl deploy/acme
 # 在恢复相应私密文件后执行：
 chmod 600 backend/.env.docker deploy/https.env
@@ -410,7 +463,7 @@ curl -i -X OPTIONS https://api.daixiaokang.com/api/analytics/visits \
 | 改后端 requirements | 重建依赖镜像，再重新创建后端容器 |
 | 改 .env.docker、Compose 环境变量或网络 | 重新创建对应容器，restart 不会加载新的容器环境变量 |
 | 改前端页面、主题配置、JS、CSS | 重新构建上传，再刷新相关 CDN 缓存 |
-| 改 Nginx 配置 | 同步 frontend/nginx.conf，执行 nginx -t 通过后 reload；挂载路径变化则重建容器 |
+| 改 Nginx 配置 | 同步 nginx/nginx.conf 和 nginx/conf.d/，执行 nginx -t 通过后 reload；挂载路径变化则重建容器 |
 | 更新地域数据库 | 同步 .xdb 后重启后端以重新加载 |
 | 仅更换服务器 IP，域名、COS 不变 | 更新主站 EdgeOne 源站和 API A 记录；前端 API/媒体域名不必修改 |
 

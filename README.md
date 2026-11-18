@@ -137,7 +137,9 @@ npm.cmd run clean
 npm.cmd run build
 ```
 
-将 `frontend/public/` 发布到静态站点目录，单独部署 FastAPI、PostgreSQL 和 Redis。当前主站经过 EdgeOne 回源 Nginx，`www.daixiaokang.com` 由 EdgeOne 跳转至主域名；API 子域名直连 Nginx，由其保留 `/api/` 路径代理到 FastAPI，为 AI SSE 关闭响应缓冲并配置足够的读取超时。域名、证书、COS、网络及迁移顺序见[当前线上配置与迁移手册](deploy/MIGRATION.md)。
+服务器目录分为 `backend/`、`deploy/`、`frontend/` 和 `nginx/`。后端源码上传到 `backend/` 并使用 `.env.docker`，证书脚本放在 `deploy/`，前端 `public/` 内的构建产物上传到 `frontend/html/`，证书保存在 `frontend/ssl/`。Nginx 公共配置使用 `nginx/nginx.conf`，站点配置放在 `nginx/conf.d/`，日志写入 `nginx/logs/`。上传范围和正式配置保留方式见[配置与上传说明](deploy/CONFIGURATION.md#日常上传范围)。
+
+PostgreSQL 和 Redis 单独部署。当前主站经过 EdgeOne 回源 Nginx，`www.daixiaokang.com` 由 EdgeOne 跳转至主域名；API 子域名直连 Nginx，由其保留 `/api/` 路径代理到 FastAPI，为 AI SSE 关闭响应缓冲并配置足够的读取超时。域名、证书、COS、网络及迁移顺序见[当前线上配置与迁移手册](deploy/MIGRATION.md)。
 
 `frontend/_config.yml` 的 Git 部署仓库仍为占位地址，使用 Git 部署前需要替换为实际仓库。当前 AI、评论和留言均依赖 FastAPI，发布静态页面后需同时接通 `/api`。详细配置见[域名与部署说明](frontend/tools/DOMAIN.md)。
 

@@ -28,6 +28,7 @@ test('CDN root changes media paths but keeps emergency fallbacks and external UR
   const hexo = fakeHexo('https://cdn.example.test/assets/')
   assert.equal(media.assetUrl(hexo, '/assets/home/pc_01.mp4'), 'https://cdn.example.test/assets/home/pc_01.mp4')
   assert.equal(media.assetUrl(hexo, '/assets/fallback/image.webp'), '/assets/fallback/image.webp')
+  assert.equal(media.assetUrl(hexo, '/assets/badge/gonganlianwangbeian.png'), '/assets/badge/gonganlianwangbeian.png')
   assert.equal(media.assetUrl(hexo, 'https://other.test/assets/x.png'), 'https://other.test/assets/x.png')
   assert.equal(media.catalog(hexo).desktop[29].id, 'pc_30')
   assert.match(media.catalog(hexo).mobile[4].poster, /^https:\/\/cdn\.example\.test\/assets\/home\/optimized\/home_mobile_05-background.webp$/)
@@ -65,6 +66,8 @@ test('rendered HTML/CSS rewrites owned images only, including subpath hosting', 
   const rewrite = hexo.callbacks['after_render:html']
   assert.equal(rewrite('<img src="/blog/assets/home/pc_01.png">'), '<img src="https://cdn.example.test/assets/home/pc_01.png">')
   assert.equal(rewrite('<img src="/blog/assets/fallback/avatar.png">'), '<img src="/blog/assets/fallback/avatar.png">')
+  assert.equal(rewrite('<img src="/blog/assets/badge/gonganlianwangbeian.png">'), '<img src="/blog/assets/badge/gonganlianwangbeian.png">')
+  assert.equal(rewrite('<img src="/assets/badge/gonganlianwangbeian.png">'), '<img src="/assets/badge/gonganlianwangbeian.png">')
   assert.equal(rewrite('<img src="https://other.test/assets/a.png">'), '<img src="https://other.test/assets/a.png">')
   assert.equal(hexo.callbacks['after_render:css']('a{background:url(/assets/avatar.png)}'), 'a{background:url(https://cdn.example.test/assets/avatar.png)}')
 })

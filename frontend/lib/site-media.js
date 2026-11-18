@@ -2,9 +2,9 @@
 const fs = require('fs')
 const path = require('path')
 const { createHash } = require('crypto')
-// base_url mirrors source/assets. Emergency fallbacks always stay local.
+// base_url mirrors source/assets. Emergency fallbacks and site badges stay local.
 function assetUrl(hexo, value) {
-  if (typeof value !== 'string' || !value.startsWith('/assets/') || value.startsWith('/assets/fallback/')) return value
+  if (typeof value !== 'string' || !value.startsWith('/assets/') || /^\/assets\/(?:fallback|badge)\//.test(value)) return value
   const base = String((hexo.theme.config.site_media || {}).base_url || '').trim().replace(/\/+$/, '')
   return base ? base + value.slice('/assets'.length) : value
 }

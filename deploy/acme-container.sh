@@ -7,6 +7,7 @@ CERT_DIR="${HTTPS_CERT_DIR:-/certs}"
 SCRIPT="$(cd -- "$(dirname -- "$0")" && pwd)/$(basename -- "$0")"
 MAIN_DOMAIN=daixiaokang.com
 API_DOMAIN=api.daixiaokang.com
+VANTAGE_DOMAIN=vantage.daixiaokang.com
 NGINX_CONTAINER=daixiaokang_frontend
 ACME_BIN="$(command -v acme.sh)"
 
@@ -46,7 +47,7 @@ issue() {
   result=0
   "$ACME_BIN" --issue --config-home "$CONFIG_HOME" --server letsencrypt \
     --accountemail "$ACME_EMAIL" --dns dns_tencent --keylength ec-256 \
-    -d "$MAIN_DOMAIN" -d "$API_DOMAIN" || result=$?
+    -d "$MAIN_DOMAIN" -d "$API_DOMAIN" -d "$VANTAGE_DOMAIN" || result=$?
   # acme.sh returns 2 when the existing certificate is not due for renewal.
   [ "$result" -eq 0 ] || [ "$result" -eq 2 ] || return "$result"
   "$ACME_BIN" --install-cert --config-home "$CONFIG_HOME" -d "$MAIN_DOMAIN" --ecc \

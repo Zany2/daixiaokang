@@ -479,6 +479,10 @@ footer:
   copyright: false # Copyright of theme and framework
   # 正式 ICP 备案号：独立显示在页脚，链接至工信部备案管理系统。
   icp: '鲁ICP备2026066398号-1'
+  public_security:
+    number: '鲁公网安备37021102001864号'
+    link: 'https://beian.mps.gov.cn/#/query/webSearch?code=37021102001864'
+    icon: /assets/badge/gonganlianwangbeian.png
   # 页脚双段式标识：修改 value / link 即可更新；link 留空时仅展示，不可点击。
   badges:
     enable: true
@@ -1172,7 +1176,7 @@ CDN:
   custom_format:
 
   option:
-    main_css: /css/index.css?v=20261024-footer-motion2
+    main_css: /css/index.css?v=20261118-footer-beian2
     main: /js/main.js?v=20261009-navmotion2
     utils: /js/utils.js?v=20261013-notify1
     # translate: https://cdn.tianli0.top/npm/js-heo@1.0.6/translate/tw_cn.js
