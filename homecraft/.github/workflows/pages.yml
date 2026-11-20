@@ -46,7 +46,7 @@ jobs:
         with:
           path: dist
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy_back20261119-pages@v4
       - name: Verify published directory
         id: verify
         if: vars.HOMECRAFT_DIRECTORY == 'true'

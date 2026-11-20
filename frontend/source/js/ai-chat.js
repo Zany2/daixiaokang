@@ -167,7 +167,7 @@
     document.head.appendChild(link);
   }
 
-  // 按钮挂在右侧竖排的「常显」组 #rightside-config-show 里，紧跟设置齿轮之后，
+  // 按钮挂在右侧竖排的「常显」组中，位于设置齿轮和校园入口之后，
   // 这样它和齿轮同属一组：右侧部件整体隐藏时它自动跟着消失，不需要额外处理。
   function ensureButton() {
     ensureStyle();
@@ -181,8 +181,8 @@
     btn.setAttribute('aria-label', 'AI 助手');
     btn.setAttribute('aria-controls', PANEL_ID);
     btn.setAttribute('aria-expanded', isOpen() ? 'true' : 'false');
-    var gear = qs('#rightside_config', host);
-    if (gear && gear.parentNode === host) host.insertBefore(btn, gear.nextSibling);
+    var anchor = qs('#campus-entry', host) || qs('#rightside_config', host);
+    if (anchor && anchor.parentNode === host) host.insertBefore(btn, anchor.nextSibling);
     else host.insertBefore(btn, host.firstChild);
     // 鼠标刚靠近按钮就把面板建好：把冷启动成本挪到这一下，点开就不卡了
     btn.addEventListener('pointerenter', prewarm, { passive: true });

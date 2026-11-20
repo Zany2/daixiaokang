@@ -22,7 +22,7 @@ npm.cmd run server
 
 ## 配置与源码
 
-实际 `_config.yml`、`_config.fomalhaut.yml` 和主题 `_config.yml` 均留在本地并由 Git 忽略，仓库保存对应的 `*.example.yml`。首次克隆需按上方命令复制后再运行。修改功能配置时，应同步维护不含真实凭据的示例。完整部署配置和加密页面的迁移关系见 [配置示例与迁移](../deploy/CONFIGURATION.md)。
+实际 `_config.yml`、`_config.fomalhaut.yml` 和主题 `_config.yml` 均留在本地并由 Git 忽略，仓库保存对应的 `*.example.yml`。首次克隆需按上方命令复制后再运行。修改功能配置时，应同步维护不含真实凭据的示例。完整部署配置和加密页面的迁移关系见 [配置示例与迁移](../deploy_back20261119/CONFIGURATION.md)。
 
 - `_config.yml`：站点域名、标题、作者、文章链接、搜索索引和部署插件。
 - `_config.fomalhaut.yml`：实际生效的站点主题配置；同名项覆盖 `themes/fomalhaut/_config.yml`。

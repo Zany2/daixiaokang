@@ -134,7 +134,7 @@ backup_dir="/daixk/project/daixiaokang-backup-$(date +%Y%m%d-%H%M%S)"
 mkdir -m 700 "$backup_dir"
 tar -czf "$backup_dir/config-and-certs.tar.gz" \
   docker-compose.yaml frontend/nginx.conf backend/.env.docker \
-  deploy/https.env deploy/acme frontend/ssl
+  deploy_back20261119/https.env deploy_back20261119/acme frontend/ssl
 mkdir -p nginx/conf.d nginx/logs
 cp -a frontend/logs/. nginx/logs/
 ```
@@ -343,10 +343,10 @@ docker build --no-cache -t daixiaokang-backend-deps:latest .
 
 ```bash
 cd /daixk/project/daixiaokang
-mkdir -p frontend/html frontend/ssl nginx/conf.d nginx/logs backend/logs deploy/acme
-chmod 700 frontend/ssl deploy/acme
+mkdir -p frontend/html frontend/ssl nginx/conf.d nginx/logs backend/logs deploy_back20261119/acme
+chmod 700 frontend/ssl deploy_back20261119/acme
 # 在恢复相应私密文件后执行：
-chmod 600 backend/.env.docker deploy/https.env
+chmod 600 backend/.env.docker deploy_back20261119/https.env
 docker compose config --quiet
 ```
 

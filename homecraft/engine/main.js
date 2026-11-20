@@ -688,6 +688,7 @@ async function boot() {
     getPlayer: () => ({ x: player.pos.x, z: player.pos.z, heading: player.heading }),
     getYaw: () => rig.yaw,
     getRoute: () => player.path,
+    getPeers: () => extras.mapPeers || [],
     onPick: navigate,
   });
 

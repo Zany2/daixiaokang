@@ -1,12 +1,12 @@
 # 正式域名配置
 
-主站地址为 `https://daixiaokang.com`。个人网站的 Nginx 模板配置主站及 `api.daixiaokang.com`，ACME 脚本的证书申请列表还包含 `vantage.daixiaokang.com`。已有证书增加 Vantage 时执行 [证书扩展流程](../../deploy/HTTPS.md#21-已有证书增加-vantage-域名)。如果需要 `www.daixiaokang.com` 兼容入口，需先扩展证书和 Nginx 配置，再将其永久跳转到主站并保留原路径和查询参数。
+主站地址为 `https://daixiaokang.com`。个人网站的 Nginx 模板配置主站及 `api.daixiaokang.com`，ACME 脚本的证书申请列表还包含 `vantage.daixiaokang.com`。已有证书增加 Vantage 时执行 [证书扩展流程](../../deploy_back20261119/HTTPS.md#21-已有证书增加-vantage-域名)。如果需要 `www.daixiaokang.com` 兼容入口，需先扩展证书和 Nginx 配置，再将其永久跳转到主站并保留原路径和查询参数。
 
 本文描述代码配置与部署要求，不代表 DNS、证书或线上服务已经按此配置。前端路径以 `frontend/` 为基准，后端路径以仓库的 `backend/` 为基准。
 
 ## Docker HTTPS 与自动续期
 
-服务器使用根目录 Compose、`frontend/html/` 和挂载后端源码的部署方式时，参见 [HTTPS 部署步骤](../../deploy/HTTPS.md)。独立证书容器通过腾讯云 DNSPod API 申请 Let's Encrypt 证书，首次启动时申请，并在每天北京时间 03:15 检查续期；宿主机不需要 cron。首次签发成功后再启用 Nginx HTTPS 模板。脚本的申请列表包含主站、API 和 Vantage 域名，EdgeOne 与媒体域名的边缘证书单独管理。
+服务器使用根目录 Compose、`frontend/html/` 和挂载后端源码的部署方式时，参见 [HTTPS 部署步骤](../../deploy_back20261119/HTTPS.md)。独立证书容器通过腾讯云 DNSPod API 申请 Let's Encrypt 证书，首次启动时申请，并在每天北京时间 03:15 检查续期；宿主机不需要 cron。首次签发成功后再启用 Nginx HTTPS 模板。脚本的申请列表包含主站、API 和 Vantage 域名，EdgeOne 与媒体域名的边缘证书单独管理。
 
 ## 已配置的代码
 
@@ -29,7 +29,7 @@
 
 ## Nginx API 转发示例
 
-当前 Docker 部署使用 `nginx/nginx.conf` 加载 `nginx/conf.d/*.conf`，上传到服务器相同的相对目录。个人网站及 API 配置集中在 `nginx/conf.d/daixiaokang.conf`，包含静态资源缓存、页面 404 跳转、静态资源真实 404、API 禁止缓存及 AI 流式转发，日志写入 `nginx/logs/`。CDN 接入要求参见 [HTTPS 部署步骤](../../deploy/HTTPS.md)。
+当前 Docker 部署使用 `nginx/nginx.conf` 加载 `nginx/conf.d/*.conf`，上传到服务器相同的相对目录。个人网站及 API 配置集中在 `nginx/conf.d/daixiaokang.conf`，包含静态资源缓存、页面 404 跳转、静态资源真实 404、API 禁止缓存及 AI 流式转发，日志写入 `nginx/logs/`。CDN 接入要求参见 [HTTPS 部署步骤](../../deploy_back20261119/HTTPS.md)。
 
 下面只展示直接在宿主机部署后端时的 API 转发片段，Docker 部署使用完整模板中的容器服务名和 Docker DNS 配置：
 
@@ -48,7 +48,7 @@ location ^~ /api/ {
 }
 ```
 
-后端通过 ASGI 客户端地址识别 IP，不直接采信应用层读取的转发头。当前 Compose 使用仅连接 Nginx 和后端的专用 `proxy` 网络（`10.67.4.0/24`），容器 IP 自动分配，并向后端注入 `FORWARDED_ALLOW_IPS=10.67.4.0/24`，只信任该网络转发的协议和 IP。后端仍通过原有 `mynetwork` 访问数据库和 Redis。迁移时检查网段冲突，并同步调整专用网段及可信网段，应用步骤见 [HTTPS 部署步骤](../../deploy/HTTPS.md)。
+后端通过 ASGI 客户端地址识别 IP，不直接采信应用层读取的转发头。当前 Compose 使用仅连接 Nginx 和后端的专用 `proxy` 网络（`10.67.4.0/24`），容器 IP 自动分配，并向后端注入 `FORWARDED_ALLOW_IPS=10.67.4.0/24`，只信任该网络转发的协议和 IP。后端仍通过原有 `mynetwork` 访问数据库和 Redis。迁移时检查网段冲突，并同步调整专用网段及可信网段，应用步骤见 [HTTPS 部署步骤](../../deploy_back20261119/HTTPS.md)。
 
 ## AI 服务部署
 

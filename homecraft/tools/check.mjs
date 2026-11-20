@@ -94,7 +94,7 @@ for (const view of VIEWS) {
     if (!traversal.up || !traversal.down || !traversal.dogIndoors) errors.push('showcase traversal regression');
   }
   const over = [stats.calls > stats.budget.calls && 'draw calls', stats.triangles > stats.budget.triangles && 'triangles'].filter(Boolean);
-  // Bytes as served; a server that compresses (tools/build.sh, deploy.md) sends far fewer.
+  // Bytes as served; a server that compresses (tools/build.sh, deploy_back20261119.md) sends far fewer.
   console.log(`${view.name}: started in ${(bootMs / 1000).toFixed(1)} s, loaded ${Math.round(bytes / 1024)} KB uncompressed, `
     + `${stats.calls} draw calls, ${Math.round(stats.triangles / 1000)}k triangles, ${stats.frameMs} ms a frame, ${stats.programs} shader programs`
     + (over.length ? `  ← over budget: ${over.join(', ')}` : ''));

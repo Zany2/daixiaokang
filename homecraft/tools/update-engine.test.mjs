@@ -35,12 +35,12 @@ function site(files = initial, agents = '# My project\nKeep my custom rules.\n')
   write(join(folder, 'package.json'), '{"name":"my-personal-site","private":true}\n');
   write(join(folder, 'world/build.js'), '// Custom furniture belongs to me.\n');
   write(join(folder, 'assets/personal.txt'), 'my picture');
-  write(join(folder, '.github/workflows/deploy.yml'), 'my custom hosting');
+  write(join(folder, '.github/workflows/deploy_back20261119.yml'), 'my custom hosting');
   if (agents !== null) write(join(folder, 'AGENTS.md'), agents);
   for (const [file, bytes] of Object.entries(files)) write(join(folder, 'engine', file), bytes);
   return folder;
 }
-const protectedPaths = ['index.html', 'home.config.js', 'package.json', 'world/build.js', 'assets/personal.txt', '.github/workflows/deploy.yml'];
+const protectedPaths = ['index.html', 'home.config.js', 'package.json', 'world/build.js', 'assets/personal.txt', '.github/workflows/deploy_back20261119.yml'];
 const protectedFiles = folder => Object.fromEntries(protectedPaths.map(file => [file, readFileSync(join(folder, file)).toString('base64')]));
 const bytes = folder => Object.fromEntries(Object.entries(readEngine(join(folder, 'engine'))).map(([file, data]) => [file, data.toString('base64')]));
 

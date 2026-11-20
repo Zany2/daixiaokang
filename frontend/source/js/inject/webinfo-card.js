@@ -8,19 +8,19 @@
  * 2026-10-04 追加时间条第三项「更新」= 站点最后更新时间（最近一次部署时间）：
  *   · 第一版取 GitHub API（产物仓库最近一次提交），要吃不认证的 60 次/小时限流；
  *     当天改成下面的同源方案，API 那套已删。
- *   · 版本时间：scripts/deploy-metadata.js 在 Hexo 构建时生成 public/deploy.json，
+ *   · 版本时间：scripts/deploy_back20261119-metadata.js 在 Hexo 构建时生成 public/deploy_back20261119.json，
  *     里面的 at 是该发布版本的 UTC 构建时刻，随 public/ 一起部署；
- *     元素的 data-deploy-api（模板里 url_for 出来的）指向它，同源小文件随便读。
- *   · 兜底值：模板构建时把本次 generate 时刻写进 data-deploy-build，先显示成 MM-DD；
- *     deploy.json 读不到（老产物、本地预览）时就用它，读到真值再换掉。
+ *     元素的 data-deploy_back20261119-api（模板里 url_for 出来的）指向它，同源小文件随便读。
+ *   · 兜底值：模板构建时把本次 generate 时刻写进 data-deploy_back20261119-build，先显示成 MM-DD；
+ *     deploy_back20261119.json 读不到（老产物、本地预览）时就用它，读到真值再换掉。
  *   · 结果存 localStorage 10 分钟，翻页不重复请求；只接受更新的时间，绝不把时间往回退。
  * ========================================================================== */
 
 (function () {
   var ROOT = '.card-webinfo';
 
-  /* ── 站点更新时间（部署产物里的 deploy.json）────────────────────────── */
-  var DEPLOY_KEY = 'wi-deploy-at';
+  /* ── 站点更新时间（部署产物里的 deploy_back20261119.json）────────────────────────── */
+  var DEPLOY_KEY = 'wi-deploy_back20261119-at';
   var DEPLOY_TTL = 10 * 60 * 1000;   // 同源小文件随便读，10 分钟够省掉翻页时的重复请求
   var deployAt = null;
   var lastTry = 0;        // 上次发请求的时刻：失败时也别一分钟一请求
@@ -50,11 +50,11 @@
   }
   /* 优先级：已取到的真实部署时间 > 构建时刻兜底；两者都没有才写「—」 */
   function paintDeploy() {
-    var el = document.querySelector(ROOT + ' .wi-deploy-v');
+    var el = document.querySelector(ROOT + ' .wi-deploy_back20261119-v');
     if (!el) return;
     var t = deployAt;
     if (t == null) {
-      var b = Date.parse(el.getAttribute('data-deploy-build') || '');
+      var b = Date.parse(el.getAttribute('data-deploy_back20261119-build') || '');
       t = isNaN(b) ? null : b;
     }
     el.textContent = t == null ? '—' : agoText(t);
@@ -70,9 +70,9 @@
     try { localStorage.setItem(DEPLOY_KEY, JSON.stringify({ t: t, at: Date.now() })); } catch (e) {}
   }
   function deployFetch() {
-    var el = document.querySelector(ROOT + ' .wi-deploy-v');
+    var el = document.querySelector(ROOT + ' .wi-deploy_back20261119-v');
     if (!el || !window.fetch) return;
-    var api = el.getAttribute('data-deploy-api');
+    var api = el.getAttribute('data-deploy_back20261119-api');
     if (!api) return;
     lastTry = Date.now();
     var ctl = null, timer = null;
@@ -144,7 +144,7 @@
     } catch (e) {}
   }
   function init() {
-    var el = document.querySelector(ROOT + ' .wi-deploy-v');
+    var el = document.querySelector(ROOT + ' .wi-deploy_back20261119-v');
     if (el) {
       var c = cacheGet();
       if (c) deployAt = c.t;

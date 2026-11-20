@@ -8,6 +8,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from controller.ai import router as ai_router
 from controller.feedback import router as feedback_router
 from controller.analytics import router as analytics_router
+from controller.campus import router as campus_router
 from services.analytics import GeoLookup
 from cache.redis import close_redis, init_redis, redis_is_ready
 from core.config import get_settings
@@ -17,6 +18,7 @@ from middleware.request_context import RequestContextMiddleware
 from middleware.security_headers import SecurityHeadersMiddleware
 from services.feedback_runtime import FeedbackRuntime
 from services.ai_runtime import AIRuntime
+from services.campus import CampusRuntime
 
 settings = get_settings()
 configure_logging(settings)
@@ -29,6 +31,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await init_redis(app)
     app.state.feedback_runtime = FeedbackRuntime(app.state.redis, settings)
     app.state.ai_runtime = AIRuntime(app.state.redis, settings)
+    app.state.campus_runtime = CampusRuntime(app.state.redis, settings)
     geo_dir = settings.analytics_geo_dir
     if not geo_dir.is_absolute():
         from pathlib import Path
@@ -51,6 +54,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         yield
     finally:
         logger.info("application.stopping")
+        await app.state.campus_runtime.close()
         await close_redis(app)
         await close_database()
         logger.info("application.stopped")
@@ -84,6 +88,7 @@ def create_app() -> FastAPI:
     application.include_router(ai_router)
     application.include_router(feedback_router)
     application.include_router(analytics_router)
+    application.include_router(campus_router)
 
     return application
 

@@ -68,7 +68,7 @@ daixiaokang/
 
 以下命令从仓库根目录开始，在两个 PowerShell 终端分别执行。
 
-公开仓库只保留配置示例。实际前端配置、Compose、Nginx、环境变量文件及加密页面密码不纳入 Git；复制和迁移关系见 [配置示例与迁移](deploy/CONFIGURATION.md)。已有本地配置无需重新复制。
+公开仓库只保留配置示例。实际前端配置、Compose、Nginx、环境变量文件及加密页面密码不纳入 Git；复制和迁移关系见 [配置示例与迁移](deploy_back20261119/CONFIGURATION.md)。已有本地配置无需重新复制。
 
 ### 前端
 
@@ -131,7 +131,7 @@ API 默认监听 `http://localhost:8000`。从 `backend` 目录启动以读取�
 
 ## Homecraft 3D 网站源码
 
-`homecraft/` 已作为 Git subtree 纳入本仓库，普通克隆即可取得完整源码。可以直接修改其中的文件，并随本仓库提交；后续仍可合并 `terryHu7/homecraft` 的上游更新。初始化远程、更新与冲突处理见 [Homecraft 维护说明](deploy/HOMECRAFT.md)。当前仅接入源码，尚未配置线上访问入口。
+`homecraft/` 已作为 Git subtree 纳入本仓库，普通克隆即可取得完整源码。可以直接修改其中的文件，并随本仓库提交；后续仍可合并 `terryHu7/homecraft` 的上游更新。初始化远程、更新与冲突处理见 [Homecraft 维护说明](deploy_back20261119/HOMECRAFT.md)。当前仅接入源码，尚未配置线上访问入口。
 
 ## 构建与部署
 
@@ -142,9 +142,9 @@ npm.cmd run clean
 npm.cmd run build
 ```
 
-服务器目录分为 `backend/`、`deploy/`、`frontend/` 和 `nginx/`。后端源码上传到 `backend/` 并使用 `.env.docker`，证书脚本放在 `deploy/`，前端 `public/` 内的构建产物上传到 `frontend/html/`，证书保存在 `frontend/ssl/`。Nginx 公共配置使用 `nginx/nginx.conf`，站点配置放在 `nginx/conf.d/`，日志写入 `nginx/logs/`。上传范围和正式配置保留方式见[配置与上传说明](deploy/CONFIGURATION.md#日常上传范围)。
+服务器目录分为 `backend/`、`deploy/`、`frontend/` 和 `nginx/`。后端源码上传到 `backend/` 并使用 `.env.docker`，证书脚本放在 `deploy/`，前端 `public/` 内的构建产物上传到 `frontend/html/`，证书保存在 `frontend/ssl/`。Nginx 公共配置使用 `nginx/nginx.conf`，站点配置放在 `nginx/conf.d/`，日志写入 `nginx/logs/`。上传范围和正式配置保留方式见[配置与上传说明](deploy_back20261119/CONFIGURATION.md#日常上传范围)。
 
-PostgreSQL 和 Redis 单独部署。当前主站经过 EdgeOne 回源 Nginx，`www.daixiaokang.com` 由 EdgeOne 跳转至主域名；API 子域名直连 Nginx，由其保留 `/api/` 路径代理到 FastAPI，为 AI SSE 关闭响应缓冲并配置足够的读取超时。域名、证书、COS、网络及迁移顺序见[当前线上配置与迁移手册](deploy/MIGRATION.md)。
+PostgreSQL 和 Redis 单独部署。当前主站经过 EdgeOne 回源 Nginx，`www.daixiaokang.com` 由 EdgeOne 跳转至主域名；API 子域名直连 Nginx，由其保留 `/api/` 路径代理到 FastAPI，为 AI SSE 关闭响应缓冲并配置足够的读取超时。域名、证书、COS、网络及迁移顺序见[当前线上配置与迁移手册](deploy_back20261119/MIGRATION.md)。
 
 `frontend/_config.yml` 的 Git 部署仓库仍为占位地址，使用 Git 部署前需要替换为实际仓库。当前 AI、评论和留言均依赖 FastAPI，发布静态页面后需同时接通 `/api`。详细配置见[域名与部署说明](frontend/tools/DOMAIN.md)。
 
@@ -157,7 +157,7 @@ PostgreSQL 和 Redis 单独部署。当前主站经过 EdgeOne 回源 Nginx，`w
 - [评论与留言前端](frontend/tools/FEEDBACK.md)
 - [本地素材与 CDN 配置](frontend/tools/SITE-MEDIA.md)
 - [域名与反向代理](frontend/tools/DOMAIN.md)
-- [当前线上配置与迁移手册](deploy/MIGRATION.md)
+- [当前线上配置与迁移手册](deploy_back20261119/MIGRATION.md)
 - [主题目录与维护说明](frontend/themes/fomalhaut/README.md)
 
 ## 来源与授权

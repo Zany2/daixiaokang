@@ -11,6 +11,7 @@ frontend/themes/fomalhaut/.git
 .ai-chat-key
 
 # Local deployment configuration
+/release/
 /docker-compose.yaml
 /docker-compose.yml
 /nginx/nginx.conf
@@ -20,6 +21,10 @@ frontend/themes/fomalhaut/.git
 /frontend/ssl/
 /deploy/https.env
 /deploy/acme/
+/gateway/ssl/
+/gateway/logs/
+/deploy_back20261119/https.env
+/deploy_back20261119/acme/
 
 # Live Hexo settings; version the corresponding example files instead.
 /frontend/_config*.yml

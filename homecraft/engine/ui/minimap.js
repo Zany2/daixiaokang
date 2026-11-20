@@ -7,7 +7,9 @@ const ISLAND = L.ISLAND, STATIONS = L.STATIONS || [], POOL = L.POOL || null, HOU
 import { icon } from './icons.js';
 import { nameOf } from '../lang.js';
 
-const PPM = 8; // map pixels per metre
+// Retain close-range detail on small worlds without allocating hundreds of
+// megabytes for a campus-sized map. Coordinates use this same scale everywhere.
+const PPM = Math.min(8, 2048 / Math.max(ISLAND.x1 - ISLAND.x0, ISLAND.z1 - ISLAND.z0));
 const COLORS = {
   grass: '#7aa653', sand: '#d5c8a7', leaves: '#3d7a2c', osmanthus: '#4f8a3a', hedge: '#3f7a2d', log: '#6e5434',
   concrete: '#d9d5cd', wood_floor: '#bd956a', epoxy: '#c3c6c9', deck: '#bd956a', pavers: '#b3afa6', travertine: '#ddd4c3', coping: '#ddd4c3',
@@ -62,14 +64,14 @@ export function drawMapImage(grid, obstacles, decorate = null) {
   return canvas;
 }
 
-export function createMinimap({ root, bigRoot, grid, obstacles, decorate = null, getPlayer, getYaw, getRoute, onPick }) {
+export function createMinimap({ root, bigRoot, grid, obstacles, decorate = null, getPlayer, getYaw, getRoute, getPeers = () => [], onPick }) {
   const canvas = root.querySelector('canvas');
   const ctx = canvas.getContext('2d');
   let mapImage = drawMapImage(grid, obstacles, decorate);
   const zooms = [2.6, 4, 6.2];
   let zoomIndex = 1;
   const dpr = Math.min(devicePixelRatio || 1, 1.5);
-  const blips = STATIONS.map(s => ({ s, img: icon(s.id).canvas }));
+  const blips = STATIONS.map(s => ({ s, img: icon(s.id).canvas, radarShown:false, mapShown:false, x:0, y:0, w:0, h:0 }));
 
   function fit() {
     const r = canvas.getBoundingClientRect();
@@ -135,14 +137,31 @@ export function createMinimap({ root, bigRoot, grid, obstacles, decorate = null,
     ctx.restore();
     // Blips stay upright; ones off the edge are pinned to the rim.
     const R = W / 2 - 14 * dpr;
-    for (const { s, img } of blips) {
+    for(const blip of blips)blip.radarShown=false;
+    for (const blip of blips) {
+      const {s,img}=blip;
       let dx = (s.at[0] - p.x) * scale, dz = (s.at[1] - p.z) * scale;
       const rx = dx * Math.cos(yaw) - dz * Math.sin(yaw), rz = dx * Math.sin(yaw) + dz * Math.cos(yaw);
       let bx = rx, bz = rz;
       const d = Math.hypot(bx, bz);
       if (d > R) { bx = bx / d * R; bz = bz / d * R; }
+      let occupied=false;
+      for(const other of blips)if(other.radarShown&&Math.hypot(bx-other.x,bz-other.y)<22*dpr){occupied=true;break;}
+      if(occupied)continue;
+      blip.x=bx;blip.y=bz;blip.radarShown=true;
       drawBlip(ctx, W / 2 + bx, H / 2 + bz, img, 18 * dpr);
     }
+    // Remote visitors share the world-to-radar transform used by destinations.
+    const peerRadius = W / 2 - 8 * dpr;
+    for (const peer of getPeers()) {
+      const dx = (peer.position.x - p.x) * scale, dz = (peer.position.z - p.z) * scale;
+      let x = dx * Math.cos(yaw) - dz * Math.sin(yaw), y = dx * Math.sin(yaw) + dz * Math.cos(yaw);
+      const distance = Math.hypot(x, y);
+      if (distance > peerRadius) { x *= peerRadius / distance; y *= peerRadius / distance; }
+      ctx.beginPath(); ctx.arc(W / 2 + x, H / 2 + y, 3.5 * dpr, 0, Math.PI * 2);
+      ctx.fillStyle = peer.color || '#57cbe3'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5 * dpr; ctx.fill(); ctx.stroke();
+    }
+    if (!bigRoot.hidden) drawBig();
     // North marker on the rim.
     const nAngle = yaw - Math.PI / 2;
     const nr = W / 2 - 11 * dpr;
@@ -222,13 +241,22 @@ export function createMinimap({ root, bigRoot, grid, obstacles, decorate = null,
     const P = (x, z) => [ox + (x - ISLAND.x0) * s, oz + (z - ISLAND.z0) * s];
     bctx.font = `600 ${13 * dpr}px -apple-system, BlinkMacSystemFont, "PingFang SC", system-ui, sans-serif`;
     bctx.textAlign = 'left'; bctx.textBaseline = 'middle';
-    for (const { s: st, img } of blips) {
+    for(const blip of blips)blip.mapShown=false;
+    for (const blip of blips) {
+      const {s:st,img}=blip;
       const [x, y] = P(st.at[0], st.at[1]);
       const glyph = 22 * dpr;
-      drawBlip(bctx, x, y, img, glyph);
+      if(x<glyph/2||y<glyph/2||x>W-glyph/2||y>H-glyph/2)continue;
       const label = nameOf(st);
       const tw = bctx.measureText(label).width;
-      const lx = x + glyph / 2 + 5 * dpr;
+      const labelWidth=tw+12*dpr,totalWidth=glyph+5*dpr+labelWidth;
+      const left=x+totalWidth-glyph/2>W?x-glyph/2-5*dpr-labelWidth:x-glyph/2;
+      let occupied=false;
+      for(const other of blips)if(other.mapShown&&left<other.x+other.w+4*dpr&&left+totalWidth>other.x-4*dpr&&y<other.y+other.h+3*dpr&&y+glyph/2>other.y-3*dpr){occupied=true;break;}
+      if(occupied)continue;
+      blip.mapShown=true;blip.x=left;blip.y=y-glyph/2;blip.w=totalWidth;blip.h=glyph;
+      drawBlip(bctx, x, y, img, glyph);
+      const lx=left===x-glyph/2?x+glyph/2+5*dpr:left;
       bctx.fillStyle = 'rgba(12, 14, 16, .72)';
       bctx.fillRect(lx, y - 10 * dpr, tw + 12 * dpr, 20 * dpr);
       bctx.fillStyle = '#fff';
@@ -236,6 +264,12 @@ export function createMinimap({ root, bigRoot, grid, obstacles, decorate = null,
     }
     const p = getPlayer();
     const [px, py] = P(p.x, p.z);
+    for (const peer of getPeers()) {
+      const [x, y] = P(peer.position.x, peer.position.z);
+      if (x < 0 || y < 0 || x > W || y > H) continue;
+      bctx.beginPath(); bctx.arc(x, y, 5 * dpr, 0, Math.PI * 2);
+      bctx.fillStyle = peer.color || '#57cbe3'; bctx.strokeStyle = '#fff'; bctx.lineWidth = 2 * dpr; bctx.fill(); bctx.stroke();
+    }
     bctx.save();
     bctx.translate(px, py);
     bctx.rotate(-p.heading + Math.PI);

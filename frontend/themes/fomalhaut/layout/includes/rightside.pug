@@ -69,6 +69,14 @@ mixin rightsideItem(array)
         button#rightside_config(type="button" title=_p("rightside.setting"))
           i.fas.fa-cog.right_side
 
+    a#campus-entry(href='/campus/' target='_blank' rel='noopener' title='打开 3D 校园（新标签页）' aria-label='打开 3D 校园（新标签页）')
+      svg.campus-entry-icon(viewBox='0 0 32 32' width='28' height='28' fill='none' aria-hidden='true' focusable='false')
+        path(d='M16 2.5 28 9.4v13.2L16 29.5 4 22.6V9.4L16 2.5Z M4 9.4 16 16.3 28 9.4 M16 16.3v13.2' stroke='currentColor' stroke-width='1.7' stroke-linejoin='round')
+      span.campus-entry-mark(aria-hidden='true') 3D
+      span.campus-entry-hint(aria-hidden='true')
+        span 3D校园
+        span.campus-entry-arrow →
+
     if showArray
       +rightsideItem(showArray)
 

@@ -2,7 +2,7 @@
   "version": 1,
   "name": "北工大 · 校园漫游",
   "url": "",
-  "logo": "assets/campus-mark.svg",
+  "logo": "assets/campus-logo.png",
   "intro": "依据校园示意图搭建的平乐园校园，走近建筑，重访校园里的故事。",
   "lang": ["zh"],
   "homecraft": true

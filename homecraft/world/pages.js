@@ -2,6 +2,8 @@ import { PLACES, STATIONS, INTRO } from './layout.js';
 import { STORIES } from './stories.js';
 import * as THREE from 'three';
 import { connectCampusRoutes } from './navigation.js';
+import { BOUNDS } from './reference-layout.js';
+import { mountMultiplayer } from './multiplayer.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const photo = p => `<figure><img src="${escape(p.src)}" alt="${escape(p.caption)}" loading="lazy" decoding="async">${p.caption?`<figcaption>${escape(p.caption)}</figcaption>`:''}</figure>`;
@@ -16,8 +18,9 @@ export function preparePages() {
       <p>沿着熟悉的路，重新走进校园。教学楼、宿舍、操场，还有留在每个转角的回忆。</p>
       <div class="campus-card-stats"><span><b>${PLACES.length}</b> 个地点</span><span><b>${categories.length}</b> 个区域</span><span><b>自由</b> 漫游</span></div>
       <h4>开始探索</h4><p>点击建筑查看地点；也可以打开地点目录，直接前往。走近地点时，按 F 阅读介绍。按 M 打开地图，按 V 切换第一人称，双击空格开始飞行。</p>
-      <p class="campus-note">场景依据提供的校园示意图搭建，布局、建筑高度和不可见部分为近似还原。地点介绍与个人故事将陆续补充。</p>
-      <details><summary>查看参考地图</summary><img class="campus-reference" src="assets/campus-reference.jpg" alt="北京工业大学平乐园校区参考地图" loading="lazy" decoding="async"></details>
+      <p class="campus-note">布局参考百度地图截图，部分楼体轮廓结合公开地图与卫星图核对。建筑高度、立面细节和部分名称仍为近似值，地点介绍与个人故事将陆续补充。</p>
+      <p class="campus-note">轮廓数据 © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>，按 <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL</a> 使用。<a href="world/osm-footprints.js" download>下载改编轮廓数据</a> · <a href="https://mapcarta.com/W33617299">Mapcarta</a> · <a href="https://www.earthol.com/fun-1-school-bjpu.html">卫星参考</a></p>
+      <details><summary>查看三张参考地图</summary><p>百度平面图：两张截图按重叠区域拼接，上北下南。</p><img class="campus-reference" src="assets/campus-plan.webp" alt="两张百度地图截图拼接的北工大校园平面图" loading="lazy" decoding="async"><p>建筑外形参考：校园示意图。</p><img class="campus-reference" src="assets/campus-reference.jpg" alt="北京工业大学平乐园校区建筑示意图" loading="lazy" decoding="async"></details>
       <p><a class="campus-site-link" href="https://daixiaokang.com/">返回个人网站 ↗</a></p>
     </div></article>`;
   for(const p of PLACES) {
@@ -33,11 +36,12 @@ export function preparePages() {
   }
 }
 
-export function mountCampus({ rig, stage, world, player, nav }) {
+export function mountCampus(app) {
+  const { rig, stage, world, player, nav } = app;
   connectCampusRoutes(nav);
   const root=document.createElement('div');root.id='campus-ui';
-  root.innerHTML=`<header class="campus-header"><span class="campus-wordmark" aria-hidden="true">北<br>工</span><div><p>平乐园 · BEIJING</p><h1>北工大<span>校园漫游</span></h1><small>沿着熟悉的路，找回校园里的故事。</small></div></header>
-    <nav class="campus-toolbar" aria-label="校园工具"><button type="button" data-campus="overview">↗ 全校鸟瞰</button><button type="button" data-campus="directory" aria-expanded="false" aria-controls="campus-directory">⌕ 地点目录 <span>${PLACES.length}</span></button><button type="button" data-campus="labels" aria-pressed="true">地点名称</button><a href="https://daixiaokang.com/" aria-label="返回个人网站">个人网站 ↗</a></nav>
+  root.innerHTML=`<header class="campus-header"><div class="campus-brand"><span class="campus-brand-logo"><img src="assets/campus-logo.png" width="44" height="28" alt=""></span><div><p>平乐园 · BEIJING</p><h1>北工大<span>校园漫游</span></h1></div></div><nav class="campus-site-links" aria-label="网站入口"><a href="https://daixiaokang.com/" target="_blank" rel="noopener noreferrer"><span>个人网站</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a><a href="https://www.bjut.edu.cn/" target="_blank" rel="noopener noreferrer"><span>北工大官网</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></nav></header>
+    <nav class="campus-toolbar" aria-label="校园工具"><button type="button" data-campus="overview">↗ 全校鸟瞰</button><button type="button" data-campus="directory" aria-expanded="false" aria-controls="campus-directory">⌕ 地点目录 <span>${PLACES.length}</span></button><button type="button" data-campus="labels" aria-pressed="true">地点名称</button></nav>
     <aside id="campus-directory" aria-label="校园地点目录" hidden><div class="campus-directory-head"><div><p>EXPLORE THE CAMPUS</p><h2>想去哪里？</h2></div><button type="button" data-campus="close-directory" aria-label="关闭地点目录">×</button></div>
       <label class="campus-search"><span aria-hidden="true">⌕</span><input type="search" placeholder="搜索建筑、广场或操场" aria-label="搜索校园地点"></label>
       <div class="campus-filters" role="group" aria-label="按区域筛选"><button type="button" data-region="all" aria-pressed="true">全部</button>${categories.map(c=>`<button type="button" data-region="${escape(c)}" aria-pressed="false">${escape(c)}</button>`).join('')}</div>
@@ -46,14 +50,27 @@ export function mountCampus({ rig, stage, world, player, nav }) {
     <div class="campus-mode"><span class="campus-status-dot"></span><strong>校园鸟瞰</strong><span class="campus-mode-copy">点击建筑，打开一段回忆</span></div>
     <div class="campus-welcome"><span>从一张地图，走回一座校园。</span><button type="button" data-campus="walk">开始漫游 <b>→</b></button></div>`;
   document.body.append(root);
+  const multiplayer = mountMultiplayer(app, root);
   const directory=root.querySelector('#campus-directory'),directoryButton=root.querySelector('[data-campus="directory"]'),query=root.querySelector('input'),rows=[...root.querySelectorAll('[data-place]')],status=root.querySelector('.campus-mode strong'),copy=root.querySelector('.campus-mode-copy'),welcome=root.querySelector('.campus-welcome');
-  let region='all',started=false;
-  stage.camera.far=2600;stage.camera.updateProjectionMatrix();
+  let region='all',started=false,lastMode='',labelElapsed=1;
+  const panel=document.getElementById('panel'),closePanel=panel?.querySelector('.close');
+  stage.camera.far=6000;stage.camera.updateProjectionMatrix();
   // Ensure every destination remains reachable after later footprint edits.
   for(const s of STATIONS){const at=nav.nearestStand(...s.at);if(at&&nav.canStand(at.x,at.z))s.at=[at.x,at.z];}
-  function setDirectory(open){directory.hidden=!open;directoryButton.setAttribute('aria-expanded',String(open));if(open)query.focus();}
+  function setDirectory(open){directory.hidden=!open;root.classList.toggle('campus-directory-open',open);directoryButton.setAttribute('aria-expanded',String(open));if(open)query.focus();}
   function filter(){const term=query.value.trim().toLowerCase();let count=0;for(const row of rows){const visible=(region==='all'||row.dataset.regionName===region)&&(!term||row.dataset.search.includes(term));row.hidden=!visible;if(visible)count++;}root.querySelector('.campus-no-results').hidden=count>0;}
-  function overview(){document.querySelector('#panel .close')?.click();rig.recenter(player);rig.showcase(...(innerWidth<700?[INTRO.portrait,INTRO.look]:[INTRO.pos,INTRO.look]));welcome.hidden=false;setDirectory(false);}
+  function frameOverview(){
+    const base=innerWidth<700?INTRO.portrait:INTRO.pos,target=new THREE.Vector3(...INTRO.look),direction=new THREE.Vector3(...base).sub(target).normalize(),right=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),direction).normalize(),up=new THREE.Vector3().crossVectors(direction,right),v=new THREE.Vector3();
+    const ty=Math.tan(THREE.MathUtils.degToRad(stage.camera.fov/2)),tx=ty*stage.camera.aspect;
+    let distance=0;
+    for(const x of [BOUNDS.x0,BOUNDS.x1])for(const z of [BOUNDS.z0,BOUNDS.z1])for(const y of [0,45]){
+      v.set(x,y,z).sub(target);const depth=v.dot(direction);
+      distance=Math.max(distance,depth+Math.abs(v.dot(right))/(tx*.9),depth+Math.abs(v.dot(up))/(ty*(innerWidth<700?.62:.72)));
+    }
+    const position=direction.multiplyScalar(distance*1.03).add(target).toArray();
+    world.campus.overviewPosition=position;rig.showcase(position,INTRO.look);
+  }
+  function overview(){closePanel?.click();rig.recenter(player);frameOverview();welcome.hidden=false;setDirectory(false);}
   function visit(id){window.__home?.go(id);welcome.hidden=true;setDirectory(false);}
   root.addEventListener('click',e=>{
     const target=e.target.closest('button');if(!target)return;
@@ -72,32 +89,45 @@ export function mountCampus({ rig, stage, world, player, nav }) {
   // Select the nearest visible footprint directly, including in the distant overview.
   // Keep the engine's drag, pinch and ground navigation intact.
   const canvas=stage.renderer.domElement,raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),hit=new THREE.Vector3();
-  const bounds=PLACES.map(p=>({id:p.id,box:new THREE.Box3(new THREE.Vector3(p.x-p.w/2,0,p.z-p.d/2),new THREE.Vector3(p.x+p.w/2,Math.max(1,p.h+.7),p.z+p.d/2))}));
+  const bounds=world.campus.pickBoxes.map(q=>({id:q.p.id,box:q.bounds}));
+  for(const p of PLACES)if(p.h===0||p.style==='gate')bounds.push({id:p.id,box:new THREE.Box3(new THREE.Vector3(p.x-p.w/2,0,p.z-p.d/2),new THREE.Vector3(p.x+p.w/2,Math.max(.2,p.h),p.z+p.d/2))});
   let press=null;
   function pickPlace(x,y){
     const rect=canvas.getBoundingClientRect();pointer.set((x-rect.left)/rect.width*2-1,1-(y-rect.top)/rect.height*2);raycaster.setFromCamera(pointer,stage.camera);
     let id=null,distance=Infinity;
     for(const b of bounds)if(raycaster.ray.intersectBox(b.box,hit)){const d=hit.distanceToSquared(raycaster.ray.origin);if(d<distance){id=b.id;distance=d;}}
+    const stadiumHits=raycaster.intersectObjects(world.campus.stadiumMeshes,false);
+    if(stadiumHits.length&&stadiumHits[0].distance**2<distance)id=stadiumHits[0].object.userData.placeId;
     return id;
   }
   canvas.addEventListener('pointerdown',e=>{
     if(press){press=null;return;}
-    if(e.button!==0||document.querySelector('#panel')?.open)return;
+    if(e.button!==0||panel?.open)return;
     press={id:e.pointerId,x:e.clientX,y:e.clientY,place:pickPlace(e.clientX,e.clientY)};
   },true);
   canvas.addEventListener('pointermove',e=>{if(press&&Math.hypot(e.clientX-press.x,e.clientY-press.y)>8)press=null;},true);
   canvas.addEventListener('pointerup',e=>{
     const start=press;press=null;
-    if(start?.id===e.pointerId&&start.place){e.stopImmediatePropagation();visit(start.place);}
+    if(start?.id===e.pointerId&&start.place&&pickPlace(e.clientX,e.clientY)===start.place){e.stopImmediatePropagation();visit(start.place);}
   },true);
   canvas.addEventListener('pointercancel',()=>{press=null;},true);
-  addEventListener('resize',()=>{if(rig.showcaseActive&&!document.querySelector('#panel')?.open)overview();});
+  addEventListener('resize',()=>{if(rig.showcaseActive&&!panel?.open)overview();});
   return {
-    update(){
-      if(!started&&window.__home){started=true;rig.recenter(player);rig.showcase(...(innerWidth<700?[INTRO.portrait,INTRO.look]:[INTRO.pos,INTRO.look]));rig.update(1,player);root.classList.add('ready');}
-      if(rig.showcaseActive){stage.setClearance(Math.max(420,Math.hypot(stage.camera.position.x-48,stage.camera.position.y,stage.camera.position.z-30)*1.2));status.textContent='校园鸟瞰';copy.textContent='点击建筑，打开一段回忆';}
-      else{status.textContent=player.flying?'空中漫游':'步行漫游';copy.textContent=innerWidth<700?'轻触地面移动 · 拖动调整视角':'WASD 移动 · 拖动旋转 · 双击空格飞行';welcome.hidden=true;}
+    update(dt){
+      if(!started&&window.__home){started=true;rig.recenter(player);frameOverview();rig.update(1,player);root.classList.add('ready');}
+      // showcaseActive becomes false as soon as the return starts, while the
+      // camera is still high above campus. Keep the follow target in view for
+      // the entire descent instead of restoring the short walking far plane.
+      const followDistance=stage.camera.position.distanceTo(player.pos);
+      stage.setClearance(rig.showcaseActive?Math.max(900,Math.hypot(stage.camera.position.x-INTRO.look[0],stage.camera.position.y,stage.camera.position.z-INTRO.look[2])*1.2):followDistance);
+      if(!rig.showcaseActive)welcome.hidden=true;
+      labelElapsed+=dt;if(labelElapsed>.12){stage.camera.updateMatrixWorld();world.labels.userData.update(stage.camera,innerWidth,innerHeight);labelElapsed=0;}
+      const mode=rig.showcaseActive?'校园鸟瞰':player.flying?'空中漫游':'步行漫游',modeKey=mode+(innerWidth<700?'mobile':'desktop');
+      if(lastMode!==modeKey){lastMode=modeKey;status.textContent=mode;copy.textContent=rig.showcaseActive?'点击建筑，打开一段回忆':innerWidth<700?'轻触地面移动 · 拖动调整视角':'WASD 移动 · 拖动旋转 · 双击空格飞行';}
+      multiplayer.update(dt);
     },
     overview,
+    multiplayer,
+    get mapPeers(){return multiplayer.mapPeers;},
   };
 }

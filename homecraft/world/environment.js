@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { buildingMassing } from './architecture.js';
 import { rng,canvasTexture } from '@engine/world/textures.js';
 import { BUILDINGS,FIELDS,PLACES,ROADS,LAWNS } from './places.js';
-import { CAMPUS_OUTLINE,WEST_PARCEL,BOUNDS,roadOverlapsBox,sampleRoad,COURT_COLUMNS,COURT_ROWS } from './reference-layout.js';
-import { PARKING,BIKE_RACKS,PERGOLA } from './details-layout.js';
+import { CAMPUS_OUTLINE,WEST_PARCEL,BOUNDS,LANDSCAPE_PATCHES,LAKE_OUTLINE,PARK_PATHS,pointInPolygon,roadOverlapsBox,sampleRoad,courtCells,footballPitch,fromReference } from './reference-layout.js';
+import { PARKING,BIKE_RACKS,PERGOLA,BENCHES } from './details-layout.js';
 
 const paint=tint=>({tex:'paint',tint}),metal=paint(0x536d65),stone=paint(0xd5d2be);
 const overlap=(a,b,pad=0)=>Math.abs(a.x-b.x)<(a.w+b.w)/2+pad&&Math.abs(a.z-b.z)<(a.d+b.d)/2+pad;
@@ -13,22 +13,21 @@ export function buildEnvironment(B,V,grid,signs) {
   const foot=(x,z,w,d)=>obstacles.push({x0:x-w/2,x1:x+w/2,z0:z-d/2,z1:z+d/2,level:0});
   const reserved=[...PARKING.map(p=>({...p,w:3,d:5})),...BIKE_RACKS,PERGOLA];
   const masses=BUILDINGS.flatMap(p=>p.style==='stadium'?[p]:buildingMassing(p));
-  const clear=(x,z,w,d,roads=true)=>!masses.some(p=>overlap({x,z,w,d},p,.7))&&!FIELDS.some(p=>overlap({x,z,w,d},p,.5))&&(!roads||!ROADS.some(p=>roadOverlapsBox(p,{x,z,w,d},.3)))&&!PLACES.some(p=>Math.hypot(x-p.at[0],z-p.at[1])<2.2+Math.max(w,d)/3);
+  const clear=(x,z,w,d,roads=true)=>!masses.some(p=>overlap({x,z,w,d},p,.7))&&!pointInPolygon(x,z,LAKE_OUTLINE)&&!FIELDS.some(p=>overlap({x,z,w,d},p,.5))&&(!roads||!ROADS.some(p=>roadOverlapsBox(p,{x,z,w,d},.3)))&&!PLACES.some(p=>Math.hypot(x-p.at[0],z-p.at[1])<2.2+Math.max(w,d)/3);
   const random=rng(1960),trees=[];
-  const tree=(x,z)=>{if(trees.length<270&&x>BOUNDS.x0+4&&x<BOUNDS.x1-4&&z>BOUNDS.z0+4&&z<BOUNDS.z1-4&&clear(x,z,3,3)&&!reserved.some(p=>overlap({x,z,w:3,d:3},p,.6))&&!trees.some(t=>Math.hypot(x-t[0],z-t[1])<3.2))trees.push([x,z]);};
-  for(const[cx,cz,w,d]of LAWNS)for(let x=cx-w/2+2.5;x<cx+w/2;x+=8)for(let z=cz-d/2+2.5;z<cz+d/2;z+=8)tree(x+(random()-.5)*2,z+(random()-.5)*2);
-  for(const r of ROADS)for(const side of [-1,1])for(const [x,z] of sampleRoad(r,20,side*(r.width/2+3.2)))tree(x,z);
+  const tree=(x,z)=>{if(trees.length<520&&x>BOUNDS.x0+4&&x<BOUNDS.x1-4&&z>BOUNDS.z0+4&&z<BOUNDS.z1-4&&clear(x,z,3,3)&&!PARK_PATHS.some(points=>roadOverlapsBox({points,width:3.1},{x,z,w:3,d:3},.8))&&!reserved.some(p=>overlap({x,z,w:3,d:3},p,.6))&&!trees.some(t=>Math.hypot(x-t[0],z-t[1])<6))trees.push([x,z]);};
+  for(const patch of LANDSCAPE_PATCHES){const xs=patch.map(p=>p[0]),zs=patch.map(p=>p[1]);for(let x=Math.min(...xs)+3;x<Math.max(...xs);x+=15)for(let z=Math.min(...zs)+3;z<Math.max(...zs);z+=15)if(pointInPolygon(x,z,patch))tree(x+(random()-.5)*4,z+(random()-.5)*4);}
+  for(const[cx,cz,w,d]of LAWNS)for(let x=cx-w/2+3;x<cx+w/2;x+=12)for(let z=cz-d/2+3;z<cz+d/2;z+=12)tree(x+(random()-.5)*2,z+(random()-.5)*2);
+  for(const r of ROADS)for(const side of [-1,1])for(const [x,z] of sampleRoad(r,32,side*(r.width/2+4)))tree(x,z);
   trees.forEach(([x,z],i)=>{
     const h=3+random()*1.7,w=4.2+random()*1.2,color=[0x83a36a,0x92ab73,0x749867,0xa4b781][i%4];
     V.box(x,.05,z,.37,h,.37,{tex:'log'});
     if(i%5===0) {
-      for(let j=0;j<4;j++)V.box(x,h-.6+j*.85,z,w*(1-j*.19)*.7,1.15,w*(1-j*.19)*.7,{tex:'hedge',tint:color});
+      for(let j=0;j<3;j++)V.box(x,h-.6+j*1.05,z,w*(1-j*.24)*.7,1.3,w*(1-j*.24)*.7,{tex:'hedge',tint:color});
     } else {
-      for(const s of [-1,1])V.box(x+s*.4,h-1,z,.17,1.4,.17,{tex:'log'},{rz:s*.65});
       V.box(x,h-.5,z,w,1.6,w*.85,{tex:'hedge',tint:color});
       V.box(x+.45,h+.85,z-.25,w*.74,1.4,w*.69,{tex:'hedge',tint:color});
       V.box(x-.5,h+.5,z+.2,w*.66,1.25,w*.7,{tex:'hedge',tint:color});
-      V.box(x,h+2,z,w*.45,.7,w*.4,{tex:'hedge',tint:color});
     }
     B.box(x,.09,z,1.2,.08,1.2,paint(0xa4ae95));
     grid.fill(Math.floor(x),0,Math.floor(z),Math.floor(x)+1,3,Math.floor(z)+1,'campus-collision');
@@ -45,7 +44,7 @@ export function buildEnvironment(B,V,grid,signs) {
     for(let i=0;i<5;i++)V.box(x-w*.36+i*w*.18,1.03,z,.18,.14,.18,paint(i%2?0xe1c69a:0xc59ca1));
     foot(x,z,w,d);
   }
-  for(const[x,z,ry]of[[-89,33,0],[-54,34,0],[-94,114,0],[24,-57,0],[-20,176,0],[74,153,0],[286,98,Math.PI/2]])if(clear(x,z,2.4,1.2)){bench(x,z,ry);if(clear(x+3,z,2.3,1.2))planter(x+3,z);}
+  for(const{x,z}of BENCHES)if(clear(x,z,2.4,1.2)){bench(x,z);if(clear(x+3,z,2.3,1.2))planter(x+3,z);}
   for(const p of PLACES.filter(p=>p.style==='square')) {
     for(const s of [-1,1]) {
       const x=p.x+s*(p.w/2-1.8),z=p.z+p.d/2-1;
@@ -89,17 +88,27 @@ export function buildEnvironment(B,V,grid,signs) {
     B.box(x,height,z,.95,.12,.35,metal);B.box(x,height-.08,z,.7,.08,.27,{tex:'paint',tint:0xffe2a8,emissive:.9});
     if(Math.abs(x%24)<5)bakes.push({id:`street-${x}-${z}`,position:[x,height-.2,z],power:1.5,radius:9,direction:[0,-1,0]});
   }
-  for(const r of ROADS)for(const [x,z] of sampleRoad(r,28,r.width/2+1.1))lamp(x,z);
+  for(const r of ROADS)for(const [x,z] of sampleRoad(r,44,r.width/2+1.1))if(clear(x,z,.5,.5,false))lamp(x,z);
   for(const p of PLACES) {
     const x=p.at[0]+1.5,z=p.at[1];
     B.box(x,0,z,.12,1.65,.12,metal);B.box(x,1.2,z,1.25,.5,.12,paint(0x426f63));
     signs.push({id:p.id,x,y:1.45,z:z+.067,w:1.22,h:.45});
   }
   // Waste sorting bins placed beside seating, away from station landing points.
-  for(const[x,z]of[[-52,34],[26,-57],[-94,114],[74,155]])if(clear(x,z,1.1,.7)) {
+  for(const{x,z}of BENCHES.map(p=>({x:p.x+4.8,z:p.z})))if(clear(x,z,1.1,.7)) {
     for(const s of [-1,1]){B.box(x+s*.28,0,z,.48,.9,.55,paint(s<0?0x688f8e:0x8d9d72));B.box(x+s*.28,.9,z,.52,.13,.6,metal);B.box(x+s*.28,.62,z+.29,.26,.1,.03,paint(0xd6ddc6));}foot(x,z,1.1,.7);
   }
-  const flag={x:43,z:-71};B.box(flag.x,.08,flag.z,1.6,.2,1.6,stone);B.box(flag.x,.28,flag.z,.1,7.5,.1,metal);B.box(flag.x+.8,6.3,flag.z,1.5,.95,.055,paint(0xb96852));foot(flag.x,flag.z,1.6,1.6);
+  const flag=fromReference(527,240);B.box(flag.x,.08,flag.z,1.6,.2,1.6,stone);B.box(flag.x,.28,flag.z,.1,7.5,.1,metal);B.box(flag.x+.8,6.3,flag.z,1.5,.95,.055,paint(0xb96852));foot(flag.x,flag.z,1.6,1.6);
+
+  // A static ornamental lake: visible shore stones and non-walkable water,
+  // without changing the engine's swimming or pool implementation.
+  const lx=LAKE_OUTLINE.map(p=>p[0]),lz=LAKE_OUTLINE.map(p=>p[1]);
+  for(let x=Math.floor(Math.min(...lx));x<Math.max(...lx);x++)for(let z=Math.floor(Math.min(...lz));z<Math.max(...lz);z++)if(pointInPolygon(x+.5,z+.5,LAKE_OUTLINE))grid.fill(x,0,z,x+1,1,z+1,'campus-collision');
+  for(let i=0;i<LAKE_OUTLINE.length;i++){
+    const a=LAKE_OUTLINE[i],b=LAKE_OUTLINE[(i+1)%LAKE_OUTLINE.length],dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
+    B.box((a[0]+b[0])/2,.08,(a[1]+b[1])/2,.6,.3,length+.3,stone,{ry:Math.atan2(dx,dz)});
+    if(i%3===0)for(let j=0;j<5;j++)V.box(a[0]+j*.22,.1,a[1]-.6,.08,.8+(j%3)*.25,.08,paint(0x7b9865));
+  }
 
   function fence(x0,z0,x1,z1,height=2.6) {
     const length=Math.hypot(x1-x0,z1-z0),base=fenceVertices.length/3;
@@ -113,12 +122,11 @@ export function buildEnvironment(B,V,grid,signs) {
     const x0=f.x-f.w/2,z0=f.z-f.d/2,x1=f.x+f.w/2,z1=f.z+f.d/2;
     fence(x0,z0,x1,z0);fence(x0,z0,x0,z1);fence(x1,z0,x1,z1);
     fence(x0,z1,f.x-1.2,z1);fence(f.x+1.2,z1,x1,z1);
-    const cols=COURT_COLUMNS[f.id],rows=COURT_ROWS[f.id],cw=f.w/cols,cd=f.d/rows;
-    for(let ix=0;ix<cols;ix++)for(let iz=0;iz<rows;iz++) {
-      const cx=x0+(ix+.5)*cw,cz=z0+(iz+.5)*cd;
-      if(f.id==='tennis')fence(cx-cw/2+2.2,cz,cx+cw/2-2.2,cz,.95);
+    for(const cell of courtCells(f)) {
+      const {x:cx,z:cz,w:cw,d:cd}=cell;
+      if(f.id==='tennis')fence(cx-cw/2,cz,cx+cw/2,cz,.95);
       else for(const side of [-1,1]) {
-        const z=cz+side*(cd/2-2),toward=-side;
+        const z=cz+side*(cd/2+.5),toward=-side;
         B.box(cx,0,z,.13,3.05,.13,metal);B.box(cx,2.75,z+toward*.15,1.4,.85,.1,stone);
         B.box(cx,2.85,z+toward*.21,.75,.45,.04,paint(0xa3b9aa));B.box(cx,2.63,z+toward*.58,.55,.07,.6,paint(0xaf704d));
         for(const sx of [-1,1])B.box(cx+sx*.23,2.28,z+toward*.58,.04,.35,.5,stone);
@@ -126,9 +134,9 @@ export function buildEnvironment(B,V,grid,signs) {
     }
   }
   for(const f of FIELDS.filter(p=>p.style==='field')) {
-    const length=f.d-f.w+8;
+    const length=footballPitch(f).length;
     for(const side of [-1,1]) {
-      const z=f.z+side*(length/2-1),back=z+side*1.2;
+      const z=f.z+side*length/2,back=z+side*1.2;
       for(const dx of [-3,3]){B.box(f.x+dx,0,z,.1,2.1,.1,stone);B.box(f.x+dx,0,back,.08,1.9,.08,stone);}
       B.box(f.x,2,z,6,.1,.1,stone);fence(f.x-3,back,f.x+3,back,1.9);
       for(const dx of [-3,3])fence(f.x+dx,z,f.x+dx,back,1.9);
@@ -144,7 +152,7 @@ export function buildEnvironment(B,V,grid,signs) {
   }
   // Decorative rails follow the irregular land parcels; gates remain open.
   for(const outline of [CAMPUS_OUTLINE,WEST_PARCEL])for(let i=0;i<outline.length;i++) {
-    const a=outline[i],b=outline[(i+1)%outline.length],dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz),steps=Math.ceil(length/5);
+    const a=outline[i],b=outline[(i+1)%outline.length],dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz),steps=Math.ceil(length/10);
     for(let j=0;j<steps;j++) {
       const x=a[0]+dx*(j+.5)/steps,z=a[1]+dz*(j+.5)/steps;
       if(PLACES.some(p=>p.style==='gate'&&Math.hypot(x-p.x,z-p.z)<14)||BUILDINGS.some(p=>overlap({x,z,w:1,d:1},p,1)))continue;

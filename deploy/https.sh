@@ -6,16 +6,16 @@ cd -- "$PROJECT_DIR"
 
 case "${1:-}" in
   start)
-    docker compose up -d --build daixiaokang_acme
+    docker compose up -d --build acme
     ;;
-  issue|renew|reload|status)
-    docker compose run --rm --no-deps daixiaokang_acme "$1"
+  issue|issue-force|renew|reload|status)
+    docker compose run --rm --no-deps acme "$1"
     ;;
   logs)
-    docker compose logs --tail=100 daixiaokang_acme
+    docker compose logs --tail=100 acme
     ;;
   *)
-    printf 'Usage: bash deploy/https.sh {start|issue|renew|reload|status|logs}\n'
+    printf 'Usage: bash deploy/https.sh {start|issue|issue-force|renew|reload|status|logs}\n'
     exit 2
     ;;
 esac

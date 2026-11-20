@@ -23,7 +23,7 @@ After importing the repository, configure:
 ## Your Own Server
 
 ```sh
-DEPLOY_TARGET=user@your-server:/var/www/site/ tools/build.sh --deploy
+DEPLOY_TARGET=user@your-server:/var/www/site/ tools/build.sh --deploy_back20261119
 ```
 
 The deploy command syncs the target directory to match the contents of `dist/`, including deleting extraneous files in the target directory. `DEPLOY_TARGET` should point to a directory dedicated to this site.

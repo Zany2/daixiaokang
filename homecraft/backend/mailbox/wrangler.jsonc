@@ -6,7 +6,7 @@
 //   3. npx wrangler kv namespace create LIMITS   (paste the id below)
 //   4. npx wrangler secret put SALT              (any long random string)
 //   5. npx wrangler secret put TURNSTILE_SECRET_KEY
-//   6. npx wrangler deploy
+//   6. npx wrangler deploy_back20261119
 // Then put https://mailbox.example.com/send in home.config.js `mailbox.endpoint`.
 // Set mailbox.turnstileSitekey to your Turnstile public sitekey (see README.md).
 {

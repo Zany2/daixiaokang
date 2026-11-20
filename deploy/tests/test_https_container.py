@@ -20,7 +20,13 @@ def shell_path(path):
 ACME_MOCK = """#!/bin/sh
 printf 'acme %s\\n' "$*" >> "$TEST_LOG"
 case "$1" in
- --issue) exit "${TEST_ISSUE_RC:-0}" ;;
+ --issue)
+  if [ "${TEST_ISSUE_RC:-0}" = 0 ]; then
+   mkdir -p "$HTTPS_CONFIG_HOME/daixiaokang.com_ecc"
+   cp "$TEST_SOURCE_CERT" "$HTTPS_CONFIG_HOME/daixiaokang.com_ecc/daixiaokang.com.cer"
+  fi
+  exit "${TEST_ISSUE_RC:-0}"
+  ;;
  --install-cert)
   shift
   while [ "$#" -gt 0 ]; do
@@ -32,7 +38,7 @@ case "$1" in
    esac
   done
   printf test-key > "$key"
-  printf test-cert > "$cert"
+  cp "$HTTPS_CONFIG_HOME/daixiaokang.com_ecc/daixiaokang.com.cer" "$cert"
   sh -c "$hook"
   ;;
  --cron) exit "${TEST_RENEW_RC:-0}" ;;
@@ -68,6 +74,26 @@ class CertificateContainerTests(unittest.TestCase):
                 cls.shell = str(candidate)
         if not cls.shell:
             raise unittest.SkipTest("A POSIX shell is required")
+        cls.fixture_dir = tempfile.TemporaryDirectory(prefix="https-cert-fixtures-")
+        cls.addClassCleanup(cls.fixture_dir.cleanup)
+        cls.certificates = {}
+        for label, domains in {
+            "current": "daixiaokang.com,api.daixiaokang.com,vantage.daixiaokang.com,ragflow.daixiaokang.com",
+            "stale": "daixiaokang.com,api.daixiaokang.com,vantage.daixiaokang.com",
+            "wrong": "ragflow.daixiaokang.com.example.test",
+        }.items():
+            cert = Path(cls.fixture_dir.name) / (label + ".pem")
+            key = Path(cls.fixture_dir.name) / (label + ".key")
+            san = "subjectAltName=" + ",".join("DNS:" + d for d in domains.split(","))
+            result = subprocess.run(
+                [cls.shell, "-c", 'openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -days 1 -subj /CN=test.example -keyout "$1" -out "$2" -addext "$3"',
+                 "fixture", shell_path(key), shell_path(cert), san],
+                env={**os.environ, "MSYS2_ARG_CONV_EXCL": "/CN="},
+                capture_output=True, text=True, timeout=15,
+            )
+            if result.returncode:
+                raise RuntimeError("Cannot create offline certificate fixtures: " + result.stderr)
+            cls.certificates[label] = cert.read_bytes()
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="https-container-test-")
@@ -86,6 +112,9 @@ class CertificateContainerTests(unittest.TestCase):
         self.write(self.script, source)
         self.write(self.bin / "acme.sh", ACME_MOCK)
         self.write(self.bin / "docker", DOCKER_MOCK)
+        # Real self-signed certificates exercise OpenSSL SAN parsing offline.
+        self.fixture = self.root / "certificate.pem"
+        self.fixture.write_bytes(self.certificates["current"])
         self.write(self.bin / "supercronic", """#!/bin/sh
 printf 'scheduler %s\\n' "$*" >> "$TEST_LOG"
 cat "${2:-$1}" >> "$TEST_LOG"
@@ -102,6 +131,7 @@ exec "$@"
         self.env.update({
             "PATH": str(self.bin) + os.pathsep + self.env["PATH"],
             "TEST_LOG": shell_path(self.log),
+            "TEST_SOURCE_CERT": shell_path(self.fixture),
             "HTTPS_CONFIG_HOME": shell_path(self.state),
             "HTTPS_CERT_DIR": shell_path(self.certs),
             "ACME_EMAIL": "test@example.test",
@@ -110,6 +140,7 @@ exec "$@"
             # Git for Windows may not have the Asia/Shanghai zoneinfo file.
             "TZ": "UTC",
         })
+        self.env.pop("ACME_DNS_SLEEP", None)
 
     @staticmethod
     def write(path, text):
@@ -132,10 +163,10 @@ exec "$@"
         self.assert_success(self.run_action("renew"))
         commands = self.commands()
         self.assertIn("--dns dns_tencent", commands)
-        self.assertIn(
-            "-d daixiaokang.com -d api.daixiaokang.com -d vantage.daixiaokang.com",
-            commands,
-        )
+        self.assertIn("--dnssleep 300", commands)
+        self.assertIn("-d daixiaokang.com -d api.daixiaokang.com -d vantage.daixiaokang.com -d ragflow.daixiaokang.com", commands)
+        self.assertIn("docker exec gateway nginx -t", commands)
+        self.assertIn("docker exec gateway nginx -s reload", commands)
         self.assertLess(commands.index("--issue"), commands.index("--install-cert"))
         self.assertLess(commands.index("nginx -t"), commands.index("nginx -s reload"))
         self.assertTrue((self.state / "https-installed").exists())
@@ -148,10 +179,46 @@ exec "$@"
         self.assertNotIn("docker ", self.commands())
         self.assertFalse((self.state / "https-installed").exists())
 
+    def test_dns_propagation_wait_can_be_overridden(self):
+        self.assert_success(self.run_action("issue", ACME_DNS_SLEEP="600"))
+        self.assertIn("--dnssleep 600", self.commands())
+
+    def test_invalid_dns_wait_fails_before_external_calls(self):
+        for value in ["0", "-1", "abc", "1.5"]:
+            with self.subTest(value=value):
+                self.assertNotEqual(self.run_action("issue", ACME_DNS_SLEEP=value).returncode, 0)
+                self.assertNotIn("acme ", self.commands())
+
     def test_not_due_still_registers_install_hook(self):
+        self.assert_success(self.run_action("issue"))
+        self.log.write_text("", encoding="utf-8")
         self.assert_success(self.run_action("issue", TEST_ISSUE_RC="2"))
         self.assertIn("--install-cert", self.commands())
         self.assertNotIn("--force", self.commands())
+
+    def test_skipped_expansion_does_not_install_stale_certificate(self):
+        self.assert_success(self.run_action("issue"))
+        source = self.state / "daixiaokang.com_ecc" / "daixiaokang.com.cer"
+        source.write_bytes(self.certificates["stale"])
+        live = (self.certs / "fullchain.pem").read_bytes()
+        self.log.write_text("", encoding="utf-8")
+        result = self.run_action("issue", TEST_ISSUE_RC="2")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("missing ragflow.daixiaokang.com", result.stdout + result.stderr)
+        self.assertNotIn("--install-cert", self.commands())
+        self.assertNotIn("nginx -s reload", self.commands())
+        self.assertEqual((self.certs / "fullchain.pem").read_bytes(), live)
+
+    def test_force_recovery_is_explicit_and_keeps_dns_wait(self):
+        self.assert_success(self.run_action("issue-force"))
+        self.assertIn("--issue --force", self.commands())
+        self.assertIn("--dnssleep 300", self.commands())
+        self.assertIn("--install-cert", self.commands())
+
+    def test_success_with_wrong_sans_is_rejected_before_install(self):
+        self.fixture.write_bytes(self.certificates["wrong"])
+        self.assertNotEqual(self.run_action("issue").returncode, 0)
+        self.assertNotIn("--install-cert", self.commands())
 
     def test_stopped_nginx_keeps_cert_and_retries_reload(self):
         self.assert_success(self.run_action("issue", TEST_NGINX_RUNNING="false"))

@@ -4,8 +4,8 @@
 # gzip copy (and a Brotli one when `brotli` is installed) for servers that can
 # send them as they are (Caddy `precompressed`, Nginx `gzip_static`). The
 # source files stay as they are, readable.
-# Usage: tools/build.sh [--deploy]
-#   --deploy   also rsync dist/ to $DEPLOY_TARGET (e.g. user@host:/var/www/site/)
+# Usage: tools/build.sh [--deploy_back20261119]
+#   --deploy_back20261119   also rsync dist/ to $DEPLOY_TARGET (e.g. user@host:/var/www/site/)
 # Needs Node.js (npx) to minify; without it the modules are copied unminified.
 set -euo pipefail
 

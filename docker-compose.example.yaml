@@ -43,16 +43,16 @@ services:
     container_name: daixiaokang_acme
     image: daixiaokang-acme:latest
     build:
-      context: ./deploy
+      context: deploy_back20261119
       dockerfile: acme.Dockerfile
     restart: unless-stopped
     env_file:
-      - ./deploy/https.env
+      - deploy_back20261119/https.env
     environment:
       - TZ=Asia/Shanghai
       - AUTO_UPGRADE=0
     volumes:
-      - ./deploy/acme:/acme.sh
+      - ./deploy_back20261119/acme:/acme.sh
       - ./frontend/ssl:/certs
       # Allows the renewal hook to check and reload the Nginx container.
       - /var/run/docker.sock:/var/run/docker.sock

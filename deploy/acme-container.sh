@@ -8,8 +8,10 @@ SCRIPT="$(cd -- "$(dirname -- "$0")" && pwd)/$(basename -- "$0")"
 MAIN_DOMAIN=daixiaokang.com
 API_DOMAIN=api.daixiaokang.com
 VANTAGE_DOMAIN=vantage.daixiaokang.com
-NGINX_CONTAINER=daixiaokang_frontend
+RAGFLOW_DOMAIN=ragflow.daixiaokang.com
+NGINX_CONTAINER=gateway
 ACME_BIN="$(command -v acme.sh)"
+force_issue=0
 
 log() { printf '[https] %s\n' "$*"; }
 fail() { printf '[https] ERROR: %s\n' "$*" >&2; exit 1; }
@@ -42,15 +44,34 @@ reload_nginx() {
   rm -f "$CONFIG_HOME/reload-pending"
   log 'Nginx configuration checked and reloaded.'
 }
+verify_domains() {
+  [ -s "$1" ] || fail "Certificate not found: $1. Run issue-force once to recover a skipped domain expansion."
+  san="$(openssl x509 -in "$1" -noout -ext subjectAltName)" || fail 'Cannot read certificate SANs.'
+  for domain in "$MAIN_DOMAIN" "$API_DOMAIN" "$VANTAGE_DOMAIN" "$RAGFLOW_DOMAIN"; do
+    printf '%s\n' "$san" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -Fx "DNS:$domain" >/dev/null ||
+      fail "Certificate is missing $domain; refusing to install it. Run issue-force once to recover a skipped domain expansion."
+  done
+}
 issue() {
   require_config
+  dns_sleep="${ACME_DNS_SLEEP:-300}"
+  case "$dns_sleep" in
+    ''|*[!0-9]*) fail 'ACME_DNS_SLEEP must be a positive integer in seconds.' ;;
+  esac
+  [ "$dns_sleep" -gt 0 ] || fail 'ACME_DNS_SLEEP must be greater than zero.'
+  # Force only through the explicit recovery action, never scheduled renewal.
+  set --
+  if [ "${force_issue:-0}" = 1 ]; then set -- --force; fi
   result=0
-  "$ACME_BIN" --issue --config-home "$CONFIG_HOME" --server letsencrypt \
-    --accountemail "$ACME_EMAIL" --dns dns_tencent --keylength ec-256 \
-    -d "$MAIN_DOMAIN" -d "$API_DOMAIN" -d "$VANTAGE_DOMAIN" || result=$?
+  "$ACME_BIN" --issue "$@" --config-home "$CONFIG_HOME" --cert-home "$CONFIG_HOME" --server letsencrypt \
+    --accountemail "$ACME_EMAIL" --dns dns_tencent --dnssleep "$dns_sleep" --keylength ec-256 \
+    -d "$MAIN_DOMAIN" -d "$API_DOMAIN" -d "$VANTAGE_DOMAIN" -d "$RAGFLOW_DOMAIN" || result=$?
   # acme.sh returns 2 when the existing certificate is not due for renewal.
   [ "$result" -eq 0 ] || [ "$result" -eq 2 ] || return "$result"
-  "$ACME_BIN" --install-cert --config-home "$CONFIG_HOME" -d "$MAIN_DOMAIN" --ecc \
+  # A failed expansion can leave saved order domains ahead of the actual cert.
+  # Check the certificate, not the saved order, before touching live files.
+  verify_domains "$CONFIG_HOME/${MAIN_DOMAIN}_ecc/${MAIN_DOMAIN}.cer"
+  "$ACME_BIN" --install-cert --config-home "$CONFIG_HOME" --cert-home "$CONFIG_HOME" -d "$MAIN_DOMAIN" --ecc \
     --key-file "$CERT_DIR/privkey.pem" --fullchain-file "$CERT_DIR/fullchain.pem" \
     --reloadcmd "sh '$SCRIPT' reload"
   touch "$CONFIG_HOME/https-installed"
@@ -87,14 +108,15 @@ daemon() {
 
 case "${1:-daemon}" in
   daemon) daemon ;;
-  issue|renew) locked "$1" ;;
+  issue|issue-force|renew) locked "$1" ;;
   # Internal actions hold the lock. Reload is also called as an acme.sh hook.
   _issue) prepare; issue ;;
+  _issue-force) prepare; force_issue=1; issue ;;
   _renew) prepare; renew ;;
   reload) reload_nginx ;;
   status)
     [ -s "$CERT_DIR/fullchain.pem" ] || fail 'No certificate found; check the certificate container logs.'
     openssl x509 -in "$CERT_DIR/fullchain.pem" -noout -subject -issuer -dates -ext subjectAltName
     ;;
-  *) fail 'Usage: daemon | issue | renew | reload | status' ;;
+  *) fail 'Usage: daemon | issue | issue-force | renew | reload | status' ;;
 esac

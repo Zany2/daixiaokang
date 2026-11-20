@@ -11,10 +11,43 @@ Zany 个人网站的 FastAPI 异步后端，为 AI 助手、文章评论和留�
 - 请求 ID 与访问日志
 - 控制台与 UTF-8 文件日志，按日期或大小滚动并自动清理旧备份
 - CORS、可信 Host、安全响应头中间件
+- 校园联机 WebSocket：房间、访客角色状态、文字聊天、Redis 跨进程广播和离线清理
+
+## 校园多人联机后端
+
+新增 `WS /api/campus/ws`，复用当前 FastAPI 服务和 Redis，无需新增数据库表。
+默认房间为 `bjut`，每房间准入上限为 1024 人，同一 IP 最多 4 条连接。首次连接发送
+`join` 消息，服务端返回玩家 ID、初始位置和其他玩家；随后支持位置、动作、
+文字聊天及心跳同步。接口和消息协议见 [校园联机接入文档](docs/campus.md)。
+
+满员时返回 `fallback`（`mode=single`、`reason=room_full`），然后以 `1000` 正常关闭连接，
+不占在线名额。前端接入联机时应保留当前地图与位置，停止联网并继续单人漫游。
+1024 是配置的准入上限，尚未经过同等人数的性能压测。
+
+`.env.example` 和 `.env.docker.example` 已包含 `CAMPUS_*` 配置示例，真实环境文件
+没有修改。浏览器来源必须在 `CAMPUS_ALLOWED_ORIGINS` 中精确列出；它独立于 HTTP CORS。
+多 worker / 多容器需要连接同一 Redis 和相同配置；Redis 不可用时拒绝联机，避免玩家分散到互不可见的进程内房间。
+
+The `homecraft` client automatically joins the campus room, displays random guest
+nicknames and online counts, and synchronizes nearby avatars and map markers.
+Chat accepts up to 200 Unicode code points. The page keeps its latest 100 messages
+in memory until refresh; speech bubbles expire after three seconds.
+这是一套访客状态同步接口，昵称不代表登录身份；暂不包含账号、语音、地图编辑、
+聊天持久化或服务端物理模拟。位置只校验数值、边界及递增序号，不能当作游戏防作弊系统。
+
+离线测试在 `backend/` 目录执行，不连接业务 PostgreSQL、Redis，也不调用模型接口：
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m unittest tests.test_campus -v
+```
+
+测试使用 fakeredis 的 Lua 引擎执行实际房间脚本，覆盖多实例广播、房间隔离、
+并发人数限制、来源与消息校验、心跳、限速、慢客户端和停机清理。
 
 ## 本地启动（Windows PowerShell）
 
-仓库仅保存 `.env.example` 和 `.env.docker.example`，真实 `.env`、`.env.docker` 均由 Git 忽略。Docker 部署时从 `.env.docker.example` 创建 `.env.docker`，替换 `CHANGE_ME` 并填写 AI 密钥；完整配置迁移关系见 [配置示例与迁移](../deploy/CONFIGURATION.md)。
+仓库仅保存 `.env.example` 和 `.env.docker.example`，真实 `.env`、`.env.docker` 均由 Git 忽略。Docker 部署时从 `.env.docker.example` 创建 `.env.docker`，替换 `CHANGE_ME` 并填写 AI 密钥；完整配置迁移关系见 [配置示例与迁移](../deploy_back20261119/CONFIGURATION.md)。
 
 需要 Python 3.11 或以上（AI 服务使用 `asyncio.timeout`）、PostgreSQL 和 Redis。以下命令在 `backend/` 目录执行；先创建 `.env` 指定的数据库并启动 Redis。
 

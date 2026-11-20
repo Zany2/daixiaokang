@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -35,6 +35,50 @@ class Settings(BaseSettings):
 
     analytics_enabled: bool = True
     analytics_geo_dir: Path = Path("data/geo")
+
+    campus_enabled: bool = True
+    campus_rooms: list[str] = Field(default_factory=lambda: ["bjut"])
+    campus_allowed_origins: list[str] = Field(default_factory=lambda: [
+        "https://daixiaokang.com", "https://www.daixiaokang.com",
+        "http://localhost:4175", "http://127.0.0.1:4175",
+    ])
+    campus_room_capacity: int = Field(default=1024, ge=2, le=1024)
+    campus_connections_per_ip: int = Field(default=4, ge=1, le=100)
+    campus_heartbeat_seconds: float = Field(default=15, ge=1, le=30)
+    campus_idle_seconds: float = Field(default=45, ge=5, le=120)
+    campus_lease_seconds: int = Field(default=90, ge=30, le=300)
+
+    @model_validator(mode="after")
+    def validate_campus_timing(self):
+        if self.campus_idle_seconds < self.campus_heartbeat_seconds * 2:
+            raise ValueError("Campus idle timeout must cover at least two heartbeats")
+        if self.campus_lease_seconds <= self.campus_idle_seconds + self.campus_heartbeat_seconds:
+            raise ValueError("Campus presence lease must exceed idle timeout plus heartbeat")
+        return self
+
+    @field_validator("campus_rooms")
+    @classmethod
+    def validate_campus_rooms(cls, value: list[str]) -> list[str]:
+        import re
+        if not 1 <= len(value) <= 16 or len(set(value)) != len(value):
+            raise ValueError("Campus must have 1 to 16 unique rooms")
+        if any(not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,31}", room) for room in value):
+            raise ValueError("Invalid campus room name")
+        return value
+
+    @field_validator("campus_allowed_origins")
+    @classmethod
+    def validate_campus_origins(cls, value: list[str]) -> list[str]:
+        from urllib.parse import urlsplit
+        if not value:
+            raise ValueError("Campus requires explicit allowed origins")
+        for origin in value:
+            parsed = urlsplit(origin)
+            if (parsed.scheme not in {"http", "https"} or not parsed.hostname
+                    or parsed.username or parsed.password or parsed.path
+                    or parsed.query or parsed.fragment or "*" in origin):
+                raise ValueError("Campus origins must be exact http(s) origins")
+        return value
 
     feedback_rate_limit_enabled: bool = True
     feedback_write_interval_seconds: int = Field(default=10, ge=1, le=3600)
