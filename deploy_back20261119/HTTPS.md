@@ -1,0 +1,179 @@
+# 容器内 HTTPS 申请与自动续期
+
+适用服务器目录：`/daixk/project/daixiaokang`。证书服务 `daixiaokang_acme` 使用 acme.sh、Let's Encrypt 和腾讯云 DNSPod DNS 验证，为 `daixiaokang.com`、`api.daixiaokang.com`、`vantage.daixiaokang.com` 申请同一张证书。首次启动立即检查/申请，以后每天北京时间 **03:15** 检查续期，进入续期窗口才重新签发。
+
+宿主机只需要 Docker 和 Compose，不需要安装 Git、OpenSSL、cron 或配置 systemd 定时任务。容器通过 Supercronic 调度，日志可用 `docker compose logs` 查看。后端内部继续使用 HTTP。
+
+## 1. 上传并准备配置
+
+首次从公开仓库部署时，先将根目录 `docker-compose.example.yaml` 复制为本地 `docker-compose.yaml`，将 `nginx/nginx.conf.example` 复制为 `nginx/nginx.conf`，将 `nginx/conf.d/daixiaokang.conf.example` 复制为 `nginx/conf.d/daixiaokang.conf`；后端使用 `backend/.env.docker.example` 创建 `.env.docker` 并填写自己的连接信息。实际配置均被 Git 忽略，完整对应关系见 [CONFIGURATION.md](CONFIGURATION.md)。已有配置时不要覆盖。
+
+上传 `deploy/` 中的脚本和 Dockerfile（包含隐藏文件 `.dockerignore`）及最新根目录 `docker-compose.yaml`。更新时保留服务器正式 `deploy/https.env` 和 `deploy/acme/`。后端源码及 `backend/.env.docker` 放在 `backend/`，前端构建产物放在 `frontend/html/`。
+
+本地 `nginx/nginx.conf` 和 `nginx/conf.d/` 上传到服务器相同的相对目录；Compose 分别挂载到 `/etc/nginx/nginx.conf` 和 `/etc/nginx/conf.d`，Nginx 日志写入宿主机 `nginx/logs/`。本地 `frontend/public/` 内的构建文件上传到服务器 `frontend/html/`。
+
+```bash
+cd /daixk/project/daixiaokang
+mkdir -p deploy_back20261119/acme frontend/html frontend/ssl nginx/conf.d nginx/logs backend/logs
+chmod 700 deploy_back20261119/acme frontend/ssl
+cp -n deploy_back20261119/https.env.example deploy_back20261119/https.env
+chmod 600 deploy_back20261119/https.env
+nano deploy_back20261119/https.env
+```
+
+填写：
+
+```dotenv
+ACME_EMAIL='你的邮箱'
+Tencent_SecretId='你的腾讯云 SecretId'
+Tencent_SecretKey='你的腾讯云 SecretKey'
+HTTPS_CRON='15 3 * * *'
+```
+
+密钥需有对应 DNSPod 域名的查询及 TXT 记录创建、删除权限，使用单独授权的子账号即可。这不是旧版 DNSPod ID/Token。配置中的单引号会由 Compose 正确解析；密钥包含 `$` 时保留单引号，避免插值。
+
+证书容器挂载 `/var/run/docker.sock`，以便通过 Docker CLI 检查并重载 Nginx，因此具有控制宿主机 Docker 的权限。凭据保存在服务器配置及 `deploy/acme/` 账户目录中，均不可公开或放入 `frontend/html/`。
+
+## 2. 启动证书容器
+
+```bash
+docker compose config --quiet
+docker compose up -d --build daixiaokang_acme
+docker compose logs -f daixiaokang_acme
+```
+
+按 `Ctrl+C` 只退出日志查看，容器继续运行。构建使用官方 `neilpang/acme.sh` 镜像，另外安装 Docker CLI、文件锁和调度工具。服务器需要能拉取镜像和 Alpine 软件包；运行时需能访问 Let's Encrypt、腾讯云 DNSPod API 和 DNS 验证查询服务。如果域名设置了 CAA，需要允许 Let's Encrypt 签发。
+
+DNS 验证不依赖 EdgeOne、80/443 端口或 Nginx 已运行。没有证书时会先申请；首次失败时保留错误日志，并按每日计划重试。修复配置后可手动执行 `renew` 立即重试。
+
+成功后，以下数据保存在宿主机，重建容器不会丢失：
+
+```text
+deploy/acme/              # ACME 账户、域名配置、续期状态（不要删除）
+frontend/ssl/
+├── fullchain.pem
+└── privkey.pem
+```
+
+查看签发结果：
+
+```bash
+docker compose run --rm --no-deps daixiaokang_acme status
+```
+
+### 2.1 已有证书增加 Vantage 域名
+
+将新版 `deploy/acme-container.sh` 上传到服务器相同位置，保留正式 `deploy/https.env`、`deploy/acme/` 和 `frontend/ssl/`。逐条执行以下命令，每一步成功后再继续。
+
+```bash
+cd /daixk/project/daixiaokang
+docker compose build daixiaokang_acme
+docker compose run --rm --no-deps daixiaokang_acme issue
+docker compose up -d --no-deps daixiaokang_acme
+docker compose run --rm --no-deps daixiaokang_acme status
+```
+
+这次手动执行 `issue` 会提交三个域名的申请列表。acme.sh 检测到域名列表变化后重新签发，安装到 `frontend/ssl/`，并调用配置检查和重载钩子。`status` 输出的 `Subject Alternative Name` 应包含 `DNS:vantage.daixiaokang.com`。后续每日任务沿用更新后的域名列表续期。
+
+已有证书安装状态时，容器启动及 `renew` 使用 ACME 保存的域名配置进行检查。修改脚本中的域名列表后，需要按上面的流程执行一次 `issue`，将新列表登记到 ACME。
+
+Vantage 站点在 `nginx/conf.d/vantage.conf` 中配置 `server_name vantage.daixiaokang.com`，HTTPS 引用 `/etc/nginx/ssl/fullchain.pem` 和 `/etc/nginx/ssl/privkey.pem`。前端及 API 的转发地址根据实际项目的容器服务名、端口和接口路径填写。
+
+## 3. 签发成功后启用 HTTPS
+
+Nginx 主配置为 `nginx/nginx.conf`，个人网站和 API 配置为 `nginx/conf.d/daixiaokang.conf`；上传时使用相同的相对目录，覆盖前备份服务器原配置。确认两份配置均已上传，并且 `frontend/ssl/fullchain.pem` 和 `privkey.pem` 已生成，再检查配置和启动服务：
+
+```bash
+# 临时容器检查实际配置和证书；检查失败时先修复，不停止原前端。
+docker compose run --rm --no-deps daixiaokang_frontend nginx -t
+docker compose up -d
+```
+
+Compose 将整个证书目录只读挂载给 Nginx，并开放 80、443 端口。Nginx 模板提供主站页面、主站 `/api/` 兼容入口和 API 子域名转发，API 流式响应关闭代理缓冲。Nginx 与后端通过专用 `proxy` 网络通信；后端同时连接原有 `mynetwork`，以访问数据库和 Redis。证书容器使用默认网络。
+
+主站 `location /` 中配置 `error_page 404 = @homepage;`，由命名 location 明确执行 `return 302 /;`，保证响应包含 `Location`，浏览器地址回到 `/`。常见静态资源（图片、脚本、样式、视频、字体、JSON、XML 等）单独处理，缺失时仍返回 404，避免把首页 HTML 当作资源加载。以点开头的文件和目录禁止访问。`/api/` 使用 `^~` 前缀优先匹配，即使接口路径以 `.js` 等扩展名结尾，也仍转发给后端。
+
+缓存策略统一由 Nginx 返回：页面、`search.xml`、站点地图及 Service Worker 使用 `Cache-Control: no-cache`，允许存储但每次使用前校验；成功的图片、视频、字体、CSS、JS 等静态资源缓存一天。当前文件名并非全部带版本号，因此不使用 `immutable`。错误响应不设置一天的缓存；`/api` 和 `/api/` 响应统一为 `no-store`。覆盖同名静态文件后，如需立即生效，应刷新浏览器及 CDN 缓存或更新资源 URL。视频保留 Nginx 默认的 Range 分段响应支持。
+
+启用文本资源 gzip、TLS 1.2/1.3、TLS 会话缓存和 HTTP/2。`http2 on` 要求 Nginx 1.25.1 或更新版本，当前 Compose 的 `nginx:latest` 支持。API 关闭响应缓冲、gzip 和代理缓存，连接超时为 5 秒、相邻两次读取之间的超时为 180 秒，以支持 AI SSE。API 的错误响应直接返回，不跳转首页；`/api` 以 308 跳转 `/api/` 并保留查询参数和请求方法。
+
+更新配置后，已运行的前端容器需先检查再重载：
+
+```bash
+docker compose exec daixiaokang_frontend nginx -t
+# 上一步通过后执行
+docker compose exec daixiaokang_frontend nginx -s reload
+```
+
+主站和 `api` 的 DNS 指向服务器，并在安全组、防火墙允许 TCP 80、443 后验证：
+
+```bash
+curl -I https://daixiaokang.com/
+curl https://api.daixiaokang.com/api/ai/status
+```
+
+模板和证书暂不包含 `www.daixiaokang.com`。`static.daixiaokang.com` 的 EdgeOne 边缘证书后续单独配置。
+
+### CDN 接入范围
+
+当前规划为 `static.daixiaokang.com → EdgeOne → COS`，静态域名不经过这台 Nginx，无需在此添加对应 `server`。在 EdgeOne 配置 COS 源站、域名 HTTPS 和缓存规则，在前端设置媒体域名即可；Nginx 的缓存响应头不会影响 COS 源站。
+
+主站网页接入 EdgeOne、API 子域名直连的部署方案：
+
+- 前端 `ai_chat.api_base` 和 `feedback.api_base` 均设置为 `https://api.daixiaokang.com/api`，重新构建上传。`api` DNS 保持直接解析到服务器，主站使用 EdgeOne 分配的 CNAME。API 子域名继续使用服务器 HTTPS 证书。
+- 主站回源使用 HTTPS、443 端口，并正确设置回源 Host 和 TLS SNI 为 `daixiaokang.com`，启用回源证书校验。边缘证书与服务器证书分别管理。
+- 主站 `/api`、`/api/*` 保留不缓存规则，兼容旧页面的请求；新页面直接访问 API 子域名。API 流式传输由 Nginx 处理，不依赖 EdgeOne 的流式传输设置。不要使用覆盖全站的强制缓存规则。
+- HTML、搜索索引及 Service Worker 遵循源站的校验策略；普通静态资源可遵循源站一天的缓存。修改同名文件后刷新 EdgeOne 缓存。
+- 当前未配置 CDN 真实 IP 信任，主站访问日志在接入 CDN 后记录边缘节点 IP；不要无条件信任外部转发头。后端跨域来源允许主站，可信 Host 包含 API 子域名。
+
+Nginx 使用 `$remote_addr` 覆盖客户端传入的 `X-Forwarded-For`，避免直连时伪造转发链。服务器已用 Docker 网段为 `10.66.0.0/24` 和 `10.67.0.0/24` 至 `10.67.3.0/24`，因此 Compose 为专用 `proxy` 网络配置 `10.67.4.0/24`。该网络仅连接 Nginx 和后端，两者的容器 IP 自动分配；后端通过 `FORWARDED_ALLOW_IPS=10.67.4.0/24` 只信任这个专用网段，识别转发后的 HTTPS 和访客 IP。该变量直接注入容器，由 Uvicorn 读取，无需修改后端代码或依赖镜像。API 子域名直连时能识别访客 IP；主域名旧 `/api` 入口经过 CDN 时仍只能识别边缘节点 IP。
+
+更新 Compose 后，运行 `docker compose config --quiet` 检查配置，再执行 `docker compose up -d --no-build --force-recreate daixiaokang_frontend daixiaokang_backend` 应用网络及环境变量变化；会短暂重启前后端，证书容器无需重建。使用 `curl -I https://api.daixiaokang.com/api/ai/status/` 复查自动重定向，`Location` 应为 HTTPS；随后检查后端日志中的 `client`。`restart` 不会应用新的环境变量，需重新创建容器。
+
+迁移服务器时先检查 Docker 网络及宿主机路由，确认 `10.67.4.0/24` 不与已有网络或路由重叠；若冲突，同步调整 `networks.proxy.ipam.config` 的 `subnet` 与后端 `FORWARDED_ALLOW_IPS`。固定的是专用网段，无需固定容器 IP。不要向 `proxy` 网络接入其他服务，也不要将整个共享网络或所有地址设为可信。
+
+## 4. 日常检查与维护
+
+证书容器启动时先检查一次，之后每天 03:15（`Asia/Shanghai`）检查。未到续期时间直接跳过；续期成功后安装证书，先执行 `nginx -t`，通过后执行 `nginx -s reload`。Nginx 未启动时保留证书，待启用 HTTPS 后正常读取。检查失败或 Docker 不可用时记录错误并保留待重载状态，下次检查重试；不会主动停止或重启 Nginx。
+
+```bash
+# 查看状态及最近日志
+docker compose ps
+docker compose logs --tail=100 daixiaokang_acme
+
+# 手动检查续期（不会强制申请；首次申请失败时也可用它重试）
+docker compose run --rm --no-deps daixiaokang_acme renew
+
+# 修复 Nginx 配置后重试检查和重载
+docker compose run --rm --no-deps daixiaokang_acme reload
+```
+
+也可以继续用宿主机便捷脚本：
+
+```bash
+bash deploy_back20261119/https.sh start
+bash deploy_back20261119/https.sh status
+bash deploy_back20261119/https.sh renew
+bash deploy_back20261119/https.sh reload
+bash deploy_back20261119/https.sh logs
+```
+
+这些命令只调用 Compose，真正操作在容器内执行。并发的申请/续期通过文件锁互斥，容器异常退出时锁自动释放。修改 DNSPod 密钥或检查时间后需重建证书容器以载入新环境：
+
+```bash
+docker compose up -d --force-recreate daixiaokang_acme
+```
+
+更新脚本或 acme.sh 版本时执行 `docker compose up -d --build daixiaokang_acme`。镜像内自动升级关闭，版本通过重新构建更新。
+
+如果此前运行过旧版宿主机申请脚本，先用 `crontab -l` 查看、`crontab -e` 删除包含 `/root/.acme.sh-daixiaokang` 的旧续期任务，避免两套任务同时管理证书；保留其他定时任务。不要使用 `crontab -r`。旧证书可保留，容器成功签发和安装后会更新部署目录。
+
+`deploy/https.env`、`deploy/acme/`、`frontend/ssl/` 已加入 Git 忽略规则。镜像构建上下文只包含 Dockerfile 和脚本，不会把密钥、证书或账户数据打包进镜像。
+
+本地流程验证（仅模拟 DNS/ACME/Docker，不申请真实证书）：
+
+```bash
+python -m unittest discover -s deploy_back20261119/tests -v
+```
+
+参考：[acme.sh](https://github.com/acmesh-official/acme.sh)、[官方容器构建](https://github.com/acmesh-official/acme.sh/blob/master/Dockerfile)、[腾讯云 DNS API 实现](https://github.com/acmesh-official/acme.sh/blob/master/dnsapi/dns_tencent.sh)。
